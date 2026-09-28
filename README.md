@@ -15,6 +15,7 @@ Jogo em pixel art do Markin: 15 dias no Rio sem voltar pra casa. Roda direto no 
 | `fonte/index.html` | A página (HTML) do jogo. |
 | `fonte/jogo.js` | Todo o código do jogo (~300 KB). É aqui que se mexe. |
 | `fonte/estilo.css` | Visual das telas, botões e balões. |
+| `fonte/mapa/` | O mapa da cidade pro Tiled (veja "Editar o mapa no Tiled"). |
 | `fonte/assets.js` | Músicas e fotos embutidas (base64). Não abra no editor: é enorme. |
 | `fonte/juntar.py` | Junta tudo de volta em `sem-volta-pra-casa.html`. |
 | `fonte/trocar_asset.py` | Troca uma música ou foto embutida. |
@@ -37,50 +38,71 @@ python3 juntar.py
 
 Nomes: `INICIO_AUDIO` (menu e intro), `MARACA_AUDIO` (torcida), `FESTA_AUDIO` (Circo Voador), `FINAL_AUDIO` (depois do chefão), `FACE_SRC` (rosto do Markin), `BALL_SRC` (bola), `SONO_SRC` (foto da derrota).
 
+## Editar o mapa no Tiled
+
+O mapa da cidade agora é feito no [Tiled](https://www.mapeditor.org/) (programa grátis de mapas). Os arquivos ficam em `fonte/mapa/`:
+
+| Arquivo | O que é |
+| --- | --- |
+| `mapa.tmj` | O mapa. É esse que você abre no Tiled. |
+| `cidade.png` | As peças do chão (grama, rua, calçada, areia, água, prédio, árvore...). |
+| `mapa.js` | Cópia do mapa que o jogo lê. Gerado pelo Tiled, não edite na mão. |
+
+1. Abra `fonte/mapa/mapa.tmj` no Tiled.
+2. **Chão:** na camada `chao`, escolha uma peça no painel de tiles e pinte (tecla **B**). Pra saber qual peça é qual, clique nela e veja a "Classe" no painel de propriedades.
+3. **Estabelecimentos:** na camada `estabelecimentos` cada retângulo é um prédio. Selecione com a tecla **S** pra arrastar, redimensionar ou copiar (Ctrl+C / Ctrl+V). No painel de propriedades:
+   - **Nome** = o que aparece no letreiro (só letras sem acento, maiúsculas).
+   - **Classe** = `loja` (com letreiro), `predio` (sem letreiro), `bar` (Bar da Cachaça) ou `sinuca` (Bambina).
+   - `cor_letreiro`, `cor_letra`, `cor_toldo`, `cor_telhado` = cores; `caixa_dagua` = caixa d'água azul no telhado.
+   - Pra criar um novo: tecla **R**, desenhe o retângulo encaixado na grade e preencha nome, classe e cores.
+4. Salve (**Ctrl+S**) e exporte (**Ctrl+E**). O Ctrl+E regrava `mapa.js`. Depois dê F5 no jogo.
+
+Cuidados: não mude o tamanho do mapa (80 × 60) nem mexa nas ruas principais, porque os carros e o ônibus andam por elas. O Maracanã, o Cristo, o Circo Voador, os Arcos da Lapa, o Pão de Açúcar e o navio ainda são desenhados no código, sempre no mesmo lugar.
+
 ## Onde fica cada coisa no `jogo.js`
 
 | Parte | Linha |
 | --- | --- |
-| Mapa da cidade | 24 |
-| Fundo: prédios, lojas, Cristo, Circo Voador, navio | 216 |
+| Mapa da cidade | 25 |
+| Fundo: prédios, lojas, Cristo, Circo Voador, navio | 171 |
 | Nomes e cores das lojas | 223 |
-| Markin no mapa (roupa, andar, respiração) | 280 |
-| NPCs de lado | 486 |
-| Rosto do Markin | 566 |
-| Músicas | 719 |
-| Botões do celular | 958 |
-| Balões de fala | 998 |
-| Andar sem diagonal | 1109 |
-| Intro | 1185 |
-| Final (bandeira, boto, navio) | 1247 |
-| Tela final | 1432 |
-| Loop do mapa (velocidade, itens, interações) | 1465 |
-| Itens | 1583 |
-| Cochilo (+3h, 12h de espera) | 1620 |
-| Mãe | 1640 |
-| Chave | 1663 |
-| Preso e tonto 10s | 1693 |
-| Tarefas | 1713 |
-| Amigos do bloco | 1728 |
-| Jamal e a banda | 535 |
-| Músicos (LED e glitter) | 522 |
-| NPCs da cidade | 1848 |
-| Estandartes e faixas | 1988 |
-| Markin de corpo inteiro nos desafios | 2019 |
-| Desafio: SURF (regras e pontos) | 2067 |
-| Desafio: SURF (física da onda) | 2090 |
-| Desafio: SURF (desenho) | 2156 |
-| Desafio: ALTINHA | 2211 |
-| Desafio: BLOCO SECRETO (Rio Branco) | 2496 |
-| Ônibus do Rio | 420 |
-| Desafio: BAR | 2565 |
-| Desafio: BAMBINA | 2712 |
-| IA do Tubarão | 2694 |
-| Desafio: CIRCO VOADOR | 2890 |
-| Desafio final: SAXOFONE | 3135 |
-| Desafio: MARACANÃ | 3236 |
-| HUD | 3359 |
-| Desenho do mapa | 3389 |
+| Markin no mapa (roupa, andar, respiração) | 226 |
+| NPCs de lado | 432 |
+| Rosto do Markin | 512 |
+| Músicas | 665 |
+| Botões do celular | 904 |
+| Balões de fala | 944 |
+| Andar sem diagonal | 1055 |
+| Intro | 1131 |
+| Final (bandeira, boto, navio) | 1193 |
+| Tela final | 1378 |
+| Loop do mapa (velocidade, itens, interações) | 1411 |
+| Itens | 1529 |
+| Cochilo (+3h, 12h de espera) | 1566 |
+| Mãe | 1586 |
+| Chave | 1609 |
+| Preso e tonto 10s | 1639 |
+| Tarefas | 1659 |
+| Amigos do bloco | 1674 |
+| Jamal e a banda | 481 |
+| Músicos (LED e glitter) | 468 |
+| NPCs da cidade | 1794 |
+| Estandartes e faixas | 1934 |
+| Markin de corpo inteiro nos desafios | 1965 |
+| Desafio: SURF (regras e pontos) | 2013 |
+| Desafio: SURF (física da onda) | 2036 |
+| Desafio: SURF (desenho) | 2102 |
+| Desafio: ALTINHA | 2157 |
+| Desafio: BLOCO SECRETO (Rio Branco) | 2442 |
+| Ônibus do Rio | 366 |
+| Desafio: BAR | 2511 |
+| Desafio: BAMBINA | 2658 |
+| IA do Tubarão | 2640 |
+| Desafio: CIRCO VOADOR | 2836 |
+| Desafio final: SAXOFONE | 3081 |
+| Desafio: MARACANÃ | 3182 |
+| HUD | 3305 |
+| Desenho do mapa | 3335 |
 
 Dica: no editor, use Ctrl+F (Cmd+F no Mac) com o nome da função. Números que dá pra ajustar fácil:
 

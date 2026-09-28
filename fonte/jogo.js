@@ -21,76 +21,31 @@ const DOORT={x:38,y:28};
 const HOME={x:DOORT.x*T+8,y:DOORT.y*T+12};
 const lots=[];
 const ROOFS=['#9b6a55','#6e7f96','#a08f6c','#7f6c93','#5e8b7b','#b07a5a','#8a8f98'];
+// o mapa vem do Tiled: mapa/mapa.tmj (edite lá e exporte com Ctrl+E, que regrava mapa/mapa.js)
 function buildMap(){
   map.fill(G);lotMap.fill(-1);lots.length=0;
-  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){if(y>=50)map[idx(x,y)]=WATER;else if(y>=44)map[idx(x,y)]=SAND;}
-  for(const r of HROADS)for(let x=0;x<MW;x++){map[idx(x,r)]=ROAD;map[idx(x,r+1)]=ROAD;}
-  for(let x=0;x<MW;x++){map[idx(x,ORLA_Y)]=ROAD;map[idx(x,ORLA_Y+1)]=ROAD;}
-  for(const c of VROADS)for(let y=0;y<=ORLA_Y+1;y++){map[idx(c,y)]=ROAD;map[idx(c+1,y)]=ROAD;}
-  for(let y=0;y<44;y++)for(let x=0;x<MW;x++){
-    if(map[idx(x,y)]!==G)continue;let near=false;
-    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(tileAt(x+dx,y+dy)===ROAD)near=true;
-    if(near)map[idx(x,y)]=(y===43||y===40)?ORLA:SIDE;
+  const M=window.TileMaps&&window.TileMaps.mapa;if(!M){alert('Faltou o arquivo do mapa: fonte/mapa/mapa.js');return;}
+  const camada=n=>M.layers.find(l=>l.name===n);
+  const chao=camada('chao'); // camada de tiles: cada tile do cidade.png é um tipo de chão (grama, rua, calçada...)
+  for(let y=0;y<Math.min(MH,chao.height);y++)for(let x=0;x<Math.min(MW,chao.width);x++){const t=(chao.data[y*chao.width+x]&0x1fffffff)-1;map[idx(x,y)]=t>=0&&t<=CIRCO?t:G;}
+  const cor=(v,padrao)=>v?'#'+v.slice(-6):padrao; // o Tiled grava cor como #AARRGGBB
+  // camada de objetos: cada retângulo é um prédio; classe loja/bar/sinuca/predio, nome = letreiro
+  for(const o of (camada('estabelecimentos')||{objects:[]}).objects){
+    const p={};for(const q of o.properties||[])p[q.name]=q.value;
+    const x0=Math.round(o.x/T),y0=Math.round(o.y/T),x1=Math.round((o.x+o.width)/T)-1,y1=Math.round((o.y+o.height)/T)-1;if(x1<x0||y1<y0)continue;
+    const tipo=o.type||o.class||'predio',bar=tipo==='bar'||tipo==='sinuca',id=lots.length;
+    const L={x0,x1,y0,y1,bar,kind:tipo==='sinuca'?'sinuca':'cabeca',samba:!!p.samba,col:cor(p.cor_telhado,ROOFS[id%ROOFS.length]),tank:!!p.caixa_dagua};
+    if(tipo==='loja'&&o.name){const fundo=cor(p.cor_letreiro,'#2f6e52');L.loja=o.name.toUpperCase();L.letreiro=[L.loja,fundo,cor(p.cor_letra,'#ffffff'),cor(p.cor_toldo,fundo)];}
+    lots.push(L);
+    for(let y=Math.max(0,y0);y<=Math.min(MH-1,y1);y++)for(let x=Math.max(0,x0);x<=Math.min(MW-1,x1);x++){map[idx(x,y)]=BLD;lotMap[idx(x,y)]=id;}
   }
-  const parks=new Set(['3,0','0,1','4,2']);
-  for(let r=0;r<3;r++)for(let c=0;c<5;c++){
-    const [x0,x1]=XB[c],[y0,y1]=YB[r],key=c+','+r;
-    if(key==='2,2'){buildHome(x0,x1,y0,y1);continue;}
-    if(key==='3,0'||key==='4,0'){for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)map[idx(x,y)]=LAPA;continue;} // Lapa
-    if(key==='4,1'){for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)map[idx(x,y)]=MORRO;continue;} // Pão de Açúcar
-    if(key==='0,0'){for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)map[idx(x,y)]=MORRO;continue;} // Corcovado com o Cristo
-    if(key==='1,1'){const ecx=(x0+x1+1)*T/2,ecy=(y0+y1+1)*T/2+2,erx=(x1-x0+1)*T/2-2,ery=(y1-y0+1)*T/2-3; // Maracanã: colisão oval, igual ao desenho
-      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const dx=(x*T+8-ecx)/erx,dy=(y*T+8-ecy)/ery;map[idx(x,y)]=dx*dx+dy*dy<=1?ESTADIO:SIDE;}continue;}
-    if(key==='0,1'){for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)map[idx(x,y)]=FAVELA;continue;} // favela Santo Amaro, no morro
-    if(parks.has(key)){
-      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
-        const edge=x===x0||x===x1||y===y0||y===y1;const hh=h2(x,y,7);
-        map[idx(x,y)]=(!edge&&hh<.12)?TREE:(hh>.86?FLOW:G);
-      }continue;
-    }
-    if(key==='1,0'){ // praça
-      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
-        const edge=(x===x0||x===x1)&&(y===y0||y===y1);map[idx(x,y)]=PATH;
-        if(edge||((x===x0+3||x===x1-3)&&(y===y0+2||y===y1-2)))map[idx(x,y)]=TREE;
-      }continue;
-    }
-    const segs=(y1-y0>=9)?[[y0,y0+4],[y0+6,y1]]:[[y0,y1]];
-    if(segs.length>1)for(let x=x0;x<=x1;x++)map[idx(x,y0+5)]=SIDE;
-    const ax=(x1-x0>=9)?Math.floor((x0+x1)/2):-1; // beco no meio do quarteirão pra passar a pé
-    for(const [sy0,sy1] of segs){
-      let x=x0;
-      const samba=key==='2,1'&&sy1===y1; // quarteirão do sambinha: o prédio dele fica inteiro, sem beco no meio
-      const bx=samba?-1:ax;
-      while(x<=x1){
-        if(x===bx){for(let y=sy0;y<=sy1;y++)map[idx(x,y)]=SIDE;x++;continue;}
-        let w=ri(3,6);if(x1-(x+w-1)<3)w=x1-x+1;if(x<bx&&x+w-1>=bx)w=bx-x;
-        if(samba){if(x===36)w=5;else if(x<36&&x+w-1>=36)w=36-x;}
-        const bar=false, id=lots.length;
-        lots.push({x0:x,x1:x+w-1,y0:sy0,y1:sy1,bar,samba:samba&&x===36,col:samba&&x===36?'#4a2a5a':pick(ROOFS),tank:Math.random()<.6});
-        for(let y=sy0;y<=sy1;y++)for(let xx=x;xx<x+w;xx++){map[idx(xx,y)]=BLD;lotMap[idx(xx,y)]=id;}
-        x+=w;
-      }
-    }
-  }
-  // só dois bares: o da cabeça e o da sinuca
-  const pickBar=(tx,ty,kind)=>{let best=null,bd=1e9;for(const L of lots){if(L.bar||L.samba||L.x1-L.x0<2)continue;const mx=Math.floor((L.x0+L.x1)/2);if(map[idx(mx,L.y1+1)]!==SIDE)continue;
-    const d=Math.hypot(mx-tx,L.y1-ty);if(d<bd){bd=d;best=L;}}if(best){best.bar=true;best.kind=kind;best.col=kind==='sinuca'?'#2f6e52':'#b8473a';}};
-  pickBar(18,34,'cabeca');pickBar(58,20,'sinuca');
-  for(let x=0;x<MW;x++)if(map[idx(x,39)]===G&&h2(x,39,3)>.7)map[idx(x,39)]=FLOW;
-  for(let y=44;y<=53;y++)for(let x=5;x<=8;x++)map[idx(x,y)]=DOCK;
-  // Arcos da Lapa: duas fileiras sólidas no topo, a rua passa por baixo
-  for(let y=0;y<=2;y++)for(let x=50;x<MW;x++){const t=map[idx(x,y)];if(t!==ROAD&&(y<2||t===LAPA))map[idx(x,y)]=ARCH;}
-  for(let y=3;y<=5;y++)for(let x=72;x<=78;x++)map[idx(x,y)]=CIRCO; // Circo Voador
-}
-function buildHome(x0,x1,y0,y1){
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
-    const edge=x===x0||x===x1||y===y0||y===y1;
-    map[idx(x,y)]=edge?FENCE:(h2(x,y,9)>.82?FLOW:G);
-  }
-  for(let y=26;y<=28;y++)for(let x=36;x<=41;x++)map[idx(x,y)]=HOUSE;
-  map[idx(DOORT.x,DOORT.y)]=DOOR;
-  for(let y=29;y<=y1;y++)map[idx(38,y)]=PATH;
-  map[idx(33,31)]=TREE;map[idx(44,27)]=TREE;map[idx(44,32)]=TREE;
+  // tile de prédio pintado sem retângulo em cima: vira um prédio sem loja
+  for(let i=0;i<MW*MH;i++){if(map[i]!==BLD||lotMap[i]>=0)continue;
+    const id=lots.length,pilha=[i],cel=[];lotMap[i]=id;
+    while(pilha.length){const j=pilha.pop();cel.push(j);const x=j%MW,y=(j-x)/MW;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=MW||ny>=MH)continue;const k=idx(nx,ny);if(map[k]===BLD&&lotMap[k]<0){lotMap[k]=id;pilha.push(k);}}}
+    const xs=cel.map(j=>j%MW),ys=cel.map(j=>Math.floor(j/MW));
+    lots.push({x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys),bar:false,samba:false,col:ROOFS[id%ROOFS.length],tank:false});}
 }
 
 /* ============ pixel glyphs for signs ============ */
@@ -219,17 +174,8 @@ function renderBG(){
     if(L.tank){const tx=(L.x0+1)*T+2,ty=L.y0*T+3;R(bgc,tx,ty,7,6,'#2f6fbd');R(bgc,tx,ty,7,2,'#4a8fe0');R(bgc,tx+1,ty+6,5,1,'rgba(0,0,0,.3)');}
   }
   drawEstadio(bgc,11*T,11*T,16*T,10*T);
-  // comércio do Rio nos prédios: padoca, farmácia, mercado, lanchonete...
-  {const lojas=[['PADOCA','#f2c230','#5a2a10','#c2452f'],['DROGARIA PACHECO','#d8332f','#ffffff','#d8332f'],['ZUZU','#f2c230','#111111','#f2c230'],['PAO DE ACUCAR','#2f9a55','#ffffff','#2f9a55'],
-     ['CONFEITARIA COLOMBO','#2a2440','#f2c230','#7a3d00'],['CERVANTES','#7a1f1f','#ffe14f','#7a1f1f'],['BOBS','#d8332f','#ffffff','#d8332f'],['REI DO MATTE','#f2a02a','#3a1a08','#2f9a55'],
-     ['ACAI DO TCHUCO','#5a2a7a','#ffffff','#5a2a7a'],['REI DO MATE','#f2a02a','#3a1a08','#2f9a55'],['BANCA','#2f6e52','#ffffff','#2f6e52'],['VENANCIO','#c2452f','#ffffff','#c2452f'],
-     ['HORTIFRUTI','#3fa34d','#ffffff','#f2a02a'],['PADARIA','#e8d193','#7a3d00','#b8473a'],['BELMONTE','#1d1d22','#f2c230','#b8473a'],['LOTERICA','#2d6fd1','#ffe14f','#2d6fd1'],
-     ['BARBEARIA','#1d1d22','#ffffff','#d8332f'],['SALAO','#ff8fc2','#3a1a2a','#ff8fc2'],['PET SHOP','#4fb0d8','#ffffff','#f2c230'],['BIBI SUCOS','#ff8a3d','#ffffff','#3fa34d'],
-     ['MOCELIN','#7a3d00','#ffe14f','#7a3d00'],['CT JOGO PENSADO','#f2c230','#111111','#1d1d22'],['PADOCA','#f2c230','#5a2a10','#c2452f'],['PASTEL CHINA','#ffe14f','#b8261c','#d8332f'],['OTICAS DO POVO','#6e7f96','#ffffff','#6e7f96']];
-   let li=0;
-   for(const L of lots){if(L.bar)continue;const wpx=(L.x1-L.x0+1)*T;
-     const cabe=lojas.map((_,k)=>(li+k)%lojas.length).find(k=>lojas[k][0].length*4+3<=wpx-4);if(cabe===undefined)continue;li=cabe+1;
-     L.loja=lojas[cabe][0];drawFachada(bgc,L,lojas[cabe]);}}
+  // fachadas das lojas (nome e cores vêm do Tiled)
+  for(const L of lots)if(!L.bar&&L.letreiro)drawFachada(bgc,L,L.letreiro);
   for(const L of lots){if(!L.bar)continue;const cx=Math.floor((L.x0+L.x1)/2)*T,cy=L.y1*T;
     if(L.kind==='sinuca'){R(bgc,cx-6,cy+1,28,8,'#1f6a3a');R(bgc,cx-6,cy+8,28,1,'#0f3a20');pxText(bgc,'BAMBINA',cx-5,cy+2,'#ffe14f');}
     else{R(bgc,cx-8,cy-6,32,15,'#ffcf4a');R(bgc,cx-8,cy+8,32,1,'#a27b12');pxText(bgc,'BAR DA',cx-3,cy-4,'#b8261c');pxText(bgc,'CACHACA',cx-5,cy+2,'#b8261c');}}
@@ -1223,7 +1169,7 @@ function* introGen(){
   yield* talk('Markin','Me dá 15 dias. Ninguém me leva pra casa.');
 }
 let bandeira=0; // 0 = abaixada, 1 = no alto do mastro
-let navioDX=0,boto=null; // no final: o navio anda pra direita e o boto vem pulando do lado
+let navioDX=0,boto=null; // no final: o navio anda pra direita e o boto vem pulando da esquerda pra direita
 function drawBoto(g,x,y,ang){ // boto cor de rosa com chapéu de palha amarelo (fita roxa)
   g.save();g.translate(Math.round(x),Math.round(y));g.rotate(ang);
   const rosa='#e8479a',rosaL='#f58cc4';
@@ -1266,13 +1212,13 @@ function* winGen(){
   yield* talk('Mãe (mensagem)','MARKIN!!! A SOPA DE CHUCHU!!!');
   yield* talk('Markin','SEM VOLTA PRA CASA!! FODA-SE A CASA!!');
   yield* talk('Markin','Capitão, muda a rota! Tem bloco em PAQUETÁ!');
-  // um boto cor de rosa aparece pulando no mar
-  boto={x:P.x+110,y:55*T+6,t:0};
-  {let t=0;while(t<2.4){const dt=yield;t+=dt;boto.t+=dt;}}
+  // um boto cor de rosa aparece pulando no mar, vindo da esquerda pra direita
+  boto={x:P.x-150,y:55*T+6,t:0};
+  {let t=0;while(t<2.4){const dt=yield;t+=dt;boto.t+=dt;boto.x+=60*dt;}}
   yield* talk('Markin','Olha lá! Um BOTO COR DE ROSA de chapéu! É sinal, galera!');
   sfx.horn();bubble({x:21*T,y:49*T},'FOOOOOOM!',1.6,'big',8);shake=.4;
   // o navio zarpa (com o Markin e a galera a bordo) e o boto vem pulando do lado
-  {const bordo=[P,...buddies];let v=0,t=0;while(t<6.5){const dt=yield;t+=dt;v=Math.min(46,v+dt*16);const dx=v*dt;navioDX+=dx;for(const o of bordo)o.x+=dx;boto.x+=dx*1.02;boto.t+=dt;
+  {const bordo=[P,...buddies];let v=0,t=0;while(t<6.5){const dt=yield;t+=dt;v=Math.min(46,v+dt*16);const dx=v*dt;navioDX+=dx;for(const o of bordo)o.x+=dx;boto.x+=dx+24*dt;boto.t+=dt;
     if(t>1.2&&t<1.25)bubble(P,'PARTIU PAQUETÁÁÁ!',2,'big',46);}}
   yield* wait(.4);
 }
@@ -1444,9 +1390,8 @@ function update(dt){
   for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.g||0)*dt;p.life-=dt;}
   particles=particles.filter(p=>p.life>0);
   if(state==='cut'){
-    if(P.moving){P.anim+=dt;}
+    P.moving=false; // o walkTo da cena liga de novo enquanto ele anda, pra animar a passada (macacão na intro)
     if(cutGen){const r=cutGen.next(dt);if(r.done){cutGen=null;if(cutKind==='intro')endIntro();else if(cutKind==='bloco')startMarch();else endWin();}}
-    P.moving=false;
   }else if(state==='play')play(dt);
   else if(state==='guitarra')updGuitarra(dt);
   else if(state==='maraca')updMaraca(dt);
@@ -1854,7 +1799,7 @@ const NPC_DEFS=[
    lines:[()=>`Ô Markin! ${diasNaRua()} te vendo na rua! Tu mora no meio-fio agora?`,()=>`De novo tu? ${diasNaRua()} seguidos na rua. Já pode pagar IPTU da calçada!`,
      ()=>`${diasNaRua()} na rua, Markin... os pombos já te chamam de vizinho.`,()=>`Te vejo mais na rua que o gari! ${diasNaRua()} já!`,
      ()=>`Olha ele! ${diasNaRua()} na pista. Daqui a pouco a prefeitura te põe no mapa.`,()=>`Markin, ${diasNaRua()} na rua. Tua cama já tá fazendo boletim de ocorrência.`]},
-  {k:'fla',area:'maraca',ring:[1,1],st:0,sp:16,look:{skin:'#b8733f',hair:'#1e140e',shirt:'#c8102e',shorts:'#f4f1e8',stripes:'#1a1a1a'},lines:['Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.','Estamos em outro patamar!']},
+  {k:'fla',area:'maraca',ring:[1,1],st:0,sp:16,coee:true,look:{skin:'#b8733f',hair:'#1e140e',shirt:'#c8102e',shorts:'#f4f1e8',stripes:'#1a1a1a'},lines:['Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.','Estamos em outro patamar!']},
   {k:'fla',area:'maraca',ring:[1,1],st:2,sp:14,look:{skin:'#e0b08a',hair:'#6b4423',shirt:'#c8102e',shorts:'#1a1a1a',stripes:'#1a1a1a',cap:'#1a1a1a'},lines:['Estamos em outro patamar!','Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.']},
   {k:'flu',area:'maraca',ring:[1,1],st:1,rev:true,sp:15,look:{skin:'#d29a6c',hair:'#1e140e',shirt:'#8a1538',shorts:'#f4f1e8',stripes:'#1f6a3a'},lines:['Ganhar Fla x Flu é normal.','Vence o Fluminense!','Saudações tricolores!']},
   {k:'flu',area:'maraca',ring:[1,1],st:3,rev:true,sp:13,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#8a1538',shorts:'#1f6a3a',stripes:'#f4f1e8',long:true},lines:['Saudações tricolores!','Ganhar Fla x Flu é normal.','Vence o Fluminense!']},
@@ -1884,6 +1829,9 @@ function updNpcs(dt){
     if(n.onipresente){n.pulo=(n.pulo??25)-dt;const dd=dist(n,P);
       if(dd>260&&n.pulo<=0&&P.mode==='free'&&state==='play'){n.pulo=rnd(35,50);for(let i=0;i<40;i++){const rg=pick(RINGS),k=ri(0,3),a=rg[k],b=rg[(k+1)%4],u=Math.random(),q={x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u},d=dist(q,P);if(d>150&&d<230){n.x=q.x;n.y=q.y;n.route=rg;n.ri=(k+1)%4;n.rev=false;n.saw=false;break;}}}
       if(dd<80&&!n.saw&&P.mode==='free'){n.saw=true;n.lineT=rnd(8,12);bubble(n,falaNpc(n),3,'',28);}else if(dd>200)n.saw=false;}
+    // torcedor do Flamengo: o Markin chega cumprimentando e ele responde
+    if(n.coee){const dd=dist(n,P);if(dd<70&&!n.saw&&P.mode==='free'){n.saw=true;bubble(P,'Coee Brother!',2.2);n.resp=1.5;n.lineT=99;}else if(dd>170)n.saw=false;
+      if(n.resp>0){n.resp-=dt;if(n.resp<=0){n.lineT=rnd(8,12);bubble(n,pick(['Coee, Markin! Mengão!','Coee! Uma vez Flamengo, sempre Flamengo!','Fala, Brother! Hoje tem Mengo!']),3,'',28,true);}}}
     if(n.kid){const dd=dist(n,P);if(dd<70&&!n.saw&&P.mode==='free'){n.saw=true;n.lineT=rnd(5,8);bubble(n,pick(n.lines.slice(0,5)),2.6,'',22);}else if(dd>170)n.saw=false;}
     // o primeiro que passar depois das 3 cervejas repara
     if(librasPend&&fx.drunk<=0)librasPend=false;
@@ -2060,27 +2008,30 @@ const DUDU_BORA=['Rema, Markin! Rema!','Olha a série chegando!','Essa é tua! P
 const DUDU_ZOA=['Tomou uma vaca, hein!','Isso é surf ou natação?','Caiu igual jaca do pé!','Engoliu meio litro de mar!','Tá bebendo a praia, Markin?','Até o boto riu dessa!','Ô, a prancha é pra ficar EM CIMA!'];
 const DUDU_MANOBRA=['ISSO!','QUE BATIDA!','Rasgou!','Tá voando, mermão!','Classe A!'];
 const DUDU_POCKET=['Volta pro pocket!','Tá longe da onda, volta!','Cola na espuma!'];
-/* SURF estilo Kelly Slater (bem simplificado): 3 ondas. Em cada uma: dropa na hora certa e depois surfa a parede,
-   subindo e descendo (↑ ↓). Descer ganha velocidade, subir gasta. Batida na crista, aéreo (sobe rápido até o lábio e
-   aperta MANOBRA; no ar, MANOBRA gira) e tubo (fica alto, colado na espuma) dão pontos. Manobras seguidas multiplicam.
-   Longe da espuma a onda perde força; engolido pela espuma ou pouso torto = vaca. Soma 2500 pontos nas 3 ondas pra vencer. */
-const SF={TOPO:66,BASE:150,MX:150,META:2500,ONDA:18};
+/* SURF estilo California Games: 3 ondas. Em cada uma: o Markin rema deitado na prancha (visto de cima) e tem que
+   apertar MANOBRA quando a onda chega nele (o drop). Aí entra a onda de lado: o tubo vai fechando atrás dele e a tela
+   anda junto. Sobe e desce na parede (↑ ↓): descer ganha velocidade, subir gasta. Pontos: TUBO (dentro do tubo; o lábio
+   fica transparente pra ver o Markin), CRISTA (andar lá em cima), RASGADA (MANOBRA na parede), AÉREO (sobe rápido até o
+   lábio e aperta MANOBRA; no ar, MANOBRA gira) e batida/cavada/cutback. Manobras variadas multiplicam.
+   O tubo fechando em cima, a espuma ou pouso torto = vaca. Soma 2500 pontos nas 3 ondas pra vencer. */
+const SF={TOPO:66,BASE:150,MX:150,CX:84,META:2500,ONDA:18};
+const surfR=r=>36-11*clamp(r.t/SF.ONDA,0,1)+Math.sin(r.t*1.3)*3; // raio do tubo: vai fechando ao longo da onda
 function startSurf(){
   mgEnter('surf');
-  mg={t:0,phase:'espera',waves:3,onda:0,wave:null,msg:'Espera a onda e DROPA quando a crista chegar em você!',msgT:3,result:null,done:0,fala:pick(DUDU_BORA),falaT:2.6,
-    me:{x:150},total:0,pts:0,combo:1,comboT:0,splash:[],pops:[],cai:0,r:null,scroll:0};
+  mg={t:0,phase:'espera',waves:3,onda:0,wave:null,msg:'Rema e espera a onda! Aperta MANOBRA quando ela chegar em você!',msgT:3,result:null,done:0,fala:pick(DUDU_BORA),falaT:2.6,
+    me:{x:150},mx:SF.MX,total:0,pts:0,combo:1,comboT:0,splash:[],pops:[],cai:0,r:null,scroll:0,wipe:0};
   surfOnda();
 }
 function surfOnda(){const m=mg;m.ultMan=null;m.cdM={};m.phase='espera';m.wave={x:W+70,sp:rnd(70,90),h:0};m.cai=0;m.onda++;m.pts=0;m.combo=1;m.comboT=0;m.fala=pick(DUDU_BORA);m.falaT=2.2;}
-function surfPts(n,txt){const m=mg;m.cdM=m.cdM||{};const k=txt.split(' ')[0],tubo=k==='TUBO';
+function surfPts(n,txt){const m=mg;m.cdM=m.cdM||{};const k=txt.split(' ')[0],tubo=k==='TUBO'||k==='CRISTA';
   if(!tubo&&m.t-(m.cdM[k]??-9)<2)return;if(!tubo)m.cdM[k]=m.t; // a mesma manobra só pontua de novo depois de 2 s
   // combo (igual no Kelly Slater): só cresce variando as manobras; repetir a mesma zera
   if(!tubo&&k!=='DROP'){if(k===m.ultMan)m.combo=1;else if(m.ultMan)m.combo=Math.min(3,m.combo+.5);m.ultMan=k;m.comboT=2.5;}
-  const v=Math.round(n*(tubo?1:m.combo));m.pts+=v;m.pops.push({x:SF.MX,y:m.r?m.r.y-30:90,t:1.2,txt:`${txt} +${v}`});
+  const v=Math.round(n*(tubo?1:m.combo));m.pts+=v;m.pops.push({x:m.mx,y:m.r?m.r.y-30:90,t:1.2,txt:`${txt} +${v}`});
   if(n>=70&&!tubo){m.fala=pick(DUDU_MANOBRA);m.falaT=1.6;}beep(760+n,.08,'square',.05);}
 function surfCai(txt){const m=mg;m.phase='caiu';m.cai=2;m.msg=txt;m.msgT=2;m.fala=pick(DUDU_ZOA);m.falaT=2.4;sfx.hit();shake=.35;
-  const kept=Math.round(m.pts*.5);m.total+=kept;m.pops.push({x:SF.MX,y:90,t:1.6,txt:`vaca: ficou ${kept}`});m.pts=0;
-  for(let i=0;i<26;i++)m.splash.push({x:SF.MX+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
+  const kept=Math.round(m.pts*.5);m.total+=kept;m.pops.push({x:m.mx,y:90,t:1.6,txt:`vaca: ficou ${kept}`});m.pts=0;
+  for(let i=0;i<26;i++)m.splash.push({x:m.mx+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
   m.r=null;surfFimOnda();}
 function surfFimOnda(){const m=mg;if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
@@ -2088,7 +2039,7 @@ function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(ke
   let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;if(Math.abs(joy.x)>.25)ix=clamp(ix+joy.x,-1,1);
   const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,act:a};}
 function updSurf(dt){
-  const m=mg;m.t+=dt;m.msgT-=dt;m.falaT-=dt;const inp=surfInp();
+  const m=mg;m.t+=dt;m.msgT-=dt;m.falaT-=dt;m.wipe=Math.max(0,m.wipe-dt);const inp=surfInp();
   for(const s of m.splash){s.t-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=260*dt;}m.splash=m.splash.filter(s=>s.t>0);
   for(const q of m.pops){q.t-=dt;q.y-=16*dt;}m.pops=m.pops.filter(q=>q.t>0);
   if(m.result){m.done-=dt;if(m.done<=0){
@@ -2097,12 +2048,12 @@ function updSurf(dt){
     else mgLost(`Somou ${m.total} de ${SF.META} pontos nas 3 ondas. O Lucas tá rindo até agora.`);}return;}
   if(m.phase==='caiu'){m.cai-=dt;if(m.cai<=0&&!m.result)surfOnda();return;}
   if(m.phase==='espera'){const w=m.wave;w.x-=w.sp*dt;w.h=Math.min(1,w.h+dt*.7);const dx=w.x-m.me.x;
-    if(inp.act){if(Math.abs(dx)<16){m.phase='ride';m.r={y:118,vy:0,v:78,dist:55,t:0,air:null,rot:0,tubo:0,longe:0,ultDir:0,ang:0};m.msg='DROPOU! Fica perto da espuma e manda manobra!';m.msgT=2.4;beep(700,.1,'square',.05);beep(900,.1,'square',.05,0,.1);surfPts(100,'DROP');}
+    if(inp.act){if(Math.abs(dx)<16){m.phase='ride';m.wipe=.6;m.r={y:118,vy:0,v:78,dist:55,t:0,air:null,rot:0,tubo:0,crista:0,rasg:0,longe:0,ultDir:0,ang:0};m.mx=SF.CX+55;m.msg='DROPOU! Entra no tubo, rasga, voa e anda na crista!';m.msgT=2.6;beep(700,.1,'square',.05);beep(900,.1,'square',.05,0,.1);surfPts(100,'DROP');}
       else surfCai(dx>0?'Cedo demais! Remou antes da onda chegar.':'Tarde demais! A onda passou e quebrou na tua cabeça.');}
     else if(dx<-26)surfCai('Perdeu a onda! Ela passou direto.');
     return;}
   // ---- surfando a parede da onda ----
-  const r=m.r;r.t+=dt;m.comboT-=dt;if(m.comboT<=0)m.combo=1;
+  const r=m.r;r.t+=dt;m.comboT-=dt;if(m.comboT<=0)m.combo=1;r.rasg=Math.max(0,r.rasg-dt);const R0=surfR(r);
   const curl=62; // a espuma anda sempre nessa velocidade atrás do Markin
   if(r.air){ // no ar: MANOBRA (ou ← →) gira; tem que pousar com a prancha reta
     const a=r.air;a.t+=dt;a.vz-=260*dt;a.z+=a.vz*dt;if(inp.act)a.spin+=1;const girando=a.spin>0||Math.abs(inp.ix)>.5;
@@ -2124,16 +2075,20 @@ function updSurf(dt){
     const dir=Math.sign(inp.iy);if(dir&&dir!==r.ultDir){if(dir>0&&r.y<SF.TOPO+12&&r.v>80)surfPts(80,'BATIDA');else if(dir<0&&r.y>SF.BASE-14&&r.v>75)surfPts(40,'CAVADA');r.ultDir=dir;}
     // aéreo: sobe rápido até o lábio e aperta MANOBRA
     if(inp.act){if(r.y<=SF.TOPO+4&&r.vy<-40&&r.v>85){r.air={z:0,vz:120+r.v*.4,t:0,spin:1};sfx.pick();}
-      else if(r.y>SF.BASE-20&&r.v>70){surfPts(30,'RASGADA');r.v-=8;}}
+      else if(r.y>SF.TOPO+14&&r.v>60){surfPts(60,'RASGADA');r.v-=8;r.rasg=.35;
+        for(let i=0;i<14;i++)m.splash.push({x:m.mx+8,y:r.y,vx:rnd(10,90),vy:rnd(-120,-50),t:rnd(.4,.8)});}}
     r.dist+=(r.v-curl)*dt;
-    // tubo: alto e colado na espuma
-    const noTubo=r.dist<34&&r.dist>-10&&r.y<SF.TOPO+40;
+    // tubo: alto e dentro do tubo (que vai fechando)
+    const noTubo=r.dist<R0+2&&r.dist>-R0*.45&&r.y<SF.TOPO+44;
     if(noTubo){r.tubo+=dt;if(Math.floor(r.tubo*2)!==Math.floor((r.tubo-dt)*2))surfPts(25,'TUBO');if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}else r.tubo=0;
-    if(r.dist<-12||(r.dist<8&&!noTubo)){surfCai(noTubo?'O tubo fechou em cima!':'A espuma te engoliu!');return;}
+    // crista: andando lá em cima, fora do tubo
+    if(!noTubo&&r.y<=SF.TOPO+6&&r.v>70){r.crista+=dt;if(Math.floor(r.crista*2)!==Math.floor((r.crista-dt)*2))surfPts(15,'CRISTA');}else r.crista=0;
+    if(r.dist<-R0*.45-4||(r.dist<8&&!noTubo)){surfCai(noTubo||r.dist<0?'O tubo fechou em cima!':'A espuma te engoliu!');return;}
     if(r.dist>150){r.longe+=dt;r.v-=18*dt;if(r.longe>.2&&m.falaT<0){m.fala=pick(DUDU_POCKET);m.falaT=1.8;}if(r.longe>4){surfCai('Saiu da onda: ela morreu no raso.');return;}}else r.longe=0;
   }
-  r.dist=clamp(r.dist,-40,200);m.scroll+=r.v*dt;
-  if(r.t>=SF.ONDA){m.total+=m.pts+100;m.pops.push({x:SF.MX,y:80,t:1.6,txt:'ONDA COMPLETA +100'});m.phase='caiu';m.cai=1.6;m.msg=`Fim da onda ${m.onda}: ${m.pts+100} pontos!`;m.msgT=1.6;m.pts=0;m.r=null;surfFimOnda();}
+  r.dist=clamp(r.dist,-40,200);m.scroll+=curl*dt; // a tela anda junto com o tubo
+  m.mx=clamp(SF.CX+r.dist,16,W-16);
+  if(r.t>=SF.ONDA){m.total+=m.pts+100;m.pops.push({x:m.mx,y:80,t:1.6,txt:'ONDA COMPLETA +100'});m.phase='caiu';m.cai=1.6;m.msg=`Fim da onda ${m.onda}: ${m.pts+100} pontos!`;m.msgT=1.6;m.pts=0;m.r=null;surfFimOnda();}
 }
 function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   R(g,x-14,y,28,3,'#f4f1e8');R(g,x-14,y+1,28,1,'#e84a4a');
@@ -2148,49 +2103,91 @@ function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na arei
   drawBuddy(g,x-2,y,DUDU,{dir:'down',frame:Math.sin(t*2)>.7?1:0,t});
 }
 // Markin em pé na prancha (inclina com a curva; no aéreo gira)
-function drawSurfista(g,x,y,ang,rot){
+function drawSurfista(g,x,y,ang,rot,agacha){
   g.save();g.translate(Math.round(x),Math.round(y));g.rotate(ang+rot*Math.PI/180);
   R(g,-17,0,34,4,'#f4f1e8');R(g,-17,1,34,1,'#ffb347');R(g,14,-1,4,3,'#f4f1e8');R(g,-3,4,6,2,'#1d1d22');
-  drawMkCorpo(g,0,0,{bermuda:true,sombra:false,agachado:Math.abs(ang)>.3,arms:'abre',face:1,frame:0});
-  drawMkCabeca(g,0,-19,24);g.restore();}
+  drawMkCorpo(g,0,0,{bermuda:true,sombra:false,agachado:agacha||Math.abs(ang)>.3,arms:'abre',face:1,frame:0});
+  drawMkCabeca(g,0,agacha?-15:-19,agacha?21:24);g.restore();}
+// Markin deitado na prancha remando, visto de cima (igual ao California Games): os braços giram
+function drawRemada(g,x,y,t){
+  g.save();g.translate(Math.round(x),Math.round(y));g.rotate(-.5);
+  // rastro de espuma atrás da prancha
+  for(let i=0;i<10;i++){const yy=22+i*3,s=Math.sin(t*9+i);R(g,-6-i*.6+s,yy,2,2,'rgba(233,244,255,.7)');R(g,4+i*.6-s,yy,2,2,'rgba(233,244,255,.7)');}
+  // prancha
+  for(let yy=-26;yy<=22;yy++){const u=(yy+2)/24.5,w=Math.round(7.5*Math.sqrt(Math.max(0,1-u*u)));if(w>0){R(g,-w,yy,w*2,1,'#f4f1e8');R(g,-w,yy,1,1,'#c9c2b2');}}
+  R(g,0,-24,1,44,'#ffb347');
+  // pernas e pés
+  R(g,-4,5,3,13,'#d29a6c');R(g,1,5,3,13,'#d29a6c');R(g,-4,17,3,2,'#b8804f');R(g,1,17,3,2,'#b8804f');
+  // bermuda e camiseta
+  R(g,-5,-1,10,8,'#2d8fe8');R(g,-5,5,10,1,'#1f6ab8');
+  R(g,-6,-14,12,14,'#5a3a26');R(g,-6,-14,12,1,'#6e4a32');R(g,-1,-14,2,3,'#e3b341');
+  // braços girando (um na frente, o outro atrás, alternando)
+  const a=t*7.5;
+  for(const [sx,ph] of [[-6,a],[6,a+Math.PI]]){
+    const reach=Math.cos(ph)*13,naAgua=Math.sin(ph)<0,hx=sx+Math.sign(sx)*(naAgua?5:3),hy=-12-reach;
+    g.strokeStyle=naAgua?'#b8804f':'#d29a6c';g.lineWidth=3;g.beginPath();g.moveTo(sx,-12);g.lineTo(hx,hy);g.stroke();
+    R(g,hx-1.5,hy-1.5,3,3,'#b8804f');
+    if(naAgua&&reach<0)for(let k=0;k<3;k++)R(g,hx+rnd(-3,3),hy+rnd(-2,4),2,2,'#e9f4ff');}
+  // cabeça (de cima: cabelo)
+  R(g,-4,-22,8,8,'#d29a6c');R(g,-4,-22,8,5,'#2a1d16');R(g,-5,-21,1,4,'#2a1d16');R(g,4,-21,1,4,'#2a1d16');
+  g.restore();}
+// lábio da onda: arco grosso que sai da crista e cai por cima do tubo
+function drawLabio(g,cx,cy,Ri,Ro,a0,a1,t){
+  const gr=g.createLinearGradient(cx-Ro,cy-Ro,cx+Ro,cy);gr.addColorStop(0,'#ffffff');gr.addColorStop(.6,'#d8f0ff');gr.addColorStop(1,'#7fcaf0');
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,Ro,a0,a1,true);g.arc(cx,cy,Ri,a1,a0,false);g.closePath();g.fill();
+  g.strokeStyle='rgba(20,80,140,.5)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,Ri,a0,a1,true);g.stroke();
+  const n=28;for(let k=0;k<=n;k++){const an=a0+(a1-2*Math.PI-a0)*k/n,rr=Ro+Math.abs(Math.sin(k*1.7+t*9))*3;R(g,cx+Math.cos(an)*rr-1,cy+Math.sin(an)*rr-1,2,2,'#ffffff');}}
 function renderSurf(){
   const g=ctx,m=mg,t=m.t;
-  const sky=g.createLinearGradient(0,0,0,70);sky.addColorStop(0,'#5ab0e8');sky.addColorStop(1,'#bfe6ff');g.fillStyle=sky;g.fillRect(0,0,W,70);
-  g.fillStyle='#fff6c8';g.beginPath();g.arc(262,24,11,0,Math.PI*2);g.fill();
-  g.fillStyle='#4a6a58';g.beginPath();g.moveTo(0,70);g.lineTo(18,50);g.lineTo(34,58);g.lineTo(52,40);g.lineTo(74,70);g.fill(); // Dois Irmãos
-  const sea=g.createLinearGradient(0,70,0,H);sea.addColorStop(0,'#2f86c8');sea.addColorStop(1,'#14507e');g.fillStyle=sea;g.fillRect(0,70,W,H-70);
   if(m.phase==='ride'&&m.r){
-    const r=m.r,cx=SF.MX-r.dist; // onde tá a espuma na tela
-    // parede da onda: do lábio (claro) até a base (escuro), com riscos passando pra dar velocidade
-    const wall=g.createLinearGradient(0,SF.TOPO-8,0,SF.BASE+18);wall.addColorStop(0,'#8fd8f8');wall.addColorStop(.35,'#3fa6dc');wall.addColorStop(1,'#16507e');g.fillStyle=wall;g.fillRect(0,SF.TOPO-8,W,SF.BASE-SF.TOPO+30);
-    for(let i=0;i<26;i++){const yy=SF.TOPO+((i*37)%(SF.BASE-SF.TOPO+10)),xx=((i*83-m.scroll*(.6+(yy-SF.TOPO)/200))%(W+40)+W+40)%(W+40)-20;R(g,xx,yy,14+(i%3)*6,1,'rgba(230,248,255,.35)');}
-    // lábio da onda (crista) com espuma
-    for(let x=0;x<W;x+=3){const yy=SF.TOPO-8+Math.round(Math.sin(x/9+t*5)*1.5);R(g,x,yy,3,3,'#e9f6ff');}
-    // o tubo e a espuma quebrando atrás
-    g.fillStyle='rgba(10,40,70,.5)';g.beginPath();g.ellipse(cx+18,SF.TOPO+26,26,30,0,0,Math.PI*2);g.fill();
-    g.strokeStyle='#e9f6ff';g.lineWidth=4;g.beginPath();g.arc(cx+18,SF.TOPO+22,24,Math.PI*1.05,Math.PI*1.9);g.stroke();
-    for(let y=SF.TOPO-10;y<H;y+=3){const w=Math.max(0,cx-4+Math.sin(y/6+t*12)*6);R(g,0,y,w,3,y%6?'#f4fbff':'#d8eef8');}
-    for(let i=0;i<18;i++)R(g,cx-rnd(0,12),SF.TOPO-12+rnd(0,SF.BASE-SF.TOPO),2,2,'#ffffff');
+    const r=m.r,R0=surfR(r),Ro=R0+14,cx=SF.CX,cy=SF.TOPO-6+R0,mx=m.mx,sc=m.scroll;
+    // céu e mar lá atrás (anda devagar pra dar sensação de movimento)
+    const sky=g.createLinearGradient(0,0,0,40);sky.addColorStop(0,'#3a3ab8');sky.addColorStop(1,'#8a9ae8');g.fillStyle=sky;g.fillRect(0,0,W,40);
+    g.fillStyle='#1c2f9a';g.fillRect(0,40,W,SF.TOPO-40);
+    for(let i=0;i<30;i++){const yy=42+(i*7)%(SF.TOPO-46),xx=((i*67-sc*(.15+yy/400))%(W+30)+W+30)%(W+30)-15;R(g,xx,yy,10+(i%3)*4,1,'rgba(200,230,255,.45)');}
+    // parede da onda
+    const wall=g.createLinearGradient(0,SF.TOPO-8,0,H);wall.addColorStop(0,'#5fb8f0');wall.addColorStop(.3,'#2a6fd6');wall.addColorStop(1,'#12308e');g.fillStyle=wall;g.fillRect(0,SF.TOPO-8,W,H-SF.TOPO+8);
+    for(let i=0;i<40;i++){const yy=SF.TOPO+((i*37)%(H-SF.TOPO)),xx=((i*83-sc*(1+(yy-SF.TOPO)/120))%(W+40)+W+40)%(W+40)-20;R(g,xx,yy,10+(i%3)*6,1,'rgba(200,236,255,.3)');}
+    // crista com espuma, da boca do tubo pra direita
+    const a0=-Math.PI/2+.62,a1=Math.PI*.92,x0=cx+Math.cos(a0)*Ro;
+    for(let x=Math.floor(x0);x<W;x+=3){const yy=SF.TOPO-9+Math.round(Math.sin(x/9+t*5)*1.5);R(g,x,yy,3,3,'#e9f6ff');}
+    // dentro do tubo (mais escuro)
+    g.fillStyle='rgba(6,24,80,.72)';g.beginPath();g.ellipse(cx+2,cy+4,R0,R0*1.12,0,0,Math.PI*2);g.fill();
+    g.fillStyle='rgba(40,110,200,.35)';g.beginPath();g.ellipse(cx+R0*.35,cy+R0*.3,R0*.55,R0*.7,0,0,Math.PI*2);g.fill();
+    // espuma quebrando atrás (esquerda), sempre fechando
+    const ly=cy+Math.sin(a1)*Ro;
+    for(let y=SF.TOPO-6;y<H;y+=3){const w=Math.max(0,(y<ly?cx-Ro*.85:cx-R0*.6+(y-ly)*.3)+Math.sin(y/6+t*12)*5);R(g,0,y,w,3,(y+Math.floor(t*20))%6<3?'#f4fbff':'#cfe6f8');}
+    for(let i=0;i<22;i++)R(g,cx-R0*.6+rnd(-10,6),ly+rnd(-6,H-ly),2,2,'#ffffff');
     // rastro da prancha
-    for(let i=1;i<8;i++)R(g,SF.MX-18-i*6,r.y+3+Math.sin(i+t*8),4,1,'rgba(233,244,255,.6)');
     const ay=r.air?r.y-r.air.z:r.y;
-    if(r.air)R(g,SF.MX-8,r.y+2,16,2,'rgba(0,0,0,.2)');
-    drawSurfista(g,SF.MX,ay,r.ang,r.rot);
+    for(let i=1;i<8;i++)R(g,mx-18-i*6,r.y+3+Math.sin(i+t*8),4,1,'rgba(233,244,255,.6)');
+    if(r.air)R(g,mx-8,r.y+2,16,2,'rgba(0,0,0,.2)');
+    drawSurfista(g,mx,ay,r.ang-r.rasg*1.4,r.rot,r.tubo>0);
+    // o lábio passa POR CIMA do Markin: dentro do tubo fica transparente pra dar pra ver ele
+    g.globalAlpha=r.tubo>0?.5:.96;drawLabio(g,cx,cy,R0+1,Ro,a0,a1,t);g.globalAlpha=1;
     // velocidade e tempo da onda
     R(g,W-70,168,60,5,'#0a1e30');R(g,W-70,168,60*clamp((r.v-25)/125,0,1),5,r.v>85?'#ffe14f':'#8be08b');outlineText(g,'VELOCIDADE',W-40,166,6,'#e9f4ff');
     R(g,10,168,60,5,'#0a1e30');R(g,10,168,60*(1-r.t/SF.ONDA),5,'#4fd8ff');outlineText(g,'ONDA',40,166,6,'#e9f4ff');
-    if(r.dist>150)outlineText(g,'← cutback: volta pra perto da espuma',W/2,150,8,'#ffe14f');
-    if(r.tubo>0)outlineText(g,'NO TUBO!',SF.MX,SF.TOPO-16,11,'#ffe14f');
+    if(r.dist>150)outlineText(g,'← cutback: volta pra perto do tubo',W/2,150,8,'#ffe14f');
+    if(r.tubo>0)outlineText(g,'NO TUBO!',mx,SF.TOPO-16,11,'#ffe14f');
+    else if(r.crista>0)outlineText(g,'NA CRISTA!',mx,SF.TOPO-16,9,'#8be08b');
   }else{
-    // esperando a onda: sentado na prancha
-    const base=128,w=m.wave||{x:-99,h:0},hA=m.phase==='caiu'?0:w.h*42;
-    const surf=x=>base-hA*Math.exp(-Math.pow((x-w.x)/34,2));
-    g.fillStyle='#1f6fae';g.beginPath();g.moveTo(0,H);for(let x=0;x<=W;x+=4)g.lineTo(x,surf(x));g.lineTo(W,H);g.fill();
-    for(let x=0;x<=W;x+=2){const yy=surf(x);if(base-yy>22)R(g,x,yy,2,2,'#e9f4ff');}
-    if(m.phase==='espera'){const my=surf(m.me.x);R(g,m.me.x-16,my-2,32,4,'#f4f1e8');R(g,m.me.x-16,my-1,32,1,'#ffb347');
-      drawMkCorpo(g,m.me.x,my-2,{agachado:true,bermuda:true,sombra:false,arms:Math.sin(t*5)>0?'rema':'down',frame:Math.floor(t*4)%2});drawMkCabeca(g,m.me.x,my-14,22);
-      const dx=w.x-m.me.x,ok=Math.abs(dx)<16;R(g,m.me.x-40,150,80,5,'#0a1e30');R(g,m.me.x-8,150,16,5,'#3fa34d');
-      R(g,clamp(m.me.x+dx*.5,m.me.x-40,m.me.x+38),147,2,11,ok?'#ffe14f':'#f4f1e8');outlineText(g,ok?'DROPA!':'espera...',m.me.x,146,8,ok?'#ffe14f':'#f3ecd8');}
+    // remando: mar visto de cima, a onda vem lá do fundo (igual ao California Games)
+    const sea=g.createLinearGradient(0,0,0,H);sea.addColorStop(0,'#1a2a9a');sea.addColorStop(.25,'#1f3fc8');sea.addColorStop(1,'#0e1e8a');g.fillStyle=sea;g.fillRect(0,0,W,H);
+    const sky=g.createLinearGradient(0,0,0,14);sky.addColorStop(0,'#2a2a90');sky.addColorStop(1,'#5a6ad8');g.fillStyle=sky;g.fillRect(0,0,W,14);
+    for(let i=0;i<150;i++){const yy=16+(i*29)%(H-16),xx=((i*53+t*(8+yy/10))%(W+10))-5;R(g,xx,yy,1+(i%3),1,i%4?'rgba(90,120,255,.55)':'rgba(170,200,255,.45)');}
+    const w=m.wave||{x:-999,h:0},dx=w.x-m.me.x,my=118;
+    if(m.phase==='espera'||dx>-60){
+      const wy=my-dx*.32,th=6+w.h*12; // a onda desce pela tela até chegar no Markin
+      g.fillStyle='rgba(12,26,110,.7)';g.fillRect(0,wy,W,th+6);
+      for(let x=0;x<W;x+=2){const yy=wy+Math.round(Math.sin(x/7+t*6)*1.5);R(g,x,yy,2,3,'#e9f4ff');if((x+Math.floor(t*30))%5===0)R(g,x,yy-2,2,2,'#c8e0ff');}
+      for(let x=0;x<W;x+=4)R(g,x,wy+3,3,1,'rgba(200,225,255,.5)');}
+    if(m.phase==='espera'){
+      const bob=Math.sin(t*3)*1.5+(Math.abs(dx)<30?-4*(1-Math.abs(dx)/30):0);
+      drawRemada(g,m.me.x,my+bob,t);
+      const ok=Math.abs(dx)<16;R(g,m.me.x-40,158,80,5,'#0a1e30');R(g,m.me.x-8,158,16,5,'#3fa34d');
+      R(g,clamp(m.me.x+dx*.5,m.me.x-40,m.me.x+38),155,2,11,ok?'#ffe14f':'#f4f1e8');
+      outlineText(g,ok?'APERTA AGORA!!!':'rema... espera a onda',W/2,58,ok?12:8,ok?'#ffe14f':'#f3ecd8');}
   }
   for(const s of m.splash)R(g,s.x,s.y,2,2,'#e9f4ff');
   // o Lucas na água, lá no ombro da onda
@@ -2203,7 +2200,10 @@ function renderSurf(){
   if(m.combo>1)outlineText(g,`x${m.combo.toFixed(1)}`,W/2,14,10,'#ff8fc2');
   outlineText(g,`META ${SF.META}`,W-8,12,7,'#fff1c2','right');R(g,W-78,17,70,5,'#0a1e30');R(g,W-78,17,70*clamp((m.total+m.pts)/SF.META,0,1),5,'#ffe14f');
   if(m.msgT>0)outlineText(g,m.msg,W/2,40,8,'#ffffff');
-  if(m.t<6&&!m.result)outlineText(g,isTouch?'↑↓ sobe e desce · ← cutback · → acelera · MANOBRA na crista':'↑↓ sobe e desce · ← cutback · → acelera · ESPAÇO na crista = aéreo',W/2,178,7,'#fff1c2');
+  const bt=isTouch?'MANOBRA':'ESPAÇO';
+  if(m.phase==='espera'&&!m.result)outlineText(g,'aperta '+bt+' quando a onda chegar em você = DROP',W/2,178,7,'#fff1c2');
+  else if(m.r&&m.r.t<5&&!m.result)outlineText(g,'↑↓ sobe e desce · '+bt+' na parede = rasgada · subindo na crista = aéreo',W/2,178,7,'#fff1c2');
+  if(m.wipe>0){g.fillStyle='rgba(255,255,255,'+(m.wipe/.6)+')';g.fillRect(0,0,W,H);}
   if(m.result==='win')outlineText(g,'NOTA 10!',W/2,92,24,'#ffe14f');
 }
 /* ---------- ALTINHA (estilo Head Volley, sem rede) ---------- */
