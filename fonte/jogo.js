@@ -859,6 +859,7 @@ window.addEventListener('focus',somDeVolta);
 window.addEventListener('keydown',e=>{initAudio();
   const k=e.code;
   // telas (menu, regras, pausa, fim): espaço ou Enter aperta o botão em destaque (JOGAR, CONTINUAR...)
+  if(!screenEl.hidden&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)&&!e.target.closest?.('input')){const bs=[...screenEl.querySelectorAll('button')];if(bs.length){e.preventDefault();const i=bs.indexOf(document.activeElement),d=k==='ArrowUp'||k==='ArrowLeft'?-1:1;bs[((i<0?0:i+d)+bs.length)%bs.length].focus({preventScroll:true});}return;}
   if(!screenEl.hidden&&(k==='Space'||k==='Enter'||k==='NumpadEnter')){e.preventDefault();if(e.repeat)return;const fo=document.activeElement,b=fo&&fo.tagName==='BUTTON'&&screenEl.contains(fo)?fo:screenEl.querySelector('button');if(b)b.click();return;}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(k)&&state!=='title')e.preventDefault();
   if(e.repeat){keys.add(k);return;}
@@ -954,7 +955,8 @@ gameEl.addEventListener('pointerdown',e=>{if(!isTouch||e.target.closest('button,
 // Guitarra: tocar (ou clicar) na coluna da nota
 gameEl.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,ln=[0,1,2,3].find(i=>Math.abs(x-gtLaneX(i))<16);
   if(state==='tempo'&&tempoS){initAudio();if(tempoS.phase==='pergunta'){if(x<W/2)actionQ=true;else tempoDesiste();}else if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
-  if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;return;}
+  if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;
+    else if(mg.phase==='conversa'&&mg.cv){if(mg.cv.fase==='escolha'){const y=(e.clientY-r.top)/r.height*H,ls=wrapTxt('x',40);const top=118-26+16+11*wrapTxt(mg.cv.g.falas[mg.cv.g.falas.length-1].join(': '),40).length-8;const i=y<top+12?0:1;mg.cv.sel=i;labEscolhe(i);}else actionQ=true;}return;}
   if(state==='virando'){actionQ=true;return;}});
 gameEl.addEventListener('pointerdown',e=>{if(state!=='guitarra'||e.target.closest('button'))return;initAudio();if(mg&&mg.phase!=='play'){actionQ=true;return;}const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W;
   let best=0,bd=1e9;for(let i=0;i<4;i++){const d=Math.abs(x-gtLaneX(i));if(d<bd){bd=d;best=i;}}if(bd<60)gtPress(best);e.preventDefault();});
@@ -1066,6 +1068,11 @@ screenEl.addEventListener('click',e=>{const b=e.target.closest('button[data-act]
   else if(a==='mgSair'){hideScreen();state='play';$('hud').hidden=false;if(isTouch)$('touch').hidden=false;saidaSegura();toast('Saiu do desafio. Dá pra voltar quando quiser.','',2.6);}
   else if(a==='dif'){diff=b.dataset.d;try{localStorage.setItem('svpc-dificuldade',diff);}catch(e){}for(const x of screenEl.querySelectorAll('[data-act=dif]'))x.classList.toggle('ghost',x.dataset.d!==diff);}
   else if(a==='musica'){musicOn=!musicOn;pause();}
+  else if(a==='controle')abreCtrlCfg(state==='paused'?'pause':'title');
+  else if(a==='ctrlPula'&&ctrlCfg)ctrlCfgProx();
+  else if(a==='ctrlPadrao'&&ctrlCfg){ctrlMapa=null;try{localStorage.removeItem('svpc-controle');}catch(e){}const v=ctrlCfg.volta;ctrlCfg=null;toast('Controle no padrão (Xbox/PlayStation).','',2.4);ctrlCfgSai(v);}
+  else if(a==='ctrlSai'&&ctrlCfg)ctrlCfgSai(ctrlCfg.volta);
+  else if(a==='ctrlFim')ctrlCfgSai(b.dataset.v);
 });
 $('skip').addEventListener('click',()=>skipIntro());
 
@@ -1367,13 +1374,13 @@ function startPlay(){
 }
 function pause(){state='paused';keys.clear();
   const lista=TASKS.map(t=>(tasksDone[t.k]?'✔ ':'○ ')+t.curto).join(' · ')+(finalStage>=1?` · ${finalStage>=2?'✔':'★'} Chefão · ${finalStage>=3?'✔':'○'} Barco`:'');
-  showScreen(`<div class="card"><h2>PAUSA</h2><p>O Markin tá de olho aberto te esperando.</p><p class="stats">${lista}</p>${sabeMusica?`<p class="stats">Música do Tempo: 7 9 8 0 7 7 · palhetas ${palhetas}/3</p>`:''}<div class="volrow"><label for="volR">Volume</label><input id="volR" type="range" min="0" max="100" step="5" value="${Math.round(volume*100)}"><output id="volO">${Math.round(volume*100)}%</output></div><div class="btns"><button data-act="resume" type="button">CONTINUAR</button><button data-act="fases" class="ghost" type="button">Escolher fase</button><button data-act="menu" class="ghost" type="button">Menu principal</button><button data-act="musica" class="ghost" type="button">${musicOn?'Desligar música':'Ligar música'}</button><button data-act="retry" class="ghost" type="button">Recomeçar</button></div></div>`);}
+  showScreen(`<div class="card"><h2>PAUSA</h2><p>O Markin tá de olho aberto te esperando.</p><p class="stats">${lista}</p>${sabeMusica?`<p class="stats">Música do Tempo: 7 9 8 0 7 7 · palhetas ${palhetas}/3</p>`:''}<div class="volrow"><label for="volR">Volume</label><input id="volR" type="range" min="0" max="100" step="5" value="${Math.round(volume*100)}"><output id="volO">${Math.round(volume*100)}%</output></div><div class="btns"><button data-act="resume" type="button">CONTINUAR</button><button data-act="fases" class="ghost" type="button">Escolher fase</button><button data-act="controle" class="ghost" type="button">Controle</button><button data-act="menu" class="ghost" type="button">Menu principal</button><button data-act="musica" class="ghost" type="button">${musicOn?'Desligar música':'Ligar música'}</button><button data-act="retry" class="ghost" type="button">Recomeçar</button></div></div>`);}
 /* ---------- MENU PRINCIPAL e ESCOLHER FASE ---------- */
 function goTitle(){
   cutGen=null;mg=null;grab=null;hideDialog();clearBubbles();setPrompt(null);resetGame();
   state='title';cutKind='';P.x=15*T;P.y=52*T+10;P.outfit='work';P.helmet=true;P.dir='left';P.mode='cut';
   $('hud').hidden=true;$('touch').hidden=true;$('skip').hidden=true;$('festa').hidden=true;
-  showScreen(`<div class="card"><div class="kicker">um jogo sobre o Markin</div><h2>SEM VOLTA<br>PRA CASA</h2><p>Depois de 15 dias embarcado, o Markin pisa em terra firme. O desafio: mais 15 dias acordado, sem voltar pra casa.</p><div class="btns"><button data-act="intro" type="button">COMEÇAR</button><button data-act="skipintro" class="ghost" type="button">Pular intro</button><button data-act="fases" class="ghost" type="button">Escolher fase</button></div><div class="difrow">Dificuldade: ${Object.keys(DIFFS).map(k=>`<button data-act="dif" data-d="${k}" type="button" class="${k===diff?'':'ghost'}">${DIFFS[k].nome}</button>`).join('')}</div></div>`);
+  showScreen(`<div class="card"><div class="kicker">um jogo sobre o Markin</div><h2>SEM VOLTA<br>PRA CASA</h2><p>Depois de 15 dias embarcado, o Markin pisa em terra firme. O desafio: mais 15 dias acordado, sem voltar pra casa.</p><div class="btns"><button data-act="intro" type="button">COMEÇAR</button><button data-act="skipintro" class="ghost" type="button">Pular intro</button><button data-act="fases" class="ghost" type="button">Escolher fase</button><button data-act="controle" class="ghost" type="button">Controle</button></div><div class="difrow">Dificuldade: ${Object.keys(DIFFS).map(k=>`<button data-act="dif" data-d="${k}" type="button" class="${k===diff?'':'ghost'}">${DIFFS[k].nome}</button>`).join('')}</div></div>`);
 }
 const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['chefao','★ Chefão: Guerra dos Músicos'],['barco','★ Marcha ao barco']];
 let fasesBack='title';
@@ -1455,7 +1462,7 @@ function endWin(){
 }
 
 function update(dt){
-  time+=dt;
+  time+=dt;ctrlPoll();
   updDialog(dt);
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').hidden=true;}
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').hidden=true;}
@@ -3936,7 +3943,23 @@ function startLabirinto(){
   const dist0={},fila=[[1,(Rr-1)*2+1]];dist0[fila[0]]=0;let longe=fila[0];
   while(fila.length){const p=fila.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const q=[p[0]+dx,p[1]+dy];if(grid[q[1]]&&grid[q[1]][q[0]]===false&&dist0[q]===undefined){dist0[q]=dist0[p]+1;fila.push(q);if(dist0[q]>dist0[longe])longe=q;}}}
   mg={t:0,phase:'anda',grid,GW,GH,ox:Math.floor((W-GW*LB.B)/2),oy:Math.floor((H-GH*LB.B)/2)+2,me:{gx:1,gy:(Rr-1)*2+1,x:1,y:(Rr-1)*2+1,dir:'right'},cria:{gx:longe[0],gy:longe[1]},moveCd:0,
-    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Tavin nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0};}
+    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Tavin nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0,cv:null,dica:null};
+  const cam=labCaminho(grid,[1,(Rr-1)*2+1],[longe[0],longe[1]]);
+  mg.gente=[['trafica',.34],['mulher',.68]].map(([k,f])=>{const p=cam[Math.max(2,Math.floor(cam.length*f))]||cam[2];return{k,gx:p[0],gy:p[1],falou:false};});}
+// gente no meio dos becos: cada um tem uma resposta que ajuda (mostra o caminho) e uma que atrapalha (volta pra entrada)
+const LB_GENTE={
+  trafica:{nome:'Traficante',look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#1d1d22',shorts:'#2d6fd1',cap:'#d0202a'},
+    falas:[['Markin','Vc viu o Tavin aí, brother?'],['Traficante','Se eu ver eu mato ele, pagou o Lança com nota falsa na boca, irmão, acredita??']],
+    a:[['Nota falsa?! Aí não, né, irmão.','Né não? Vi ele correndo pra lá. Se achar, avisa que o patrão tá esperando.','dica'],
+       ['Pô, pega leve com o moleque...','Pega leve? Tá defendendo caloteiro? VAZA DAQUI!','expulsa']]},
+  mulher:{nome:'Mulher do chefe',look:{skin:'#c98c64',hair:'#e8c070',shirt:'#ff4fa0',shorts:'#ff4fa0',skirt:true,long:true,earring:true},
+    falas:[['Mulher do chefe','Ih, olha só quem apareceu nos becos... Tu não é daqui, né? Gostei dessa corrente.']],
+    a:[['E tu, gata? Sozinha num beco escuro desses?','Sozinha não, meu marido é o dono da boca... MÔ! VEM VER QUEM TÁ ME CANTANDO!','expulsa'],
+       ['Valeu, mas tô na missão: procurando o Tavin.','Respeitador, hein? Gostei. O Tavin passou correndo pra lá, todo assustado.','dica']]}};
+// caminho mais curto entre duas casas do labirinto
+function labCaminho(grid,a,b){const pai={},k=p=>p[0]+','+p[1],fila=[a];pai[k(a)]=null;
+  while(fila.length){const p=fila.shift();if(p[0]===b[0]&&p[1]===b[1])break;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const q=[p[0]+dx,p[1]+dy];if(grid[q[1]]&&grid[q[1]][q[0]]===false&&!(k(q) in pai)){pai[k(q)]=p;fila.push(q);}}}
+  const out=[];let p=b;while(p&&k(p) in pai){out.unshift(p);p=pai[k(p)];}return out;}
 const LB_FALAS=[['Tavin','Coeee, Markin?? PQP cara você me salvou! Me leva cntg que eu te ensino uma música maneira nessa parada aí. Não aguento mais bafar'],
   ['Tavin','É a Música do Tempo. Toca certinho no sax e o relógio volta dois dias.'],['Tavin','Mas a palheta não aguenta: cada vez que tu toca, uma quebra. Usa só quando for apagar.'],
   ['Tavin','Presta atenção que eu vou tocar. Depois é contigo.']];
@@ -3950,12 +3973,26 @@ function updLabirinto(dt){
     m.moving=!!(dx||dy);if(m.moving)m.anim+=dt;
     if((dx||dy)&&m.moveCd<=0){if(dx)me.dir=dx>0?'right':'left';else me.dir=dy>0?'down':'up';
       if(!m.grid[me.gy+dy][me.gx+dx]){me.gx+=dx;me.gy+=dy;m.moveCd=.11;}}
+    m.dica&&(m.dica.t-=dt);if(m.dica&&m.dica.t<=0)m.dica=null;
+    for(const p of m.gente)if(!p.falou&&Math.abs(me.gx-p.gx)+Math.abs(me.gy-p.gy)<=1){p.falou=true;m.moving=false;m.phase='conversa';m.cv={p,g:LB_GENTE[p.k],fi:0,fase:'falas',sel:0,t0:m.t,lastIy:0};return;}
     if(Math.abs(me.gx-m.cria.gx)+Math.abs(me.gy-m.cria.gy)<=1){m.phase='fala';m.falas=LB_FALAS;m.fi=0;m.falaT=m.t;m.moving=false;sfx.alert();}
+    return;}
+  if(m.phase==='conversa'){const cv=m.cv;
+    let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy=-1;else if(keys.has('ArrowDown')||keys.has('KeyS'))iy=1;else if(Math.abs(joy.y)>.5)iy=Math.sign(joy.y);
+    if(cv.fase==='escolha'&&iy&&iy!==cv.lastIy)cv.sel=1-cv.sel;cv.lastIy=iy;
+    if(inp.act&&m.t-cv.t0>.3){cv.t0=m.t;
+      if(cv.fase==='falas'){cv.fi++;if(cv.fi>=cv.g.falas.length)cv.fase='escolha';}
+      else if(cv.fase==='escolha')labEscolhe(cv.sel);
+      else{m.phase='anda';m.cv=null;labEfeito(cv.ef);}}
     return;}
   if(m.phase==='fala'){if(inp.act&&m.t-m.falaT>.3){m.fi++;m.falaT=m.t;if(m.fi>=m.falas.length){m.phase='ensina';m.ens={i:-1,t:-.6};}}return;}
   if(m.phase==='ensina'){m.ens.t+=dt;const i=Math.floor(m.ens.t/.95); // o Cria toca devagar, uma nota de cada vez
     if(i>m.ens.i&&i<MUSICA_TEMPO.length){m.ens.i=i;const ln=MUSICA_TEMPO[i];m.press[ln]=.7;beep(GT_SCALE[[2,4,5,7][ln]],.6,'sawtooth',.04);}
     if(i>=MUSICA_TEMPO.length+1){m.phase='repete';m.seq=[];m.msg='Agora tu! '+(isTouch?'Toque nas cores':'Teclas 7 8 9 0');m.msgT=99;}return;}}
+function labEscolhe(i){const m=mg,cv=m.cv;if(!cv||cv.fase!=='escolha')return;const [,resp,ef]=cv.g.a[i];cv.fase='resp';cv.resp=resp;cv.ef=ef;cv.t0=m.t;}
+function labEfeito(ef){const m=mg;
+  if(ef==='dica'){m.dica={t:7,path:labCaminho(m.grid,[m.me.gx,m.me.gy],[m.cria.gx,m.cria.gy])};m.msg='Segue os pontinhos!';m.msgT=2.4;sfx.pick();}
+  else if(ef==='expulsa'){const R2=LB.ROWS;m.me.gx=m.me.x=1;m.me.gy=m.me.y=(R2-1)*2+1;flash=.6;shake=.4;sfx.hit();m.msg='Correu de volta pra entrada dos becos!';m.msgT=2.6;}}
 function labPress(ln){const m=mg;if(state!=='labirinto'||!m||m.phase!=='repete'||m.result)return;m.press[ln]=.2;
   beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);
   if(ln===MUSICA_TEMPO[m.seq.length]){m.seq.push(ln);if(m.seq.length>=MUSICA_TEMPO.length){m.result='win';m.done=2.6;m.msg='APRENDEU A MÚSICA DO TEMPO!';m.msgT=2.6;sfx.win();}}
@@ -3966,11 +4003,19 @@ function renderLabirinto(){
     if(m.grid[y][x]){const c=LB_CORES[Math.floor(h2(x,y,61)*LB_CORES.length)];R(g,px,py,B,B,c);R(g,px,py,B,2,'rgba(255,255,255,.18)');R(g,px,py+B-1,B,1,'rgba(0,0,0,.35)');if(h2(x,y,62)>.6)R(g,px+3,py+3,3,3,'#2a3a5a');}
     else{R(g,px,py,B,B,'#5a544c');if(h2(x,y,63)>.8)R(g,px+2,py+4,4,1,'#4a4540');}}
   const cr=m.cria;g.save();g.translate(m.ox+cr.gx*B+B/2,m.oy+cr.gy*B+B-1);g.scale(.5,.5);drawBuddy(g,0,0,CRIA_LOOK,{dir:'down',frame:0,t});g.restore();
+  for(const p of m.gente){g.save();g.translate(m.ox+p.gx*B+B/2,m.oy+p.gy*B+B-1);g.scale(.5,.5);drawBuddy(g,0,0,LB_GENTE[p.k].look,{dir:'down',frame:0,t});g.restore();}
   const me=m.me;g.save();g.translate(m.ox+me.x*B+B/2,m.oy+me.y*B+B-1);g.scale(.5,.5);drawMarkin(g,0,0,{dir:me.dir,frame:m.moving?Math.floor(m.anim*10)%4:0,outfit:P.outfit});g.restore();
   // becos escuros: só enxerga em volta do Markin (o Cria aparece quando tu chega perto)
-  if(m.phase==='anda'){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='rgba(6,4,12,.94)';dc.fillRect(0,0,W,H);dc.globalCompositeOperation='destination-out';
-    const lx=m.ox+me.x*B+B/2,ly=m.oy+me.y*B+B/2,gr=dc.createRadialGradient(lx,ly,0,lx,ly,40);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.7,'rgba(0,0,0,.85)');gr.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=gr;dc.fillRect(0,0,W,H);
+  if(m.phase==='anda'||m.phase==='conversa'){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='#000';dc.fillRect(0,0,W,H);dc.globalCompositeOperation='destination-out'; // breu total: só a luz em volta do Markin
+    const lx=m.ox+me.x*B+B/2,ly=m.oy+me.y*B+B/2,gr=dc.createRadialGradient(lx,ly,0,lx,ly,34);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.6,'rgba(0,0,0,.8)');gr.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=gr;dc.fillRect(0,0,W,H);
     dc.globalCompositeOperation='source-over';g.drawImage(dk,0,0);}
+  if(m.dica){g.globalAlpha=Math.min(1,m.dica.t);for(const [x,y] of m.dica.path){const k=Math.sin(t*6-(x+y)*.5)*.5+.5;R(g,m.ox+x*B+B/2-1,m.oy+y*B+B/2-1,2,2,k>.5?'#ffe14f':'#ff9a3d');}g.globalAlpha=1;}
+  if(m.phase==='conversa'&&m.cv){const cv=m.cv,linha=cv.fase==='falas'?cv.g.falas[cv.fi]:cv.fase==='resp'?[cv.g.nome,cv.resp]:cv.g.falas[cv.g.falas.length-1];
+    const ls=wrapTxt(linha[0]+': '+linha[1],40),hOp=cv.fase==='escolha'?26:0,y0=118-hOp;
+    R(g,30,y0,260,14+ls.length*11+hOp,'rgba(10,6,20,.94)');R(g,30,y0,260,1,'#ffe14f');
+    ls.forEach((s,i)=>outlineText(g,s,W/2,y0+12+i*11,7,linha[0]==='Markin'?'#8be08b':'#ffffff'));
+    if(cv.fase==='escolha')cv.g.a.forEach((o,i)=>{const y=y0+16+ls.length*11+i*12,sel=cv.sel===i;R(g,38,y-8,244,11,sel?'#2a1a40':'#1d1230');if(sel)R(g,38,y-8,244,1,'#ffe14f');outlineText(g,(sel?'▸ ':'  ')+o[0],42,y,6,sel?'#ffe14f':'#f3ecd8','left');});
+    else outlineText(g,isTouch?'toque ▸':'ESPAÇO ▸',284,y0+10+ls.length*11,6,'#ffe14f','right');}
   if(m.phase==='fala'){const [quem,txt]=m.falas[m.fi],ls=wrapTxt(quem+': '+txt,40);R(g,30,118,260,14+ls.length*11,'rgba(10,6,20,.94)');R(g,30,118,260,1,'#ffe14f');
     ls.forEach((s,i)=>outlineText(g,s,W/2,130+i*11,7,'#ffffff'));outlineText(g,isTouch?'toque ▸':'ESPAÇO ▸',284,128+ls.length*11,6,'#ffe14f','right');}
   if(m.phase==='ensina'||m.phase==='repete'||m.result){R(g,96,140,128,38,'rgba(10,6,20,.9)');
@@ -3979,6 +4024,44 @@ function renderLabirinto(){
     if(m.phase==='repete')for(let i=0;i<MUSICA_TEMPO.length;i++)R(g,128+i*11,145,7,3,i<m.seq.length?'#8be08b':'#3a3050');}
   outlineText(g,'BECOS DO SANTO AMARO',W/2,10,7,'#ffe14f');
   if(m.msgT>0&&m.phase!=='fala')outlineText(g,m.msg,W/2,22,8,m.result?'#8be08b':'#ffffff');}
+
+/* ================= CONTROLE (gamepad): vira teclas do teclado; tela pra configurar qualquer controle ================= */
+const CTRL_PASSOS=[['cima','CIMA (direcional)'],['baixo','BAIXO (direcional)'],['esq','ESQUERDA (direcional)'],['dir','DIREITA (direcional)'],
+  ['acao','AÇÃO / FALAR / PULAR (A)'],['correr','CORRER (B)'],['teia','TEIA DO HOMEM-ARANHA (X)'],['recusa','RECUSAR LIGAÇÃO (Y)'],['pausa','PAUSAR (Start)'],['sair','SAIR DO DESAFIO (Select)']];
+const CTRL_PADRAO={cima:{b:12},baixo:{b:13},esq:{b:14},dir:{b:15},acao:{b:0},correr:{b:1},teia:{b:2},recusa:{b:3},pausa:{b:9},sair:{b:8}};
+const CTRL_TECLA={cima:'ArrowUp',baixo:'ArrowDown',esq:'ArrowLeft',dir:'ArrowRight',acao:'Space',correr:'ShiftLeft',teia:'KeyQ',recusa:'KeyR',pausa:'KeyP',sair:'Escape'};
+const CTRL_COR={acao:'Digit7',correr:'Digit8',recusa:'Digit9',teia:'Digit0'}; // nos jogos das 4 cores: A verde, B vermelho, Y amarelo, X azul
+let ctrlMapa=null,ctrlCfg=null,ctrlAviso=false;const ctrlSoltar={};
+try{ctrlMapa=JSON.parse(localStorage.getItem('svpc-controle')||'null');}catch(e){}
+const ctrlPad=()=>{try{return [...navigator.getGamepads()].find(p=>p)||null;}catch(e){return null;}};
+// lê um "botão" do mapa: botão de verdade ou eixo (alguns controles baratos mandam o direcional como eixo)
+function ctrlLe(gp,m){if(!m)return false;if(m.b!==undefined)return !!(gp.buttons[m.b]&&gp.buttons[m.b].pressed);if(m.a!==undefined)return (gp.axes[m.a]||0)*m.s>.5;return false;}
+function ctrlTecla(code,down){window.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{code}));}
+const ctrlCores=()=>state==='guitarra'||state==='tempo'||(state==='labirinto'&&mg&&mg.phase==='repete');
+function ctrlPoll(){const gp=ctrlPad();if(!gp)return;
+  if(!ctrlAviso){ctrlAviso=true;if(screenEl.hidden)toast('Controle conectado! Pra configurar os botões: menu > Controle.','',3.4);}
+  if(ctrlCfg){ctrlCfgPoll(gp);return;}
+  const mapa=ctrlMapa||CTRL_PADRAO;
+  for(const [acao] of CTRL_PASSOS){let on=ctrlLe(gp,mapa[acao]);
+    if(acao==='cima')on=on||(gp.axes[1]||0)<-.5;if(acao==='baixo')on=on||(gp.axes[1]||0)>.5;if(acao==='esq')on=on||(gp.axes[0]||0)<-.5;if(acao==='dir')on=on||(gp.axes[0]||0)>.5; // analógico esquerdo sempre anda
+    if(on&&!ctrlSoltar[acao]){const code=(ctrlCores()&&CTRL_COR[acao])||CTRL_TECLA[acao];ctrlSoltar[acao]=code;ctrlTecla(code,true);}
+    else if(!on&&ctrlSoltar[acao]){ctrlTecla(ctrlSoltar[acao],false);ctrlSoltar[acao]=null;}}}
+// tela de configurar: um botão de cada vez
+function abreCtrlCfg(volta){const gp=ctrlPad();ctrlCfg={i:0,volta,mapa:{...(ctrlMapa||CTRL_PADRAO)},esperaSoltar:true};ctrlCfgTela(gp?'':'Conecte o controle no USB e aperte qualquer botão.');}
+function ctrlCfgTela(aviso){const [,nome]=CTRL_PASSOS[ctrlCfg.i];
+  showScreen(`<div class="card"><div class="kicker">configurar controle · ${ctrlCfg.i+1}/${CTRL_PASSOS.length}</div><h2>CONTROLE</h2><p>Aperte no controle o botão pra:</p><p class="stats" style="font-size:1.3em">${nome}</p>${aviso?`<p>${aviso}</p>`:''}
+  <div class="btns"><button data-act="ctrlPula" class="ghost" type="button">Pular este</button><button data-act="ctrlPadrao" class="ghost" type="button">Usar padrão</button><button data-act="ctrlSai" class="ghost" type="button">Cancelar</button></div></div>`);}
+function ctrlCfgPoll(gp){const c=ctrlCfg;
+  const algum=gp.buttons.some(b=>b.pressed)||gp.axes.some(v=>Math.abs(v)>.5);
+  if(c.esperaSoltar){if(!algum)c.esperaSoltar=false;return;}
+  let pego=null;gp.buttons.forEach((b,i)=>{if(!pego&&b.pressed)pego={b:i};});
+  if(!pego)gp.axes.forEach((v,i)=>{if(!pego&&Math.abs(v)>.6)pego={a:i,s:Math.sign(v)};});
+  if(pego){c.mapa[CTRL_PASSOS[c.i][0]]=pego;beep(880,.08,'square',.05);ctrlCfgProx();}}
+function ctrlCfgProx(){const c=ctrlCfg;c.i++;c.esperaSoltar=true;
+  if(c.i>=CTRL_PASSOS.length){ctrlMapa=c.mapa;try{localStorage.setItem('svpc-controle',JSON.stringify(ctrlMapa));}catch(e){}const v=c.volta;ctrlCfg=null;
+    showScreen(`<div class="card"><h2>CONTROLE PRONTO!</h2><p>Os botões ficaram salvos neste navegador.</p><div class="btns"><button data-act="ctrlFim" data-v="${v}" type="button">OK</button></div></div>`);}
+  else ctrlCfgTela('');}
+function ctrlCfgSai(v){ctrlCfg=null;if(v==='pause')pause();else goTitle();}
 
 /* ================= LOOP ================= */
 let last=performance.now();
