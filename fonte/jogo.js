@@ -764,6 +764,7 @@ function crowdTick(){
 function musWant(){
   if(state==='tempo')return null; // a Música do Tempo toca sozinha
   if(mus.mg&&mus.mg[state])return 'mg_'+state; // desafio com música própria
+  if(state==='labirinto'&&mg&&(mg.phase==='ensina'||mg.phase==='repete'||mg.result))return null; // silêncio pra aprender a Música do Tempo
   if(state==='title'||state==='cut'&&cutKind==='intro')return mus.inicioBuf?'inicio':'menu';
   if(state==='over')return finalStage>=3?(mus.finalBuf?'final':'axe'):null; // venceu: axé; perdeu: silêncio
   if(state==='guitarra')return null; // a guitarra do Jamal tem o próprio ritmo
@@ -1531,7 +1532,7 @@ function play(dt){
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
-    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "O Cria só fala com quem tem sax."','',3);return;}if(near.k==='alt'){startAltinha();return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){startSinuca();return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
+    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){startAltinha();return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){startSinuca();return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
@@ -3827,8 +3828,8 @@ function updLabirinto(dt){
     if(Math.abs(me.gx-m.cria.gx)+Math.abs(me.gy-m.cria.gy)<=1){m.phase='fala';m.falas=LB_FALAS;m.fi=0;m.falaT=m.t;m.moving=false;sfx.alert();}
     return;}
   if(m.phase==='fala'){if(inp.act&&m.t-m.falaT>.3){m.fi++;m.falaT=m.t;if(m.fi>=m.falas.length){m.phase='ensina';m.ens={i:-1,t:-.6};}}return;}
-  if(m.phase==='ensina'){m.ens.t+=dt;const i=Math.floor(m.ens.t/.5);
-    if(i>m.ens.i&&i<MUSICA_TEMPO.length){m.ens.i=i;const ln=MUSICA_TEMPO[i];m.press[ln]=.3;beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);}
+  if(m.phase==='ensina'){m.ens.t+=dt;const i=Math.floor(m.ens.t/.95); // o Cria toca devagar, uma nota de cada vez
+    if(i>m.ens.i&&i<MUSICA_TEMPO.length){m.ens.i=i;const ln=MUSICA_TEMPO[i];m.press[ln]=.7;beep(GT_SCALE[[2,4,5,7][ln]],.6,'sawtooth',.04);}
     if(i>=MUSICA_TEMPO.length+1){m.phase='repete';m.seq=[];m.msg='Agora tu! '+(isTouch?'Toque nas cores':'Teclas 7 8 9 0');m.msgT=99;}return;}}
 function labPress(ln){const m=mg;if(state!=='labirinto'||!m||m.phase!=='repete'||m.result)return;m.press[ln]=.2;
   beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);
