@@ -2157,7 +2157,7 @@ function updSurf(dt){
     r.bomba=Math.max(0,(r.bomba||0)-(vert?3:9)*dt);
     const alvoV=(aponta?52+mag*38:22)+(inp.held?40:0)+Math.abs(sn)*40+r.bomba;
     r.v+=(alvoV-r.v)*(alvoV<r.v?(aponta?1.4:2.6):1.1)*dt;r.v=clamp(r.v,22,SF.VMAX);
-    r.vy=sn*clamp(r.v,60,120);r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2);
+    r.vy=sn*clamp(r.v,60,120)*2;r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2); // sobe e desce na parede com o dobro da rapidez
     if(r.y>SF.FUNDO){surfCai('Desceu demais e afundou na base da onda!');return;}
     // perdendo velocidade: a rabeta afunda e espirra um jato de água pra trás
     const freia=r.v-alvoV>25;
