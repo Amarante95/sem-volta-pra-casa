@@ -855,6 +855,8 @@ window.addEventListener('blur',somForaDaTela);
 window.addEventListener('focus',somDeVolta);
 window.addEventListener('keydown',e=>{initAudio();
   const k=e.code;
+  // telas (menu, regras, pausa, fim): espaço ou Enter aperta o botão em destaque (JOGAR, CONTINUAR...)
+  if(!screenEl.hidden&&(k==='Space'||k==='Enter'||k==='NumpadEnter')){e.preventDefault();if(e.repeat)return;const fo=document.activeElement,b=fo&&fo.tagName==='BUTTON'&&screenEl.contains(fo)?fo:screenEl.querySelector('button');if(b)b.click();return;}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(k)&&state!=='title')e.preventDefault();
   if(e.repeat){keys.add(k);return;}
   if(state==='mglost'&&(k==='Space'||k==='Enter')){const b=screenEl.querySelector('[data-act="mgRetry"]');if(b){b.click();actionQ=false;return;}} // perdeu o desafio: ESPAÇO tenta de novo
@@ -1140,7 +1142,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1462,6 +1464,7 @@ function update(dt){
   else if(state==='festa')updFesta(dt);
   else if(state==='labirinto')updLabirinto(dt);
   else if(state==='tempo')updTempo(dt);
+  else if(state==='virando')updVirando(dt);
   if(!MG_STATES.includes(state)&&state!=='title')updBuddies(dt);
   updTouchUI();
   cam.x=clamp(P.x-W/2,0,MW*T-W);cam.y=clamp(P.y-10-H/2,0,MH*T-H);
@@ -1999,16 +2002,49 @@ function convCria(){
   return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá... esse mlk tá a dias aí...',
     a:[['Deixa comigo, vou achar o Tavin!',null,()=>startLabirinto()],['Agora não, depois eu volto.','Não demora não, o Tavin tá sofrendo lá dentro.']]};}
 // a aranha da parte verde: se o Markin for grosso, ela pica e ele vira Homem-Aranha
-function picadaAranha(){lose(5);fx.spider=16;fx.trip=0;sfx.rip();shake=.4;
-  for(let i=0;i<16;i++)particles.push({x:P.x+rnd(-6,6),y:P.y-rnd(4,20),vx:rnd(-50,50),vy:rnd(-70,-20),g:120,life:rnd(.6,1.1),col:pick(['#d0202a','#1f4fb5','#f4f1e8']),s:2});
-  toast(`A aranha te picou! Virou HOMEM-ARANHA: ninguém te reconhece e ${KL} solta teia na mãe.`,'good',3.6);}
+// a picada dói na hora; quando a conversa fecha, começa a transformação no centro da tela
+let aranhaPend=false,virar=null;
+function picadaAranha(){lose(5);sfx.hit();shake=.4;aranhaPend=true;}
+function comecaVirar(){virar={t:0};state='virando';interruptRest();setPrompt(null);clearBubbles();P.moving=false;
+  $('hud').hidden=true;$('toast').hidden=true;$('banner').hidden=true;$('phone').hidden=true;call=null;}
+function updVirando(dt){const v=virar,t0=v.t;v.t+=dt;
+  if(t0<.4&&v.t>=.4)sfx.trip();
+  if(v.t>.4&&v.t<1.6&&Math.random()<dt*10)beep(180+v.t*500,.07,'sawtooth',.02);
+  if(t0<1.6&&v.t>=1.6){flash=.8;shake=.6;sfx.rip();beep(523,.15,'square',.05);beep(784,.25,'square',.05,0,.12);}
+  if(v.t>=3.2){virar=null;state='play';P.mode='free';$('hud').hidden=false;fx.spider=16;fx.trip=0;
+    toast(`HOMEM-ARANHA! Escala prédios, bares e o Circo, ninguém te reconhece e ${KL} solta teia na mãe.`,'good',3.6);}}
+function renderVirando(){const g=ctx,t=virar.t,cx=W/2,cy=H/2;headCv.hidden=true;
+  g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/.4)})`;g.fillRect(0,0,W,H);
+  const virou=t>=1.6;
+  // raios vermelhos e azuis girando
+  if(t>.3){const al=Math.min(1,(t-.3)/.4),rot=t*(virou?.8:2.4);
+    for(let i=0;i<16;i++){const a=rot+i/16*Math.PI*2;g.fillStyle=i%2?`rgba(208,32,42,${.32*al})`:`rgba(31,79,181,${.32*al})`;
+      g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*260,cy+Math.sin(a)*260);g.lineTo(cx+Math.cos(a+.2)*260,cy+Math.sin(a+.2)*260);g.closePath();g.fill();}}
+  // a teia crescendo do centro
+  if(t>.6){const p=Math.min(1,(t-.6)/1),N=12,R0=150*p;g.strokeStyle='rgba(240,240,255,.45)';g.lineWidth=1;
+    for(let i=0;i<N;i++){const a=i/N*Math.PI*2;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*R0,cy+Math.sin(a)*R0);g.stroke();}
+    for(let r=18;r<R0;r+=17){g.beginPath();for(let i=0;i<=N;i++){const a=i/N*Math.PI*2,rr=r-(i%2)*2,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.stroke();}}
+  // o Markin no centro: treme ganhando poder e depois aparece de Homem-Aranha
+  const tremor=t>.4&&!virou?(Math.random()-.5)*4*((t-.4)/1.2):0,esc=virou?1+Math.max(0,.3-(t-1.6)*.6):1;
+  const bw=56*esc,bh=40*esc,bx=cx-bw/2+tremor,by=cy+10;
+  if(t>.4&&!virou){const k=(t-.4)/1.2;g.strokeStyle=`rgba(255,70,70,${.4+.4*Math.sin(t*30)})`;g.lineWidth=2+k*3;g.beginPath();g.ellipse(cx+tremor,cy,42+k*12+Math.sin(t*22)*3,60+k*10,0,0,Math.PI*2);g.stroke();}
+  if(virou){R(g,bx,by,bw,bh,'#d0202a');R(g,bx,by,bw*.18,bh,'#1f4fb5');R(g,bx+bw*.82,by,bw*.18,bh,'#1f4fb5');
+    g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;for(let i=1;i<4;i++){g.beginPath();g.moveTo(bx+bw*.18,by+bh*i/4);g.lineTo(bx+bw*.82,by+bh*i/4);g.stroke();}
+    const ax=cx,ay=by+bh*.4;R(g,ax-2,ay-4,4,8,'#1a1a1a');for(const d of [-1,1]){R(g,ax+d*2,ay-3,d*6,1,'#1a1a1a');R(g,ax+d*2,ay,d*7,1,'#1a1a1a');R(g,ax+d*2,ay+3,d*6,1,'#1a1a1a');}} // a aranha no peito
+  else drawMkTorso(g,bx,by,bw,bh);
+  const st=faceState();st.spider=virou;st.mood=virou?'hype':null;buildFace(st,{});g.imageSmoothingEnabled=false;
+  const fw=50*esc,fh=62*esc;g.drawImage(fbuf,cx-fw/2+tremor,by-fh+8,fw,fh);
+  if(virou){const p=Math.min(1,(t-1.6)/.3);outlineText(g,'HOMEM-ARANHA!',cx,22,Math.round(8+10*p),'#ff3b3b');
+    if(t>2.1)outlineText(g,'COM GRANDES PODERES VEM GRANDES ROLÊS!',cx,H-8,7,'#f3ecd8');}
+  else if(t>.4)outlineText(g,'A PICADA TÁ FAZENDO EFEITO...',cx,22,8,'#c9a0ff');}
 // a conversa toda acontece na caixa: a pessoa fala, o Markin escolhe, o Markin diz e a pessoa responde (espaço passa)
 function caixa(nome,texto,opcoes){$('bgnome').textContent=nome;$('bgtext').textContent=texto;$('beg').classList.toggle('falando',!opcoes);}
 function marcaSel(){$('bgSim').classList.toggle('sel',beg.sel===0);$('bgNao').classList.toggle('sel',beg.sel===1);}
 const CONV_GAP=720; // 12h de jogo pra conversar de novo com a mesma pessoa
 function abreConversa(n){if(n.k!=='criaSA')n.falouEm=totalMin;const c=convDe(n);beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';setPrompt(null);if(n.beggar)sfx.alert();
   abreEspaco('beg');caixa(n.titulo,c.f,true);$('bgOp1').textContent=c.a[0][0];$('bgOp2').textContent=c.a[1][0];$('beg').hidden=false;}
-function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='beg')P.mode='free';}
+function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='beg')P.mode='free';
+  if(aranhaPend&&state==='play'){aranhaPend=false;comecaVirar();}}
 function updBeg(dt,act){beg.t+=dt;P.moving=false;if(act&&beg.t>.35){if(beg.fase==='pergunta')escolheResposta(beg.sel);else avancaConversa();}}
 function escolheResposta(i){if(!beg||beg.fase!=='pergunta'||beg.t<.35||state!=='play')return;
   beg.esc=beg.c.a[i];beg.fase='markin';beg.t=0;caixa('MARKIN',beg.esc[0]);}
@@ -2019,7 +2055,7 @@ function avancaConversa(){const {n,esc}=beg,[,resp,ef]=esc;
     else if(ef)ef();
     return;}
   closeBeg();
-  if(typeof ef==='function'){ef();return;}
+  if(typeof ef==='function'){if(!resp)ef();return;} // efeito sem resposta (ex.: entrar nos becos) roda ao fechar; com resposta já rodou
   if(ef==='dar'){n.cd=70;n.flee=4;n.feliz=true;}
   else if(ef==='nega'){n.cd=35;n.flee=3.5;n.feliz=false;}}
 function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e calcinha)
@@ -3758,6 +3794,7 @@ function render(){
     R(ctx,bx-1,by-1,bw+2,8,'#000');R(ctx,bx,by,bw,6,'#3a1a1a');R(ctx,bx,by,bw*p,6,p>.7?'#8be08b':'#ffb347');}
   renderHead(cx,cy);
   if(state==='tempo')renderTempo();
+  if(state==='virando')renderVirando();
 }
 const dk=document.createElement('canvas');dk.width=W;dk.height=H;const dc=dk.getContext('2d');
 function lightHole(wx,wy,r,cx,cy){const x=wx-cx,y=wy-cy;if(x<-r||x>W+r||y<-r||y>H+r)return;const g=dc.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.6,'rgba(0,0,0,.7)');g.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=g;dc.fillRect(x-r,y-r,r*2,r*2);}
