@@ -97,7 +97,7 @@ Cuidados: não mude o tamanho do mapa (80 × 60) nem mexa nas ruas principais, p
 | Ônibus do Rio | 366 |
 | Desafio: BAR | 2511 |
 | Desafio: BAMBINA | 2658 |
-| IA do Tubarão | 2640 |
+| IA do Liu | 2640 |
 | Desafio: CIRCO VOADOR | 2836 |
 | Desafio final: SAXOFONE | 3081 |
 | Desafio: MARACANÃ | 3182 |
@@ -141,3 +141,4 @@ Dica: no editor, use Ctrl+F (Cmd+F no Mac) com o nome da função. Números que 
 23. Estandarte do Bloco do Markin com a cara dele no meio.
 24. Final: a galera embarca, sobe a bandeira PARTIU PAQUETAAAAA, um boto cor de rosa de chapéu pula no mar, o navio zarpa e o boto vai do lado. A tela final fala "Boto Cor de Rosa".
 25. Roupa nova do Markin (camiseta oversized marrom, cordões, bolsa transversal, jeans largo, tênis branco), mais bem desenhado e com braços nos desafios.
+26. Bambina: o adversário agora é o Liu; quando tu faz falta ou mata a branca, dá pra ver ele escolhendo a bola dele que cai (a mais difícil); ele encaçapa 35%, quase acerta 60% e erra feio 5%; bebe a cada tacada e o taco dele balança cada vez mais (só no desenho).

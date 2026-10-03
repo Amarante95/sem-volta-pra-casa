@@ -1785,7 +1785,7 @@ const BUDDY_DEFS={
     lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Mamãe eu quero!']},
   bar:{nome:'Seu Zé',skin:'#c98c64',hair:'#9a9a9a',shirt:'#f4f1e8',shorts:'#2d6fd1',prop:'beer',belly:true,beard:'#bdbdbd',oi:'Seis brejas e de pé? Tu é dos meus!',
     lines:['Mais uma, garçom!','No meu tempo a gente virava 3 dias.','Saideira? Nunca.','Cerveja é hidratação.']},
-  sinuca:{nome:'Tubarão',skin:'#8a5a3a',hair:'#1e140e',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',shades:true,cap:'#1d1d22',oi:'Me ganhou na bambina... respeito. Tô contigo.',
+  sinuca:{nome:'Liu',skin:'#8a5a3a',hair:'#1e140e',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',shades:true,cap:'#1d1d22',oi:'Me ganhou na bambina... respeito. Tô contigo.',
     lines:['Vermelha no canto, parceiro.','Taco é extensão do braço.','Ninguém me ganha... quase ninguém.','Fica frio, eu cuido da retaguarda.']},
   festa:{nome:'Gatinha',skin:'#e8b894',hair:'#b58cff',shirt:'#141018',shorts:'#141018',skirt:true,long:true,earring:true,oi:'Eu disse que não era pra sumir. Bora junto!',
     lines:['Tu me deve um nascer do sol.','Que rolê, hein?','Tua mãe liga muito, né?','Vai ter bloco? Eu vou!']}
@@ -2139,7 +2139,7 @@ function galeraMG(g,kind,t){
   list=list.slice(0,spots.length);if(!list.length)return;
   list.forEach((b,i)=>{const [x,y,s]=spots[i];g.save();g.translate(x,y);g.scale(s,s);drawBuddy(g,0,0,{...b,hair:b.k==='festa'?gatHair:b.hair},{dir:'down',frame:Math.floor(t*6+i)%4,t});g.restore();});
   const FALAS={bar:['Vira! Vira! Vira!','Mais uma, garçom!','Segura essa cabeça, Markin!','Tá bebendo ou tá dormindo?'],
-    sinuca:['Tá vendo 3 vermelhas onde tem uma?','Mira na bola, não no teto!','O Tubarão tá de sacanagem hoje!','Bambina é paciência, Markin!'],
+    sinuca:['Tá vendo 3 vermelhas onde tem uma?','Mira na bola, não no teto!','O Liu tá de sacanagem hoje!','Bambina é paciência, Markin!'],
     maraca:['Vai, Markin! Agora!','A gente distrai o segurança!','Pula esse alambrado!','Invade logo, parça!']}[kind];
   const k=Math.floor(t/3.2),i=k%list.length,[x,y,s]=spots[i];
   // a galera só fala quando não tem outra frase na tela
@@ -3019,9 +3019,10 @@ function renderBar(){
   if(m.msgT>0)outlineText(g,m.msg,W/2,34,9,'#ffffff');
   else if(t<4&&!m.result)outlineText(g,isTouch?'setas seguram a cabeça · BEBE':'← → equilibra a cabeça · ESPAÇO bebe · ESC sai',W/2,178,7,'#fff1c2');
 }
-/* ---------- BAMBINA: 4 vermelhas x 4 amarelas contra o Tubarão, um de cada vez; cerveja a cada tacada do Markin ----------
-   A primeira bola que a branca tocar define a cor de quem tacou. Branca na caçapa: quem tacou perde.
-   Se a branca não tocar primeiro numa bola da tua cor, o adversário escolhe uma bola dele pra cair. */
+/* ---------- BAMBINA: 4 vermelhas x 4 amarelas contra o Liu, um de cada vez; cerveja a cada tacada do Markin ----------
+   A primeira bola que a branca tocar define a cor de quem tacou. Branca na caçapa: volta pro meio e o adversário tira uma bola dele
+   (junto com a última bola de quem tacou: perde). Se a branca não tocar primeiro numa bola da tua cor, o adversário escolhe uma bola dele pra cair.
+   O Liu também bebe a cada tacada: o taco dele balança cada vez mais, mas só no desenho. */
 const SN={x0:36,y0:44,x1:284,y1:158,r:4};
 const POCKETS=[[36,44],[160,41],[284,44],[36,158],[160,161],[284,158]];
 const BB_COL={r:'#d0202a',y:'#f2c230'};
@@ -3032,12 +3033,12 @@ function startSinuca(){
   // posição simétrica: vermelhas na metade esquerda, amarelas espelhadas na direita, branca no centro
   const balls=[{x:160,y:101,vx:0,vy:0,c:'#f4f1e8',cue:true}];
   for(const [x,y] of [[113,53],[113,149],[45,96.5],[45,105.5]]){balls.push({x,y,vx:0,vy:0,c:BB_COL.r,team:'r'});balls.push({x:320-x,y,vx:0,vy:0,c:BB_COL.y,team:'y'});}
-  mg={t:0,balls,ang:0,phase:'aim',pw:0,pwDir:1,turn:'me',myTeam:null,firstHit:null,mine:0,his:0,goal:4,shots:0,beers:0,pickI:0,pickHeld:0,msg:'BAMBINA contra o Tubarão! A primeira bola que tu acertar vira a tua cor.',msgT:3.8,result:null,done:0,scratch:false,potThis:[],drinkT:0,ai:null,fim:''};
+  mg={t:0,balls,ang:0,phase:'aim',pw:0,pwDir:1,turn:'me',myTeam:null,firstHit:null,mine:0,his:0,goal:4,shots:0,beers:0,hisBeers:0,pcPick:null,pickI:0,pickHeld:0,msg:'BAMBINA contra o Liu! A primeira bola que tu acertar vira a tua cor.',msgT:3.8,result:null,done:0,scratch:false,potThis:[],drinkT:0,ai:null,fim:''};
 }
 // cor de cada jogador (null enquanto ninguém acertou nenhuma bola)
 function bbCor(m,quem){return m.myTeam?(quem==='me'?m.myTeam:bbOutra(m.myTeam)):null;}
 function bbConta(m){const eu=bbCor(m,'me'),ele=bbCor(m,'pc');m.mine=eu?m.balls.filter(b=>b.in&&b.team===eu).length:0;m.his=ele?m.balls.filter(b=>b.in&&b.team===ele).length:0;}
-// bolas do Markin que ainda estão na mesa (pra ele escolher qual cai quando o Tubarão faz falta)
+// bolas do Markin que ainda estão na mesa (pra ele escolher qual cai quando o Liu faz falta)
 function bbMinhasNaMesa(m){const c=bbCor(m,'me');return m.balls.filter(b=>!b.in&&!b.cue&&b.team===c);}
 function snWob(m){if(m.turn!=='me')return 0;const d=(m.beers*.12+(fx.drunk>0?.15:0))*.5;return Math.sin(m.t*1.3)*d*.15+Math.sin(m.t*2.6)*d*.05;}
 function snPhysics(m,h){
@@ -3053,7 +3054,7 @@ function snPhysics(m,h){
       const rv=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;if(rv>0){const k=rv*.96;a.vx-=k*nx;a.vy-=k*ny;b.vx+=k*nx;b.vy+=k*ny;if(rv>20)beep(900,.03,'square',.03);}}}
 }
 function snShoot(m,cue,a,pw){const v=70+pw*320;cue.vx=Math.cos(a)*v;cue.vy=Math.sin(a)*v;m.phase='roll';m.potThis=[];m.scratch=false;m.firstHit=null;beep(160,.08,'triangle',.08);}
-// o Tubarão escolhe a bola dele mais fácil (qualquer uma, se as cores ainda não foram definidas)... e erra 3 de cada 4
+// o Liu escolhe a bola dele mais fácil (qualquer uma, se as cores ainda não foram definidas)
 function snAiPlan(m,cue){
   const r=SN.r,cor=bbCor(m,'pc');let best=null;
   for(const b of m.balls){if(b.in||b.cue||(cor&&b.team!==cor))continue;
@@ -3061,13 +3062,13 @@ function snAiPlan(m,cue){
       const gx=b.x-ux*r*2,gy=b.y-uy*r*2,cx=gx-cue.x,cy=gy-cue.y,cl=Math.hypot(cx,cy)||1,corte=(cx*ux+cy*uy)/cl;
       if(corte<.3)continue;const sc=corte*2-dl/300-cl/400;if(!best||sc>best.sc)best={sc,ang:Math.atan2(cy,cx),d:dl+cl,b};}}
   if(!best){const b=m.balls.find(b=>!b.in&&!b.cue&&(!cor||b.team===cor));best={ang:b?Math.atan2(b.y-cue.y,b.x-cue.x):Math.PI,d:200};}
-  // o Tubarão só erra a bola dele 10% das vezes, mas só encaçapa 25%: no resto bate na bola e ela não entra
-  const r0=Math.random(),acerta=r0<.25,erraBola=r0>=.9;
+  // o Liu encaçapa 35%, quase acerta 60% (bate na bola dele e ela não entra) e erra feio 5%
+  const r0=Math.random(),acerta=r0<.35,erraBola=r0>=.95;
   if(!acerta&&!erraBola){const alvo=best.b||m.balls.find(b=>!b.in&&!b.cue&&(!cor||b.team===cor));
     if(alvo){const dx=alvo.x-cue.x,dy=alvo.y-cue.y,dl=Math.hypot(dx,dy)||1,lado=Math.asin(Math.min(1,r*1.5/dl))*pick([-1,1])*rnd(.55,.9);
       return snAiConfere(m,cue,{ang:Math.atan2(dy,dx)+lado,pw:clamp(.3+dl/600+rnd(-.05,.12),.3,.8),t:0,from:m.ang});}}
   const fim={ang:best.ang+(acerta?rnd(-.008,.008):pick([-1,1])*rnd(.16,.42)),pw:clamp((.34+best.d/520)*(acerta?1:rnd(.8,1.25)),.3,1),t:0,from:m.ang};
-  return erraBola?fim:snAiConfere(m,cue,fim);} // só 10% das vezes ele erra a bola dele
+  return erraBola?fim:snAiConfere(m,cue,fim);} // só 5% das vezes ele erra feio
 // confere se a tacada bate primeiro numa bola dele; se não, procura outro ângulo que bata
 function snAiConfere(m,cue,plan){const cor=bbCor(m,'pc'),ok=a=>{const pr=snPredict(m,cue,a);return pr.b&&(!cor||pr.b.team===cor);};
   if(ok(plan.ang))return plan;
@@ -3082,7 +3083,7 @@ function snAiTick(m,dt,cue){
 function snEndShot(m,cue){
   for(const b of m.balls){b.vx=b.vy=0;}
   const eu=m.turn==='me',quem=eu?'me':'pc';
-  if(eu){m.beers++;m.shots++;m.drinkT=1.1;sfx.gulp();}
+  if(eu){m.beers++;m.shots++;m.drinkT=1.1;sfx.gulp();}else m.hisBeers++;
   m.phase='aim';m.ai=null;m.pw=0;m.pwDir=1;m.msgT=2.4;
   // quem acertou a primeira bola da partida fica com aquela cor
   let definiu=false;
@@ -3091,53 +3092,63 @@ function snEndShot(m,cue){
   // branca na caçapa: se foi junto com a última bola de quem tacou, ele perde
   if(m.scratch){const ownS=bbCor(m,quem);
     if(ownS&&m.potThis.includes(ownS)&&(eu?m.mine:m.his)>=m.goal){cue.in=true;m.done=2.8;m.msgT=2.8;
-      if(eu){m.result='lose';m.msg='MATOU A BRANCA JUNTO COM A ÚLTIMA! Perdeu.';m.fim='Tu matou a branca junto com a tua última bola... perdeu a bambina pro Tubarão.';sfx.lose();}
-      else{m.result='win';m.msg='O TUBARÃO MATOU A BRANCA JUNTO COM A ÚLTIMA! GANHOU!';sfx.win();}
+      if(eu){m.result='lose';m.msg='MATOU A BRANCA JUNTO COM A ÚLTIMA! Perdeu.';m.fim='Tu matou a branca junto com a tua última bola... perdeu a bambina pro Liu.';sfx.lose();}
+      else{m.result='win';m.msg='O LIU MATOU A BRANCA JUNTO COM A ÚLTIMA! GANHOU!';sfx.win();}
       return;}
     // senão a branca volta pro meio, a vez passa e o adversário tira uma bola dele
     cue.in=false;cue.vx=cue.vy=0;cue.x=160;cue.y=101;
     for(let k=0;k<12&&m.balls.some(b=>!b.in&&!b.cue&&Math.hypot(b.x-cue.x,b.y-cue.y)<SN.r*2+1);k++)cue.x+=SN.r*2+1;
     m.turn=eu?'pc':'me';m.msgT=3;
-    if(eu){const dele=ownS?m.balls.filter(b=>!b.in&&!b.cue&&b.team===bbCor(m,'pc')):[],b=pick(dele);
-      if(b){b.in=true;beep(300,.12,'triangle',.07,120);}bbConta(m);
-      m.msg='MATOU A BRANCA! Ela volta pro meio'+(b?' e o Tubarão tirou uma bola dele.':'. Vez do Tubarão.');
-      if(m.his>=m.goal){m.result='lose';m.done=2.6;m.msg='Matou a branca e o Tubarão completou as quatro...';m.fim='Tu matou a branca e o Tubarão tirou a última bola dele... perdeu a bambina.';sfx.lose();}
-      return;}
+    if(eu){if(ownS&&snPcPickStart(m,'MATOU A BRANCA! Volta pro meio e o Liu escolhe uma bola dele.','Matou a branca e o Liu completou as quatro...','Tu matou a branca e o Liu tirou a última bola dele... perdeu a bambina.'))return;
+      m.msg='MATOU A BRANCA! Ela volta pro meio. Vez do Liu.';return;}
     const minhas=ownS?bbMinhasNaMesa(m):[];
-    if(minhas.length){m.phase='pick';m.pickI=0;m.pickHeld=1;m.msg='O TUBARÃO MATOU A BRANCA! Escolhe uma bola tua pra cair.';m.msgT=3.2;}
-    else m.msg='O Tubarão matou a branca! Ela volta pro meio. Tua vez.';
+    if(minhas.length){m.phase='pick';m.pickI=0;m.pickHeld=1;m.msg='O LIU MATOU A BRANCA! Escolhe uma bola tua pra cair.';m.msgT=3.2;}
+    else m.msg='O Liu matou a branca! Ela volta pro meio. Tua vez.';
     return;}
   const own=bbCor(m,quem);
   // falta com a última bola: encaçapou a última batendo primeiro na do adversário = perde
   if(own&&m.firstHit&&m.firstHit!==own&&m.potThis.includes(own)&&(eu?m.mine:m.his)>=m.goal){m.done=2.8;m.msgT=2.8;
-    if(eu){m.result='lose';m.msg='FALTA! Derrubou a última batendo na bola dele. Perdeu.';m.fim='Tu derrubou a tua última bola batendo primeiro na do Tubarão. Falta: perdeu a bambina.';sfx.lose();}
-    else{m.result='win';m.msg='O TUBARÃO FEZ FALTA NA ÚLTIMA! GANHOU A BAMBINA!';sfx.win();}
+    if(eu){m.result='lose';m.msg='FALTA! Derrubou a última batendo na bola dele. Perdeu.';m.fim='Tu derrubou a tua última bola batendo primeiro na do Liu. Falta: perdeu a bambina.';sfx.lose();}
+    else{m.result='win';m.msg='O LIU FEZ FALTA NA ÚLTIMA! GANHOU A BAMBINA!';sfx.win();}
     return;}
   if(m.mine>=m.goal&&(eu||m.his<m.goal)){m.result='win';m.done=2.4;m.msg=`AS QUATRO ${BB_NOME[bbCor(m,'me')]}! GANHOU A BAMBINA!`;m.msgT=2.4;sfx.win();return;}
-  if(m.his>=m.goal){m.result='lose';m.done=2.4;m.msg=`O Tubarão matou as quatro ${BB_NOME[bbCor(m,'pc')].toLowerCase()}...`;m.fim=`O Tubarão encaçapou as quatro ${BB_NOME[bbCor(m,'pc')].toLowerCase()} primeiro... perdeu a bambina.`;m.msgT=2.4;sfx.lose();return;}
+  if(m.his>=m.goal){m.result='lose';m.done=2.4;m.msg=`O Liu matou as quatro ${BB_NOME[bbCor(m,'pc')].toLowerCase()}...`;m.fim=`O Liu encaçapou as quatro ${BB_NOME[bbCor(m,'pc')].toLowerCase()} primeiro... perdeu a bambina.`;m.msgT=2.4;sfx.lose();return;}
   // falta: a branca não tocou primeiro numa bola da cor de quem tacou (ou não tocou em nada)
   if(!own||m.firstHit!==own){
     m.turn=eu?'pc':'me';
-    if(!own){m.msg=(eu?'Não acertou nenhuma bola! Vez do Tubarão.':'O Tubarão não acertou nenhuma bola! Tua vez.');return;}
-    if(eu){ // o Tubarão escolhe uma amarela (ou vermelha) dele pra cair
-      const dele=m.balls.filter(b=>!b.in&&!b.cue&&b.team===bbCor(m,'pc'));const b=pick(dele);
-      if(b){b.in=true;beep(300,.12,'triangle',.07,120);}bbConta(m);
-      m.msg=(m.firstHit?(m.potThis.includes(own)?'Falta! Tua bola caiu, mas bateu primeiro na dele.':'Falta! Bateu primeiro na bola dele.'):'Falta! Não acertou nenhuma bola.')+' Ele tirou uma.';m.msgT=3;
-      if(m.his>=m.goal){m.result='lose';m.done=2.6;m.msg='Com a tua falta, o Tubarão completou as quatro...';m.fim='Uma falta tua deu a última bola pro Tubarão... perdeu a bambina.';sfx.lose();}
+    if(!own){m.msg=(eu?'Não acertou nenhuma bola! Vez do Liu.':'O Liu não acertou nenhuma bola! Tua vez.');return;}
+    if(eu){ // o Liu escolhe uma amarela (ou vermelha) dele pra cair
+      const motivo=m.firstHit?(m.potThis.includes(own)?'Falta! Tua bola caiu, mas bateu primeiro na dele.':'Falta! Bateu primeiro na bola dele.'):'Falta! Não acertou nenhuma bola.';
+      if(!snPcPickStart(m,motivo+' O Liu escolhe uma.','Com a tua falta, o Liu completou as quatro...','Uma falta tua deu a última bola pro Liu... perdeu a bambina.'))m.msg=motivo;
       return;}
-    // falta do Tubarão: o Markin escolhe uma bola dele pra cair
+    // falta do Liu: o Markin escolhe uma bola dele pra cair
     const minhas=bbMinhasNaMesa(m);
-    if(minhas.length){m.phase='pick';m.pickI=0;m.pickHeld=1;m.msg='FALTA DO TUBARÃO! Escolhe uma bola tua pra cair.';m.msgT=3.2;}
-    else m.msg='Falta do Tubarão! Tua vez.';
+    if(minhas.length){m.phase='pick';m.pickI=0;m.pickHeld=1;m.msg='FALTA DO LIU! Escolhe uma bola tua pra cair.';m.msgT=3.2;}
+    else m.msg='Falta do Liu! Tua vez.';
     return;}
   const minhas=m.potThis.filter(t=>t===own).length,dele=m.potThis.length-minhas,segue=minhas>0;
-  if(eu)m.msg=(segue?(minhas>1?`${minhas} de uma vez! Joga de novo.`:'Encaçapou! Joga de novo.'):dele?'Encaçapou a bola dele... vez do Tubarão.':'Não encaçapou. Gole de raiva. Vez do Tubarão.');
-  else m.msg=(segue?'O Tubarão acertou... ele joga de novo.':dele?'O Tubarão encaçapou uma bola TUA! Valeu, Tubarão. Tua vez.':pick(['O Tubarão errou feio! Tua vez.','Tubarão: "Essa mesa tá torta!" Tua vez.','Errou! Tua vez, Markin.','Tubarão: "Foi o giz!" Tua vez.']));
+  if(eu)m.msg=(segue?(minhas>1?`${minhas} de uma vez! Joga de novo.`:'Encaçapou! Joga de novo.'):dele?'Encaçapou a bola dele... vez do Liu.':'Não encaçapou. Gole de raiva. Vez do Liu.');
+  else m.msg=(segue?'O Liu acertou... ele joga de novo.':dele?'O Liu encaçapou uma bola TUA! Valeu, Liu. Tua vez.':pick(['O Liu errou feio! Tua vez.','Liu: "Essa mesa tá torta!" Tua vez.','Errou! Tua vez, Markin.','Liu: "Foi o giz!" Tua vez.']));
   if(!segue)m.turn=eu?'pc':'me';
-  if(definiu){m.msg=eu?`Tu é das ${BB_NOME[m.myTeam]}! O Tubarão fica com as outras.`:`O Tubarão é das ${BB_NOME[bbOutra(m.myTeam)]}. Tu é das ${BB_NOME[m.myTeam]}.`;m.msgT=3;}
+  if(definiu){m.msg=eu?`Tu é das ${BB_NOME[m.myTeam]}! O Liu fica com as outras.`:`O Liu é das ${BB_NOME[bbOutra(m.myTeam)]}. Tu é das ${BB_NOME[m.myTeam]}.`;m.msgT=3;}
   else if(m.turn==='me'&&eu&&m.beers===3){m.msg='Tá batendo... o taco tá tremendo.';m.msgT=2;}
 }
-// falta do Tubarão: o Markin escolhe (← → e ESPAÇO) qual bola dele cai
+// falta do Markin: o Liu passa o dedo pelas bolas dele, decide e derruba uma (a que tá mais difícil de encaçapar)
+function snPcPickStart(m,msg,msgPerde,fim){
+  const dele=m.balls.filter(b=>!b.in&&!b.cue&&b.team===bbCor(m,'pc'));if(!dele.length)return false;
+  const cue=m.balls.find(b=>b.cue),facil=b=>Math.max(...POCKETS.map(([px,py])=>{const dx=px-b.x,dy=py-b.y,dl=Math.hypot(dx,dy)||1,gx=b.x-dx/dl*SN.r*2,gy=b.y-dy/dl*SN.r*2,cx=gx-cue.x,cy=gy-cue.y,cl=Math.hypot(cx,cy)||1;return (cx*dx+cy*dy)/dl/cl*2-dl/300;}));
+  let alvo=0;dele.forEach((b,i)=>{if(facil(b)<facil(dele[alvo]))alvo=i;});
+  m.phase='pcPick';m.pcPick={t:0,dele,alvo,i:0,msgPerde,fim};m.msg=msg;m.msgT=3;return true;}
+function snPcPickTick(m,dt){
+  const p=m.pcPick;p.t+=dt;
+  const i=p.t<1.6?Math.floor(p.t/.32)%p.dele.length:p.alvo;if(i!==p.i){p.i=i;beep(560,.04,'square',.025);}
+  if(p.t<2.3)return;
+  const b=p.dele[p.alvo];b.in=true;beep(300,.12,'triangle',.07,120);bbConta(m);m.phase='aim';m.pcPick=null;m.ai=null;
+  if(m.his>=m.goal){m.result='lose';m.done=2.6;m.msg=p.msgPerde;m.msgT=2.6;m.fim=p.fim;sfx.lose();return;}
+  m.msg='Caiu uma do Liu. Vez dele.';m.msgT=1.8;}
+// taco do Liu: balança cada vez mais a cada cerveja, mas a tacada dele sai igual
+function snWobPc(m){if(m.turn!=='pc')return 0;const d=Math.min(m.hisBeers,12)*.022;return Math.sin(m.t*1.7)*d+Math.sin(m.t*3.3)*d*.45;}
+// falta do Liu: o Markin escolhe (← → e ESPAÇO) qual bola dele cai
 function snPick(m,inp){
   const minhas=bbMinhasNaMesa(m);if(!minhas.length){m.phase='aim';return;}
   m.pickI=((m.pickI%minhas.length)+minhas.length)%minhas.length;
@@ -3152,14 +3163,15 @@ function updSinuca(dt){
   const m=mg;m.t+=dt;m.msgT-=dt;m.drinkT=Math.max(0,m.drinkT-dt);
   const inp=mgInput();
   if(m.result){m.done-=dt;if(m.done<=0){
-    if(m.result==='win'){if(m.beers>=3)librasPend=true;markTask('sinuca');mgExit(`Ganhou a bambina do Tubarão com ${m.beers} cervejas! +6h acordado.`,'good',10,360);}
-    else mgLost(m.fim||'Perdeu a bambina pro Tubarão.');}return;}
+    if(m.result==='win'){if(m.beers>=3)librasPend=true;markTask('sinuca');mgExit(`Ganhou a bambina do Liu com ${m.beers} cervejas! +6h acordado.`,'good',10,360);}
+    else mgLost(m.fim||'Perdeu a bambina pro Liu.');}return;}
   tickFx(dt);
   const cue=m.balls.find(b=>b.cue);
   if(m.phase==='roll'){
     for(let s=0;s<4;s++)snPhysics(m,dt/4);
     if(m.balls.every(b=>b.in||Math.hypot(b.vx,b.vy)<2))snEndShot(m,cue);}
   else if(m.phase==='pick')snPick(m,inp);
+  else if(m.phase==='pcPick')snPcPickTick(m,dt);
   else if(m.turn==='pc')snAiTick(m,dt,cue);
   else if(m.phase==='aim'){m.ang+=inp.ix*1.5*dt;if(inp.act){m.phase='power';m.pw=0;m.pwDir=1;}}
   else if(m.phase==='power'){
@@ -3188,7 +3200,7 @@ function renderSinuca(){
     else g.arc(px,py,9,0,Math.PI*2);g.fill();}
   const cue=m.balls.find(b=>b.cue);
   // raio de direcionamento (antes das bolas, por baixo delas)
-  if(m.phase!=='roll'&&m.phase!=='pick'&&!m.result&&!cue.in){
+  if(m.phase!=='roll'&&m.phase!=='pick'&&m.phase!=='pcPick'&&!m.result&&!cue.in){
     const a=m.ang+snWob(m),ca=Math.cos(a),sa=Math.sin(a),pr=snPredict(m,cue,a),len=Math.hypot(pr.gx-cue.x,pr.gy-cue.y);
     g.fillStyle='rgba(255,255,255,.7)';for(let d=7;d<len;d+=4)g.fillRect(cue.x+ca*d-.5,cue.y+sa*d-.5,1.5,1.5);
     if(pr.b){g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=1;g.beginPath();g.arc(pr.gx,pr.gy,SN.r,0,Math.PI*2);g.stroke();
@@ -3196,7 +3208,7 @@ function renderSinuca(){
       g.strokeStyle=pr.b.c;g.lineWidth=2;g.beginPath();g.moveTo(pr.b.x,pr.b.y);g.lineTo(pr.b.x+pr.nx*46,pr.b.y+pr.ny*46);g.stroke();
       const hx=pr.b.x+pr.nx*46,hy=pr.b.y+pr.ny*46,an=Math.atan2(pr.ny,pr.nx);g.fillStyle=pr.b.c;g.beginPath();g.moveTo(hx+Math.cos(an)*4,hy+Math.sin(an)*4);g.lineTo(hx+Math.cos(an+2.5)*4,hy+Math.sin(an+2.5)*4);g.lineTo(hx+Math.cos(an-2.5)*4,hy+Math.sin(an-2.5)*4);g.fill();
       // e a branca desvia pro lado
-      // mirando na bola do Tubarão: um X em cima dela
+      // mirando na bola do Liu: um X em cima dela
       const minha=bbCor(m,'me');if(m.turn==='me'&&minha&&pr.b.team!==minha){g.strokeStyle='#ff3b3b';g.lineWidth=2;g.beginPath();g.moveTo(pr.b.x-5,pr.b.y-5);g.lineTo(pr.b.x+5,pr.b.y+5);g.moveTo(pr.b.x+5,pr.b.y-5);g.lineTo(pr.b.x-5,pr.b.y+5);g.stroke();}
       const dot=ca*pr.nx+sa*pr.ny,tx=ca-dot*pr.nx,ty=sa-dot*pr.ny,tl=Math.hypot(tx,ty);if(tl>.05){g.fillStyle='rgba(255,255,255,.35)';for(let d=4;d<20;d+=4)g.fillRect(pr.gx+tx/tl*d-.5,pr.gy+ty/tl*d-.5,1.5,1.5);}}
   }
@@ -3204,8 +3216,11 @@ function renderSinuca(){
     g.fillStyle=b.c;g.beginPath();g.arc(b.x,b.y,SN.r,0,Math.PI*2);g.fill();R(g,b.x-2,b.y-2,1,1,'#ffffff');}
   if(m.phase==='pick'&&!m.result){const minhas=bbMinhasNaMesa(m),b=minhas[m.pickI%Math.max(1,minhas.length)];
     if(b){const pul=SN.r+3+Math.abs(Math.sin(t*6))*2;g.strokeStyle='#ffffff';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,pul,0,Math.PI*2);g.stroke();outlineText(g,'ESSA?',b.x,b.y-11,7,'#ffffff');}}
-  if(m.phase!=='roll'&&m.phase!=='pick'&&!m.result&&!cue.in){
-    const a=m.ang+snWob(m),ca=Math.cos(a),sa=Math.sin(a);
+  // o Liu escolhendo a bola dele que cai
+  if(m.phase==='pcPick'&&m.pcPick&&!m.result){const p=m.pcPick,b=p.dele[p.i],ok=p.t>=1.6;
+    const pul=SN.r+3+Math.abs(Math.sin(t*(ok?10:6)))*2;g.strokeStyle='#ffb347';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,pul,0,Math.PI*2);g.stroke();outlineText(g,ok?'ESSA!':'ESSA?',b.x,b.y-11,7,'#ffb347');}
+  if(m.phase!=='roll'&&m.phase!=='pick'&&m.phase!=='pcPick'&&!m.result&&!cue.in){
+    const a=m.ang+snWob(m)+snWobPc(m),ca=Math.cos(a),sa=Math.sin(a);
     const pull=6+(m.phase==='power'?m.pw*16:0);g.strokeStyle=m.turn==='pc'?'#8a6a40':'#c9a060';g.lineWidth=2.5;g.beginPath();g.moveTo(cue.x-ca*pull,cue.y-sa*pull);g.lineTo(cue.x-ca*(pull+78),cue.y-sa*(pull+78));g.stroke();
     g.strokeStyle='#f4f1e8';g.lineWidth=2.5;g.beginPath();g.moveTo(cue.x-ca*pull,cue.y-sa*pull);g.lineTo(cue.x-ca*(pull+4),cue.y-sa*(pull+4));g.stroke();
   }
@@ -3217,8 +3232,9 @@ function renderSinuca(){
   const placar=(x0,cor,n)=>{for(let i=0;i<4;i++){const cx=x0+i*9;g.fillStyle=i<n&&cor?BB_COL[cor]:'#2a2a30';g.beginPath();g.arc(cx,23,3.2,0,Math.PI*2);g.fill();g.strokeStyle=cor?BB_COL[cor]:'#6a6a74';g.lineWidth=1;g.beginPath();g.arc(cx,23,3.4,0,Math.PI*2);g.stroke();}};
   outlineText(g,'MARKIN',30,12,7,m.turn==='me'?'#ffe14f':'#9fb0cc','left');placar(33,bbCor(m,'me'),m.mine);
   R(g,W-100,3,96,28,'rgba(7,11,20,.72)');
-  outlineText(g,'TUBARÃO',W-8,12,7,m.turn==='pc'?'#ffe14f':'#9fb0cc','right');placar(W-38,bbCor(m,'pc'),m.his);
-  outlineText(g,m.phase==='pick'?'ESCOLHE UMA BOLA TUA':m.turn==='me'?'TUA VEZ':'VEZ DO TUBARÃO',W/2,14,9,m.turn==='me'?'#8be08b':'#ffb347');
+  outlineText(g,'LIU',W-8,12,7,m.turn==='pc'?'#ffe14f':'#9fb0cc','right');placar(W-38,bbCor(m,'pc'),m.his);
+  R(g,W-96,17,6,9,'rgba(230,240,250,.6)');R(g,W-95,19,4,6,'#f2b63a');outlineText(g,'x'+m.hisBeers,W-88,25,7,'#f2b63a','left');
+  outlineText(g,m.phase==='pick'?'ESCOLHE UMA BOLA TUA':m.phase==='pcPick'?'O LIU ESCOLHE UMA BOLA DELE':m.turn==='me'?'TUA VEZ':'VEZ DO LIU',W/2,14,9,m.turn==='me'?'#8be08b':'#ffb347');
   outlineText(g,`CERVEJAS ${m.beers}`,W/2,25,7,'#f2b63a');
   if(m.drinkT>0){R(g,188,16,6,9,'rgba(230,240,250,.6)');R(g,189,18,4,6,'#f2b63a');}
   if(m.msgT>0)outlineText(g,m.msg,W/2,40,8,'#ffffff');
@@ -3423,6 +3439,18 @@ function drawGatinha(g,x,y,mood,set,corpo){ // retrato pixel 30x38 em escala 2 (
   else if(mood==='scared'){P2(9,15,4,3,'#fbf4e8');P2(17,15,4,3,'#fbf4e8');P2(10,16,2,1,'#3a2a5a');P2(18,16,2,1,'#3a2a5a');P2(9,12,4,1,'#4a3a3a');P2(17,12,4,1,'#4a3a3a');P2(13,24,4,3,'#7a1f2a');P2(14,25,2,1,'#2a0a10');}
   else{eyes(false);P2(12,25,6,1,'#9a3040');}
   if(mood==='love')for(const [u,v] of [[1,4],[27,8]]){P2(u,v,1,1,'#ff5a8a');P2(u+2,v,1,1,'#ff5a8a');P2(u,v+1,3,1,'#ff5a8a');P2(u+1,v+2,1,1,'#ff5a8a');}
+  if(!corpo)return;
+  // corpo: cabelo caindo nas costas, cropped preto de alcinha, barriga de fora, saia preta com cinto da cor do cabelo
+  const top='#141018',topL='#2a2030';
+  P2(3,28,4,11,hair);P2(23,28,4,11,hair);
+  P2(5,36,20,2,sk);P2(4,37,1,2,sk);P2(25,37,1,2,sk);P2(11,36,8,1,skD);
+  P2(9,36,1,2,top);P2(20,36,1,2,top);P2(14,37,2,1,'#e3b341');
+  P2(8,38,14,7,top);P2(9,38,12,1,topL);P2(11,40,1,4,topL);P2(18,40,1,4,topL);
+  P2(4,38,4,9,sk);P2(22,38,4,9,sk);P2(4,38,1,9,skD);P2(25,38,1,9,skD);
+  P2(4,45,4,1,'#4fffd2');P2(22,45,4,1,'#ff4fd8'); // pulseirinhas de festa
+  P2(4,47,4,2,skD);P2(22,47,4,2,skD);
+  P2(9,45,12,2,sk);P2(9,45,12,1,skD);P2(15,46,1,1,skD);
+  P2(8,47,14,1,hair);P2(8,48,14,2,top);P2(7,50,16,3,top);P2(7,52,16,1,topL);P2(12,49,1,3,topL);P2(17,49,1,3,topL);
 }
 function renderFesta(){
   const g=ctx,m=mg,t=m.t;
@@ -3439,18 +3467,6 @@ function renderFesta(){
   // Markin (esquerda) e a gatinha (direita)
   const st=faceState();st.mood=m.phase==='end'?(m.result==='win'?'hype':'sad'):(m.phase==='react'?'hype':null);
   buildFace(st,{});g.imageSmoothingEnabled=false;
-  if(!corpo)return;
-  // corpo: cabelo caindo nas costas, cropped preto de alcinha, barriga de fora, saia preta com cinto da cor do cabelo
-  const top='#141018',topL='#2a2030';
-  P2(3,28,4,11,hair);P2(23,28,4,11,hair);
-  P2(5,36,20,2,sk);P2(4,37,1,2,sk);P2(25,37,1,2,sk);P2(11,36,8,1,skD);
-  P2(9,36,1,2,top);P2(20,36,1,2,top);P2(14,37,2,1,'#e3b341');
-  P2(8,38,14,7,top);P2(9,38,12,1,topL);P2(11,40,1,4,topL);P2(18,40,1,4,topL);
-  P2(4,38,4,9,sk);P2(22,38,4,9,sk);P2(4,38,1,9,skD);P2(25,38,1,9,skD);
-  P2(4,45,4,1,'#4fffd2');P2(22,45,4,1,'#ff4fd8'); // pulseirinhas de festa
-  P2(4,47,4,2,skD);P2(22,47,4,2,skD);
-  P2(9,45,12,2,sk);P2(9,45,12,1,skD);P2(15,46,1,1,skD);
-  P2(8,47,14,1,hair);P2(8,48,14,2,top);P2(7,50,16,3,top);P2(7,52,16,1,topL);P2(12,49,1,3,topL);P2(17,49,1,3,topL);
   const bob=Math.sin(m.beat*6)*1.5;
   drawMkTorso(g,34,104+bob,56,40);R(g,24,106+bob,12,16,'#5a3a26');R(g,88,106+bob,12,16,'#5a3a26');R(g,25,122+bob,10,18,'#d29a6c');R(g,89,122+bob,10,18,'#d29a6c');R(g,25,139+bob,10,5,'#b8804f');R(g,89,139+bob,10,5,'#b8804f');
   g.drawImage(fbuf,32,30+bob,60,75);
