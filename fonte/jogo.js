@@ -2084,11 +2084,11 @@ const DUDU_POCKET=['Volta pro pocket!','Tá longe da onda, volta!','Cola na espu
    A QUEBRA (a coluna branca de espuma) anda conforme a velocidade dele: → acelera (a quebra vai pra esquerda e some da
    tela), ← freia (a quebra alcança e ele entra no TUBO). Descer a parede (↓) dá velocidade, subir (↑) tira.
    Freou demais e a quebra empurrou ele até o fim da tela = vaca. Só 2 manobras:
-   - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Conta o TEMPO NO TUBO.
+   - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Os pontos do tubo sobem com multiplicador (x1, x1.1, ... x2 em 4 s).
    - AÉREO: ESPAÇO só funciona lá em cima da onda. No ar, ← → (ou ↑ ↓) giram a prancha; dá pra fazer 360°,
      mas tem que cair com o bico da prancha apontando pra baixo, senão é vaca.
    Soma 2500 pontos nas 3 ondas pra vencer. */
-const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80};
+const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80,TUBO_PTS:1000/22};
 // tartarugas: aparecem depois de 5 s em pé, nadando na parede. Bater nelas = vaca (dá pra pular por cima no aéreo)
 const TARTA_FALAS=['Kd meu canudo?'];
 // frente da quebra na altura y: embaixo fica em cx, e o lábio lá em cima se inclina pra direita (como no jogo)
@@ -2157,7 +2157,7 @@ function updSurf(dt){
       r.dir+=passo;r.giro=(r.giro||0)+passo;}}
     else if(aponta){let dd=Math.atan2(inp.iy,inp.ix)-r.dir;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-4.6*dt,4.6*dt);r.dir+=passo;r.giro=(r.giro||0)+passo;}
     // volta completa na onda = 360°
-    if(Math.abs(r.giro||0)>=Math.PI*2){r.giro-=Math.sign(r.giro)*Math.PI*2;surfPts(400,'360°');}
+    if(Math.abs(r.giro||0)>=Math.PI*2){r.giro-=Math.sign(r.giro)*Math.PI*2;surfPts(250,'360°');}
     const cs=Math.cos(r.dir),sn=Math.sin(r.dir);r.face=cs>=0?1:-1;
     r.ang=Math.atan2(sn,Math.abs(cs)); // ângulo da prancha do jeito que ele tá virado (entre -90° e 90°)
     // velocidade: cada coisa soma um pedaço e só juntando tudo chega no máximo:
@@ -2201,13 +2201,18 @@ function updSurf(dt){
       if(naEspuma){surfCai('Subiu na espuma e a onda quebrou em cima!');return;}
       if(inp.joyOn?(aponta&&inp.iy>.3):inp.kx*(r.face||1)>0){ // batida: bate no lábio e volta pra baixo jogando um leque de água
         r.dir=Math.atan2(-Math.sin(r.dir),Math.cos(r.dir));r.y=SF.LABIO+3;
-        const perto=m.mx-surfFrente(m.cx,SF.CREST),pts=Math.round(150*clamp(1+(140-perto)/70,1,3)/10)*10;surfPts(pts,'BATIDA');
+        const perto=m.mx-surfFrente(m.cx,SF.CREST),pts=Math.round(50*clamp(1+(140-perto)/70,1,3)/10)*10;surfPts(pts,'BATIDA');
         for(let i=0;i<22;i++)m.splash.push({x:m.mx-r.face*rnd(6,20),y:r.y,vx:-r.face*rnd(20,120),vy:rnd(-170,-60),t:rnd(.5,.9)});}
       else if(r.v<SF.VSAI){surfCai('Chegou devagar na crista e a onda quebrou em cima!');return;}
       else salta(base);} // saiu da onda (segurando ESPAÇO ou não, pulo normal)
   }
   r.segurava=inp.held;
-  if(noTubo){r.tubo+=dt;if(Math.floor(r.tubo*2)!==Math.floor((r.tubo-dt)*2))surfPts(25,'TUBO');if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}else r.tubo=0;
+  // tubo: os pontos vão subindo desde zero, com multiplicador que começa em x1 e sobe 0,1 a cada 0,4 s (x2 em 4 s).
+  // Ficando 10 s no tubo, ele soma 1000 pontos.
+  if(noTubo){const mult=1+Math.floor(r.tubo/.4)*.1,ganho=SF.TUBO_PTS*mult*dt;r.tubo+=dt;r.tuboPts=(r.tuboPts||0)+ganho;m.pts+=ganho;
+    if(Math.floor(r.tubo/.4)!==Math.floor((r.tubo-dt)/.4))beep(500+Math.min(40,Math.floor(r.tubo/.4))*25,.05,'square',.04);
+    if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}
+  else{if(r.tuboPts>=1)m.pops.push({x:m.mx,y:r.y-44,t:1.4,txt:`TUBO +${Math.round(r.tuboPts)}`});r.tubo=0;r.tuboPts=0;}
   if(m.mx>W-12){surfCai('O tubo fechou em cima de você!');return;}
   if(m.total+m.pts>=SF.META&&!r.air){m.total+=m.pts;m.pts=0;surfFimOnda();} // a onda não acaba: vai até cair ou bater a meta
 }
@@ -2376,7 +2381,7 @@ function renderSurf(){
   // UMA frase por vez: aviso > tempo no tubo > aperta > tartaruga > Lucas
   const tq=(m.tart||[]).find(q=>q.falaT>0);
   if(m.msgT>0&&m.msg&&m.result!=='win')outlineText(g,m.msg,W/2,40-camY,8,'#ffffff');
-  else if(r&&r.tubo>0)outlineText(g,`TEMPO NO TUBO: ${r.tubo.toFixed(1)}`,W/2,40-camY,10,'#ffffff');
+  else if(r&&r.tubo>0)outlineText(g,`TUBO ${Math.floor(r.tuboPts||0)}  x${(1+Math.floor(r.tubo/.4)*.1).toFixed(1)}`,W/2,40-camY,11,'#ffffff');
   else if(aperta)outlineText(g,'APERTA AGORA!!!',W/2,40,12,'#ffe14f');
   else if(tq)outlineText(g,tq.fala,clamp(tq.x,50,W-50),tq.y-20,7,'#c8ffb0');
   else if(m.falaT>0)outlineText(g,'LUCAS: '+m.fala,W/2,150,7,'#fff1c2');
