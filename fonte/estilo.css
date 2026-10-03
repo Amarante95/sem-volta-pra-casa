@@ -38,6 +38,11 @@ header p{margin:0;color:var(--muted);font-size:20px;max-width:40ch}
 .bar{width:9em;height:.75em;background:#0a1020;border:2px solid #000;position:relative;margin-top:.15em}
 .bar i{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--ok);transition:width .2s linear,background .3s}
 .bar b{position:absolute;right:0;top:0;bottom:0;width:0;background:repeating-linear-gradient(135deg,#3a3f4f 0 3px,#1c2030 3px 6px);border-left:2px solid #9fb0cc}
+.bar.sono{height:.55em;margin-top:.2em}
+.bar.sono i{background:#9b76d6;width:0}
+.bar.sono span{position:absolute;left:.3em;top:50%;transform:translateY(-50%);font-family:'Pixelify Sans',monospace;font-size:.45em;line-height:1;color:#fff;letter-spacing:.08em;text-shadow:0 0 2px #000,0 0 2px #000}
+.bar.sono.alerta{animation:pisca .6s steps(2) infinite}
+#bannerS:empty{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:.3em;margin-top:.25em;min-height:.9em}
 .chip{font-size:.6em;padding:0 .35em;border:1px solid currentColor;line-height:1.3}
 .hud-r{transition:opacity .35s;text-align:right;background:rgba(7,11,20,.72);border:2px solid var(--line);padding:.25em .6em;font-variant-numeric:tabular-nums}
@@ -92,12 +97,15 @@ body:not(.mobile) .game button.fopt.on{border-color:#ffe14f;background:#2a1a40}
 body.mobile .game button.fopt:focus,body.mobile .game button.fopt:focus-visible{outline:none}
 .beg{border-color:#c9a060;box-shadow:0 0 0 2px #120a22,0 0 1em rgba(201,160,96,.35)}
 .beg b{color:#ffe14f}
-.begbtns{display:flex;gap:1.2em;justify-content:center;margin-top:.2em}
-.game .begbtns button{display:flex;flex-direction:column;align-items:center;gap:.1em;background:none;box-shadow:none;padding:0;color:var(--paper);font-family:'VT323',monospace;font-weight:400;font-size:.8em}
-.begbtns button svg{width:2.4em;height:2.4em;padding:.5em;border-radius:50%;box-sizing:content-box}
-.begbtns .bgsim svg{background:#2f9a55;box-shadow:0 .18em 0 #1a5a30}
-.begbtns .bgnao svg{background:#d0202a;box-shadow:0 .18em 0 #6a0a10}
-body.mobile .begbtns kbd{display:none}
+.begbtns{display:flex;flex-direction:column;gap:.3em;margin-top:.2em}
+.game .begbtns button{display:flex;align-items:center;gap:.5em;text-align:left;line-height:1.05;background:#1d1230;color:var(--paper);box-shadow:none;border:2px solid #5a4630;padding:.25em .5em;font-family:'VT323',monospace;font-weight:400;font-size:1em;-webkit-tap-highlight-color:transparent;user-select:none}
+.begbtns button::before{content:'▸';color:#ffe14f;visibility:hidden}
+.game .begbtns button.sel{border-color:#ffe14f;background:#2a1a40}
+.begbtns button.sel::before{visibility:visible}
+.beg #bgMais{display:none;text-align:right;color:#ffe14f;font-style:normal;font-size:.8em;animation:pisca 1s steps(2) infinite}
+.beg.falando #bgMais{display:block}
+.beg.falando .begbtns{display:none}
+@keyframes pisca{50%{opacity:.25}}
 .fopt kbd{font-size:.85em;margin-right:.3em;color:#ffe14f;border-color:#3a2a5a}
 .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,8,16,.78);padding:4%}
 .card{text-align:center;max-width:34em}
@@ -127,7 +135,9 @@ body.mobile .begbtns kbd{display:none}
 #btnA.acao{background:#8be08b!important;box-shadow:0 .2em 0 #2f6a2e!important;opacity:.95;animation:acaoPulsa .7s ease-in-out infinite alternate}
 @keyframes acaoPulsa{to{transform:scale(1.08)}}
 #btnA svg,#btnW svg{width:62%;height:62%;display:block;margin:auto}
-#btnW{position:absolute;right:19%;bottom:17%;width:8%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.85;background:#d0202a!important;box-shadow:0 .2em 0 #6a0a10!important}
+#btnC{position:absolute;right:16.5%;bottom:6%;width:8%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.8;background:#ffb347!important;box-shadow:0 .2em 0 #8a5a1a!important}
+#btnC svg{width:62%;height:62%;display:block;margin:auto}
+#btnW{position:absolute;right:4.5%;bottom:31%;width:8%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.85;background:#d0202a!important;box-shadow:0 .2em 0 #6a0a10!important}
 #btnB{position:absolute;right:16%;bottom:5%;width:10%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.75;background:#4fd8ff!important;box-shadow:0 .2em 0 #1f6a8a!important;color:#04202c!important}
 #btnL,#btnR{position:absolute;bottom:6%;width:11%;aspect-ratio:1;border-radius:50%;pointer-events:auto;font-size:1.4em!important;padding:0!important;opacity:.75;background:rgba(243,236,216,.85)!important;box-shadow:0 .2em 0 rgba(0,0,0,.4)!important}
 #btnL{left:3%}#btnR{left:16%}

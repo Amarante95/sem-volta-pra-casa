@@ -168,6 +168,10 @@ function drawNavio(c,sx,sy){
   R(c,sx+218,sy-50,1,20,'#1d1d22');
   c.fillStyle='#f4f1e8';c.font='bold 7px monospace';c.fillText('MARÉ ALTA',sx+160,sy+36);
 }
+// parte de cima do navio (casario, chaminé, contêineres): desenhada por cima de quem anda na areia atrás dele
+let navioCv=null;
+function navioTopo(){if(!navioCv){navioCv=document.createElement('canvas');navioCv.width=250;navioCv.height=72;drawNavio(navioCv.getContext('2d'),4,56);}return navioCv;}
+const noNavio=(px,py)=>px>=9*T&&px<=27*T&&py>=46*T&&py<50*T; // areia colada no navio: sem itens
 function renderBG(){
   for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)drawTile(bgc,x,y);
   for(const L of lots){
@@ -622,6 +626,11 @@ function renderHead(cx,cy){
   const respira=!P.moving&&!chairS&&!napS&&!grab&&Math.sin(time*2.6)>.2; // parado, a cabeça sobe 1px junto com o peito
   const bob=(P.moving?Math.sin(P.anim*16)*3:0)-(respira?3.5:0),tilt=P.dir==='left'?-6:P.dir==='right'?6:0;
   headCv.style.transform=`translate(-50%,-100%) translateY(${bob}%) rotate(${tilt+bob*.8}deg)`;
+  // atrás do casario do navio: corta o pedaço da cabeça que fica escondido
+  let corte=0;const hx0=10*T+176;
+  if(navioDX===0&&P.x>hx0-6&&P.x<hx0+60){const topo=P.x>hx0+16&&P.x<hx0+36?50*T+4-44:50*T+4-30;corte=(P.y-12)-topo;}
+  const altH=headCv.offsetHeight*W/(cv.clientWidth||1);
+  headCv.style.clipPath=corte>0&&altH>0?`inset(0 0 ${Math.min(100,corte/altH*100).toFixed(1)}% 0)`:'';
   const na=(state==='play'||state==='paused'||state==='over')?nightA():0;
   headCv.style.filter=`drop-shadow(1px 2px 0 rgba(0,0,0,.45))`+(na>.01?` brightness(${(1-na*.45).toFixed(2)})`:'');
 }
@@ -693,8 +702,9 @@ const MUS_SONGS={
 function musInit(){
   if(mus||!AC)return;
   const nb=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-  const out=AC.createGain();out.gain.value=0;out.connect(MASTER);
-  mus={out,noise:nb,song:null,step:0,next:AC.currentTime+.15,chaseT:0,vol:0,duck:0};
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=20000;lp.connect(MASTER); // abafa a música nas conversas
+  const out=AC.createGain();out.gain.value=0;out.connect(lp);
+  mus={out,lp,lpF:20000,noise:nb,song:null,step:0,next:AC.currentTime+.15,chaseT:0,vol:0,duck:0};
   crowdInit();
   setInterval(musTick,80);
 }
@@ -758,6 +768,7 @@ function musWant(){
   if(state==='festa')return mus.festaBuf?'festaRec':'funk';
   if(state==='paused'||state==='mglost')return mus.song;
   if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // conquistou o bloco dele: axé até o barco
+  if(beg&&state==='play')return mus.song&&!['fuga','cogumelo'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // conversa: trilha tranquila
   const chase=!!grab||(mom&&mom.chasing&&dist(mom,P)<220)||taxis.some(c=>c.chase);
   if(chase)mus.chaseT=3;
   if(mus.shroomT>0)return 'cogumelo';
@@ -770,14 +781,16 @@ function musTick(){
   const want=musWant();
   if(want!==mus.song){ // troca imediata: a trilha velha é cortada antes da nova começar
     const old=mus.out,now=AC.currentTime;old.gain.cancelScheduledValues(now);old.gain.setValueAtTime(old.gain.value,now);old.gain.linearRampToValueAtTime(0,now+.08);setTimeout(()=>old.disconnect(),700);
-    mus.out=AC.createGain();mus.out.gain.value=0;mus.out.connect(MASTER);mus.vol=-1;mus.song=want;mus.step=0;mus.next=now+.12;
+    mus.out=AC.createGain();mus.out.gain.value=0;mus.out.connect(mus.lp);mus.vol=-1;mus.song=want;mus.step=0;mus.next=now+.12;
     if(mus.rec){const r=mus.rec;mus.rec=null;setTimeout(()=>{try{r.stop();}catch(e){}},300);}
     if(want==='inicio'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5);
     if(want==='festaRec'&&mus.festaBuf)mus.rec=recLoop(mus.festaBuf,mus.out,.75,2.5);
     if(want==='blocoRec'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5,20);
     if(want==='final'&&mus.finalBuf){const src=AC.createBufferSource(),g=AC.createGain();src.buffer=mus.finalBuf;src.loop=true;g.gain.value=.6;src.connect(g);g.connect(mus.out);src.start(now+.12);mus.rec=src;}}
   mus.duck=Math.max(0,mus.duck-.08);if(state==='play'){mus.shroomT=Math.max(0,(mus.shroomT||0)-.08);mus.chaseT=Math.max(0,mus.chaseT-.08);}
-  const vol=(!musicOn||muted||!want||mus.duck>0)?0:state==='paused'?.22:.55;
+  const conversa=!!beg&&state==='play';
+  const vol=(!musicOn||muted||!want||mus.duck>0)?0:state==='paused'?.22:conversa?.3:.55;
+  const fq=conversa?900:20000;if(mus.lpF!==fq){mus.lp.frequency.setTargetAtTime(fq,AC.currentTime,.2);mus.lpF=fq;}
   if(Math.abs(vol-mus.vol)>.01){const now=AC.currentTime;mus.out.gain.cancelScheduledValues(now);mus.out.gain.setTargetAtTime(vol,now+(mus.vol<0?.1:0),vol===0?.03:.12);mus.vol=vol;}
   crowdTick();
   if(mus.next<AC.currentTime)mus.next=AC.currentTime+.05;
@@ -839,7 +852,7 @@ window.addEventListener('keydown',e=>{initAudio();
   if(k==='Space'||k==='KeyE'||k==='Enter')actionQ=true;
   if(k==='KeyR')declineQ=true;
   if(k==='ArrowLeft'||k==='ArrowRight'||k==='KeyA'||k==='KeyD')lastAxis='x';else if(k==='ArrowUp'||k==='ArrowDown'||k==='KeyW'||k==='KeyS')lastAxis='y';
-  if(beg&&state==='play'){if(k==='Digit1'||k==='Numpad1'||k==='KeyY')begEscolhe(true);else if(k==='Digit2'||k==='Numpad2'||k==='KeyN')begEscolhe(false);}
+  if(beg&&state==='play'&&beg.fase==='pergunta'&&['ArrowUp','ArrowDown','KeyW','KeyS'].includes(k)){beg.sel=1-beg.sel;marcaSel();}
   if(k==='KeyQ'&&state==='play'&&fx&&fx.spider>0)shootWeb();
   if(k==='ArrowUp'||k==='KeyW')jumpQ=true;
   if(k==='ArrowLeft'||k==='KeyA')laneQ=-1;if(k==='ArrowRight'||k==='KeyD')laneQ=1;
@@ -862,7 +875,7 @@ stick.addEventListener('pointerdown',e=>{if(joy.id!==null)return;joy.id=e.pointe
 stick.addEventListener('pointermove',e=>{if(e.pointerId===joy.id)moveJoy(e);});
 const endJoy=e=>{if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;knob.style.transform='';sBase.style.left='';sBase.style.top='';stick.classList.remove('on');}};
 stick.addEventListener('pointerup',endJoy);stick.addEventListener('pointercancel',endJoy);
-let aHeld=false;
+let aHeld=false,runHeld=false;
 $('btnA').addEventListener('pointerdown',e=>{e.preventDefault();actionQ=true;aHeld=true;initAudio();});
 $('btnW').addEventListener('pointerdown',e=>{e.preventDefault();initAudio();if(state==='play'&&fx&&fx.spider>0)shootWeb();});
 const ICON_RUN='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="4.2" r="2.4" fill="#1a1030" stroke="none"/><path stroke-width="3.2" d="M15.2 8.4 11.6 14"/><path stroke-width="2.4" d="M15 8.6 18.4 11.2 21 9.6M14.6 8.8 10.8 8.6 8.6 11"/><path stroke-width="2.6" d="M11.6 14 15.4 16.2 16.6 21.4M11.6 14 8.6 17.6 4.4 17.2"/><path stroke-width="1.5" d="M2 7.2H7.4M1 11.2H6M2.4 15.2H5.4M1 19.6H4"/></svg>';
@@ -871,15 +884,18 @@ const ICON_DORME='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-w
 const ICON_FALA='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-width="2.2" stroke-linejoin="round"><path d="M3.5 5H20.5V15.5H11L6 19.5V15.5H3.5Z"/><circle cx="8" cy="10.3" r=".9" fill="#1a1030"/><circle cx="12" cy="10.3" r=".9" fill="#1a1030"/><circle cx="16" cy="10.3" r=".9" fill="#1a1030"/></svg>';
 const ICONS={run:ICON_RUN,entra:ICON_ENTRA,dorme:ICON_DORME,fala:ICON_FALA};
 const ICON_WEB='<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1"><path d="M6 0V12M0 6H12M1.8 1.8L10.2 10.2M10.2 1.8L1.8 10.2"/><circle cx="6" cy="6" r="2"/><circle cx="6" cy="6" r="4.2"/></svg>';
-$('btnW').innerHTML=ICON_WEB;
+$('btnW').innerHTML=ICON_WEB;$('btnC').innerHTML=ICON_RUN;
+$('btnC').addEventListener('pointerdown',e=>{e.preventDefault();runHeld=true;initAudio();});
+for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnC').addEventListener(ev,()=>{runHeld=false;});
 for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnA').addEventListener(ev,()=>{aHeld=false;});
 $('decline').addEventListener('click',()=>{declineQ=true;});
-$('bgSim').addEventListener('click',()=>begEscolhe(true));$('bgNao').addEventListener('click',()=>begEscolhe(false));
+$('beg').addEventListener('click',e=>{if(!e.target.closest('button'))actionQ=true;});$('bgSim').addEventListener('click',()=>escolheResposta(0));$('bgNao').addEventListener('click',()=>escolheResposta(1));
+$('bgSim').addEventListener('pointerenter',()=>{if(beg){beg.sel=0;marcaSel();}});$('bgNao').addEventListener('pointerenter',()=>{if(beg){beg.sel=1;marcaSel();}});
 $('dialog').addEventListener('click',()=>{actionQ=true;});
 // cenas (intro, bloco, final): tocar/clicar em qualquer lugar da tela passa a fala
 $('game').addEventListener('pointerdown',e=>{if(state==='cut'&&!e.target.closest('button,.phone'))actionQ=true;});
 $('nap').addEventListener('pointerdown',()=>{actionQ=true;});
-if(isTouch){$('touch').hidden=true;$('declineKey').textContent='';$('napHint').textContent='Toque em A quando o marcador estiver no verde';document.body.classList.add('mobile');}
+if(isTouch){$('touch').hidden=true;$('declineKey').textContent='';$('bgMais').textContent='toque ▸';$('napHint').textContent='Toque em A quando o marcador estiver no verde';document.body.classList.add('mobile');}
 /* ---- controles de toque por desafio ---- */
 let touchIx=0,touchMode='';
 function holdBtn(id,v){const b=$(id);
@@ -906,17 +922,17 @@ function updTouchUI(){
   const mode=state==='maraca'&&mg&&mg.phase==='sneak'?'maracaS':MG_STATES.includes(state)?state:state==='play'?(beg?'none':grab?'grab':'play'):(state==='cut'&&cutKind==='intro')?'cut':'none';
   $('btnW').hidden=!(isTouch&&mode==='play'&&fx&&fx.spider>0);
   if(mode==='sinuca'&&mg){const l=mg.phase==='pick'?'ESCOLHE':mg.turn==='pc'?'ESPERA':mg.phase==='power'?'TACAR':'FORÇA';if($('btnA').textContent!==l)$('btnA').textContent=l;}
-  if(mode==='play'&&touchMode==='play'){const ic=!nearK?'run':nearK==='bus'||nearK==='chair'?'dorme':nearK==='mate'?'fala':'entra';
-    if($('btnA').dataset.ic!==ic){$('btnA').dataset.ic=ic;$('btnA').innerHTML=ICONS[ic];$('btnA').classList.toggle('acao',ic!=='run');}}
+  if(mode==='play'&&touchMode==='play'){const ic=!nearK?'a':nearK==='bus'||nearK==='chair'?'dorme':nearK==='npc'?'fala':'entra';
+    if($('btnA').dataset.ic!==ic){$('btnA').dataset.ic=ic;$('btnA').innerHTML=ic==='a'?'A':ICONS[ic];$('btnA').classList.toggle('acao',ic!=='a');}}
   if(mode==='maracaS'&&mg){const l=mg.me.x>=262?'PULA':'CORRE';if($('btnA').textContent!==l)$('btnA').textContent=l;}
   if(mode===touchMode)return;touchMode=mode;touchIx=0;
   const show=(id,v)=>{$(id).hidden=!v;};
   $('touch').hidden=mode==='none'||mode==='festa';$('touch').dataset.mode=mode;
   show('stick',mode==='play'||mode==='altinha'||mode==='maraca'||mode==='surf');
   const lr=['bar','sinuca'].includes(mode);show('btnL',lr);show('btnR',lr);
-  show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
-  const la={surf:'MANOBRA',play:'A',grab:'SOLTA!',cut:'OK',altinha:'CHUTA',maraca:'CHUTA',maracaS:'CORRE',bloco:'PULA',bar:'BEBE',sinuca:'FORÇA'}[mode]||'A';
-  if(mode==='play'){$('btnA').innerHTML=ICON_RUN;$('btnA').dataset.ic='run';$('btnA').classList.remove('word');}else{$('btnA').dataset.ic='';$('btnA').textContent=la;$('btnA').classList.toggle('word',la.length>1);}$('btnB').classList.add('word');
+  show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
+  const la={surf:'SALTA',play:'A',grab:'SOLTA!',cut:'OK',altinha:'CHUTA',maraca:'CHUTA',maracaS:'CORRE',bloco:'PULA',bar:'BEBE',sinuca:'FORÇA'}[mode]||'A';
+  if(mode==='play'){$('btnA').innerHTML='A';$('btnA').dataset.ic='a';$('btnA').classList.remove('acao');$('btnA').classList.remove('word');}else{$('btnA').dataset.ic='';$('btnA').textContent=la;$('btnA').classList.toggle('word',la.length>1);}$('btnB').classList.add('word');
 }
 function goFullscreen(){if(!isTouch)return;try{const d=document.documentElement;if(document.fullscreenEnabled&&!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
 
@@ -931,6 +947,7 @@ function abreEspaco(keep){
     if(keep!=='toast'&&!$('toast').hidden){$('toast').hidden=true;toastT=0;continue;}
     break;}}
 function bubble(target,text,dur=2.4,cls='',off,prio){
+  if(state!=='cut'&&target!==mom&&!(tias&&tias.includes(target)))return; // durante o jogo, balão só da mãe e das tias
   for(const b of bubbles)if(b.target===target&&!b.dead){b.el.remove();b.dead=true;}
   // fala do Markin, da mãe, das tias e as grandes passam na frente; o resto espera a vez (se não couber, não aparece)
   if(prio===undefined)prio=target===P||target===mom||(tias&&tias.includes(target))||cls==='big';
@@ -1005,7 +1022,7 @@ $('skip').addEventListener('click',()=>skipIntro());
 /* ================= WORLD STATE ================= */
 let state='title',cutKind='',cutGen=null,time=0;
 const cam={x:0,y:0};let shake=0,flash=0;
-const P={x:0,y:0,h:44,dir:'down',anim:0,frame:0,outfit:'work',energy:100,mode:'free',helmet:true,hidden:false,jumpZ:0};
+const P={x:0,y:0,h:44,dir:'down',anim:0,frame:0,outfit:'work',energy:100,sono:0,mode:'free',helmet:true,hidden:false,jumpZ:0};
 let fx,totalMin,day,lastDay,items,keysE,mom,tias,particles,fakeT,nextCall,call,napS,chairS,spawnT,idleT,lowLineT,playerField,pfTile,burnWarned,fieldT,shroomTalkT;
 // amigos que seguem o Markin, rastro dele pelo mapa, chefão e fase final (0 tarefas · 1 chefão rodando · 2 bloco indo pro barco · 3 embarcou)
 let buddies=[],trail=[],buddyT=12,boss=null,finalStage=0,webCd=0,gatHair='#b58cff';
@@ -1017,9 +1034,9 @@ function setupStatics(){
   buildMap();renderBG();
   barDoors=lots.filter(L=>L.bar).map(L=>({x:Math.floor((L.x0+L.x1)/2)*T+8,y:(L.y1+1)*T+6,h:30,kind:L.kind}));
   busStops.length=0;chairs.length=0;lamps.length=0;
-  const stopCand=[[14,10],[40,7],[60,21],[20,24],[56,35],[75,24],[3,21],[33,38],[64,40],[18,40],[44,10],[72,7]];
+  const stopCand=[[14,10],[44,10],[75,24],[20,24],[56,35],[18,40]];
   for(const [sx,sy] of stopCand){const t=nearestTile(sx,sy,tt=>tt===SIDE||tt===ORLA);if(t)busStops.push({x:t.x*T+8,y:t.y*T+12,h:26});}
-  for(const cx of [16,24,33,44,53,61,70,77])chairs.push({x:cx*T+8,y:46*T+10,h:22});
+  for(const cx of [16,33,53,70])chairs.push({x:cx*T+8,y:46*T+10,h:22});
   // coqueiros e quiosques no calçadão
   palms.length=0;kiosks.length=0;for(const kx of [11,29,49,65])kiosks.push({x:kx*T+8,y:44*T+12});
   for(let x=3;x<MW;x+=6)if(!kiosks.some(k=>Math.abs(k.x-(x*T+8))<40))palms.push({x:x*T+8,y:44*T+4});
@@ -1030,6 +1047,7 @@ function setupStatics(){
   for(let y=0;y<50;y++)for(let x=0;x<MW;x++){const t=map[idx(x,y)];if(SOLID.has(t)||t===DOOR||t===DOCK)continue;
     const yard=x>=31&&x<=46&&y>=25&&y<=34; // quintal da casa
     if(!yard)walkTiles.push({x,y});else if(Math.hypot(x-DOORT.x,y-DOORT.y)<4)continue;
+    if(noNavio(x*T+8,y*T+8))continue;
     // zona de itens: cada região do mapa tem os seus
     const q={x,y},perto=(o,r)=>Math.hypot(x-(o.x-8)/T,y-(o.y-10)/T)<=r;
     if(perto(FESTA,8)||t===LAPA||(x>=50&&y<=8)){spawnSets.beer.push(q,q,q);spawnSets.zip.push(q);spawnSets.shades.push(q);if(t!==ROAD)spawnSets.shroom.push(q);} // festa e Lapa: de tudo um pouco
@@ -1086,7 +1104,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1097,13 +1115,13 @@ function resetGame(){bandeira=0;
   cv.style.filter='';cv.style.transform='';
   {const tg=targets();for(const k in tg)for(let i=0;i<tg[k];i++)spawnItem(k,true);} // já começa com as mesmas quantidades de sempre
   navioDX=0;boto=null;
-  mg=null;grab=null;spawnNpcs();lastSleep=-999;lastRest={chair:-99999,bus:-99999};altinhaDay=0;barDay=0;festaDay=0;tasksDone={};hintT=15;$('festa').hidden=true;taxis=[];taxiT=20;relocateBloco();
+  mg=null;grab=null;spawnNpcs();lastSleep=-999;for(const o of [...busStops,...chairs])o.lastRest=-99999;altinhaDay=0;barDay=0;festaDay=0;tasksDone={};hintT=15;$('festa').hidden=true;taxis=[];taxiT=20;tregua=0;relocateBloco();
 }
 function targets(){return{beer:12,shroom:2,zip:3,shades:2,shroomAranha:1,shroomGold:1,shroomRoxo:1};} // igual todos os dias
 function spawnItem(type,initial=false){
   // escolhe, entre vários lugares do mapa inteiro, o mais longe dos itens que já existem
   const pool=spawnSets[type],minP=initial?70:90;let p=null,bs=-1;
-  for(let i=0;i<16;i++){const t=pick(pool),q={x:t.x*T+8,y:t.y*T+10};if(dist(q,P)<minP)continue;let md=1e9;for(const it of items)if(!it.fake)md=Math.min(md,dist(it,q));if(md>bs){bs=md;p=q;}}
+  for(let i=0;i<16;i++){const t=pick(pool),q={x:t.x*T+8,y:t.y*T+10};if(dist(q,P)<minP)continue;let md=1e9;for(const it of items)if(!it.aluc)md=Math.min(md,dist(it,q));if(md>bs){bs=md;p=q;}}
   if(!p)p=randTileFrom(pool,minP);
   items.push({type,x:p.x,y:p.y,h:18,fake:false,talkCd:rnd(0,3)});
 }
@@ -1239,7 +1257,7 @@ function* blocoGen(){
   yield* wait(2.8);
   yield* talk('Markin','Destino: o porto. O barco não espera. BORA EMBARCAR DE NOVO!');
 }
-// atalho de teste: pula direto pro chefão (1) ou pra marcha até o barco (2), com as 5 tarefas feitas e a galera junta
+// atalho de teste: pula direto pro chefão (1) ou pra marcha até o barco (2), com as tarefas feitas e a galera junta
 function continuarJogo(){
   const sv=salvo;if(!sv){resetGame();startPlay();return;}
   resetGame();startPlay();clearBubbles();
@@ -1287,13 +1305,13 @@ function skipIntro(){
 function endIntro(){
   $('skip').hidden=true;state='ready';P.mode='free';
   showScreen(`<div class="card"><div class="kicker">regras</div><h2>SEM VOLTA<br>PRA CASA</h2>
-  <p>Fique <b>15 dias</b> sem voltar pra casa e cumpra as <b>6 tarefas</b> espalhadas pela cidade. Cada uma traz um amigo pro seu bloco. Se a energia zerar, o Markin apaga.</p>
-  <div class="rules"><div><em>Pozinho, cogumelos, cerveja</em> repõem energia</div><div><em>Ponto de ônibus / cadeira</em> pra cochilar (${KL})</div><div><em>Óculos</em> te disfarçam da mãe</div><div><em>Cogumelo-Aranha</em> vira Homem-Aranha</div><div><em>Casa</em> puxa quando você tá com sono</div></div>
+  <p>Fique <b>15 dias</b> sem voltar pra casa e cumpra as <b>7 tarefas</b> espalhadas pela cidade. Cada uma traz um amigo pro seu bloco. Se a energia zerar, o Markin apaga.</p>
+  <div class="rules"><div><em>Pozinho, cogumelos, cerveja</em> repõem energia</div><div><em>Ponto de ônibus / cadeira</em> pra cochilar (${KL})</div><div><em>Óculos</em> te disfarçam da mãe</div><div><em>Cogumelo-Aranha</em> vira Homem-Aranha</div><div><em>Sono</em> encheu, o Markin apaga: cochile antes</div></div>
   <div class="btns"><button data-act="play" type="button">JOGAR</button></div></div>`);
 }
 function startPlay(){
   state='play';P.mode='free';$('hud').hidden=false;$('skip').hidden=true;if(isTouch)$('touch').hidden=false;
-  hideScreen();banner('DIA 1','Cumpra as 6 tarefas e junte a galera.');sfx.day();
+  hideScreen();banner('DIA 1','');sfx.day();
   bubble(P,'VAMBORAAA!',2);
 }
 function pause(){state='paused';keys.clear();
@@ -1306,11 +1324,11 @@ function goTitle(){
   $('hud').hidden=true;$('touch').hidden=true;$('skip').hidden=true;$('festa').hidden=true;
   showScreen(`<div class="card"><div class="kicker">um jogo sobre o Markin</div><h2>SEM VOLTA<br>PRA CASA</h2><p>Depois de 15 dias embarcado, o Markin pisa em terra firme. O desafio: mais 15 dias acordado, sem voltar pra casa.</p><div class="btns"><button data-act="intro" type="button">COMEÇAR</button><button data-act="skipintro" class="ghost" type="button">Pular intro</button><button data-act="fases" class="ghost" type="button">Escolher fase</button></div><div class="difrow">Dificuldade: ${Object.keys(DIFFS).map(k=>`<button data-act="dif" data-d="${k}" type="button" class="${k===diff?'':'ghost'}">${DIFFS[k].nome}</button>`).join('')}</div></div>`);
 }
-const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf (bônus)'],['chefao','★ Chefão: saxofone'],['barco','★ Marcha ao barco']];
+const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['chefao','★ Chefão: saxofone'],['barco','★ Marcha ao barco']];
 let fasesBack='title';
 function showFases(back){
   fasesBack=back;
-  showScreen(`<div class="card"><div class="kicker">escolher fase</div><h2>FASES</h2><p>${back==='pause'?'Os desafios continuam a partida atual. O chefão e a marcha começam uma partida nova, já com as 6 tarefas feitas.':'Cada fase começa uma partida nova. O chefão e a marcha já vêm com as 5 tarefas feitas e a galera junta.'}</p>
+  showScreen(`<div class="card"><div class="kicker">escolher fase</div><h2>FASES</h2><p>${back==='pause'?'Os desafios continuam a partida atual. O chefão e a marcha começam uma partida nova, já com as 6 tarefas feitas.':'Cada fase começa uma partida nova. O chefão e a marcha já vêm com as tarefas feitas e a galera junta.'}</p>
   <div class="fases">${FASES.map(([k,n])=>`<button data-act="fase" data-f="${k}" type="button" class="${k==='chefao'||k==='barco'?'':'ghost'}">${n}</button>`).join('')}</div>
   <div class="btns"><button data-act="fasesVoltar" class="ghost" type="button">Voltar</button></div></div>`);
 }
@@ -1366,6 +1384,7 @@ function gameOver(reason){
   const why=reason==='door'?['VOLTOU PRA CASA','Entrou pela porta da frente. A sopa de chuchu tava ótima. Você perdeu.']
     :reason==='tarefas'?['FALTOU TAREFA',`Os 15 dias acabaram, mas faltou: ${TASKS.filter(t=>!tasksDone[t.k]).map(t=>t.nome.toLowerCase()).join(', ')}. O Markin embarcou sem viver tudo. Você perdeu.`]
     :reason==='navio'?['O NAVIO ZARPOU',finalStage<=1?'Os 15 dias acabaram e o Markin nunca encarou o Bloco do Jamal. O navio foi embora sem ele. Você perdeu.':'O Bloco do Markin não chegou no porto a tempo. O navio zarpou e a galera foi comer sopa de chuchu. Você perdeu.']
+    :reason==='sono'?['APAGOU DE SONO','Não cochilou a tempo e apagou na calçada. Acordou na cama dele, com a mãe fazendo carinho. Você perdeu.']
     :reason==='bloco'?['DORMIU NO BLOCO','Apagou no meio da rua atrás do Bloco Secreto. Acordou em casa, com a mãe fazendo cafuné. Você perdeu.']
     :['APAGOU','A energia zerou. O Markin acordou na cama dele, coberto, com a mãe fazendo carinho. Você perdeu.'];
   setTimeout(()=>showScreen(`<div class="card"><img class="sono" src="${SONO_SRC}" alt="Markin dormindo, enrolado no cobertor azul"><div class="kicker">fim de jogo</div><h2 class="lose">${why[0]}</h2><p>${why[1]}</p><p class="stats">Aguentou até o dia ${day} · ${hrs}h acordado</p><div class="btns">${salvo?'<button data-act="continuar" type="button">CONTINUAR DE ONDE PAROU</button>':''}<button data-act="retry" type="button" class="${salvo?'ghost':''}">${salvo?'Recomeçar do zero':'TENTAR DE NOVO'}</button><button data-act="again" class="ghost" type="button">Ver a intro de novo</button><button data-act="menu" class="ghost" type="button">Menu principal</button></div></div>`),500);
@@ -1408,21 +1427,23 @@ function update(dt){
 }
 
 function play(dt){
+  // numa conversa o mundo para: tempo, vida, sono, efeitos e inimigos congelam; só a galera do bem segue andando
+  if(beg){nearK=null;setPrompt(null);updBeg(dt,takeAction());updNpcs(dt);updHUD();return;}
   const clockRate=72;
   totalMin+=dt*clockRate;
   day=Math.min(15,Math.floor(totalMin/1440)+1);
   if(totalMin>=15*1440){gameOver(TASKS.every(t=>tasksDone[t.k])?'navio':'tarefas');return;}
-  hintT-=dt;if(hintT<=0){hintT=32;taskHint();}
   if(bloco&&dist(bloco,P)<150){bloco.lineT-=dt;if(bloco.lineT<=0){bloco.lineT=rnd(4,7);bubble(bloco,pick(['Ô abre alas!','ALALAÔ-Ô-Ô!','Vem pro bloco, Markin!','Mamãe eu quero!','Cadê o tamborim?!']),2.2,'tia',44);}}
   if(day!==lastDay){lastDay=day;banner('DIA '+day,L.days[day]||'');sfx.day();while(keysE.length<nKeys()){const p=randTileFrom(walkTiles,240);keysE.push({x:p.x,y:p.y,h:18});}}
   const wasTurbo=fx.turbo>0,wasSpider=fx.spider>0;
   for(const k of ['turbo','crash','trip','disguise','drunk','burn','spider','sleepy'])fx[k]=Math.max(0,fx[k]-dt);
   if(wasTurbo&&fx.turbo<=0){fx.crash=14;toast('Bateu a bad... tudo pesado.','bad');}
   if(wasSpider&&fx.spider<=0)endSpider();
-  webCd=Math.max(0,webCd-dt);
+  webCd=Math.max(0,webCd-dt);tregua=Math.max(0,tregua-dt);
   let decay=DF().e;if(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
   decay*=1-.04*buddies.filter(b=>!b.crowd).length; // a galera anima: energia cai mais devagar
   if(!chairS)P.energy-=decay*dt;if(P.energy>maxE())P.energy=maxE();
+  if(!chairS&&!napS)P.sono=Math.min(100,P.sono+dt*clockRate*SONO_MIN*(fx.sleepy>0?2:1)); // o sono só passa cochilando
   let ix=0,iy=0;
   if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;
   if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;
@@ -1440,16 +1461,14 @@ function play(dt){
     if(nextCall<=0&&(momNaTela||grab||mom.chasing||mom.alertT>0||(mom.knowT||0)>0))nextCall=rnd(4,8); // nessas horas ela não liga
     if(nextCall<=0&&!napS){const mx=2.8;call={t:mx,max:mx,lastRing:-1};placePhone();$('phone').hidden=false;}}
   if(grab||napS||chairS||beg)nearK=null;
-  if(beg){updBeg(dt);setPrompt(null);}
+  if(beg){updBeg(dt,act);setPrompt(null);}
   else if(grab){updGrab(dt,act);setPrompt(null);if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){grab=null;gameOver('door');return;}}
   else if(napS)updNap(dt,act);
   else if(chairS)updChair(dt,act,im);
   else{
-    let sp=52.5*(fx.turbo>0?1.55:1)*(fx.crash>0?.8:1)*(fx.spider>0?1.25:1)*(fx.sleepy>0?.6:1)*(aHeld||keys.has('Space')?1.275:1); // segurar o botão da direita (ou ESPAÇO) corre (15% mais devagar que antes)
+    let sp=52.5*(fx.turbo>0?1.55:1)*(fx.crash>0?.8:1)*(fx.spider>0?1.25:1)*(fx.sleepy>0?.6:1)*(runHeld||keys.has('ShiftLeft')||keys.has('ShiftRight')?1.275:1); // segurar SHIFT (ou o botão de correr) corre
     let vx=ix*sp,vy=iy*sp;if(fx.trip>0){vx=-vx;vy=-vy;}
     if(fx.drunk>0){if(ix)vx+=Math.sin(time*3.1)*20;else if(iy)vy+=Math.sin(time*3.1)*12;} // bêbado cambaleia no mesmo eixo que anda
-    if(P.energy<40){const pull=(40-P.energy)/40*34;const dx=HOME.x-P.x,dy=HOME.y-P.y; // a casa puxa, também sem diagonal
-      if(ix)vx+=Math.sign(dx)*pull;else if(iy)vy+=Math.sign(dy)*pull;else if(Math.abs(dx)>Math.abs(dy))vx+=Math.sign(dx)*pull;else vy+=Math.sign(dy)*pull;}
     moveP(vx*dt,vy*dt);
     P.moving=im>.1;if(P.moving){P.anim+=dt*(fx.turbo>0?1.6:1);
       const ax=fx.trip>0?-ix:ix,ay=fx.trip>0?-iy:iy;if(Math.abs(ax)>Math.abs(ay))P.dir=ax>0?'right':'left';else P.dir=ay>0?'down':'up';}
@@ -1461,17 +1480,14 @@ function play(dt){
     if(!near&&dist(SURF,P)<24)near={k:'surf',o:SURF};
     if(boss&&finalStage===1&&dist(boss,P)<34)near={k:'boss',o:boss};
     if(!near)for(const b of barDoors)if(dist(b,P)<15){near={k:b.kind==='sinuca'?'sinuca':'bar',o:b};break;}
-    if(!near){const v=npcs.find(n=>n.vende&&dist(n,P)<22);if(v)near={k:'mate',o:v};}
+    if(!near){let v=null,vd=22;for(const n of npcs){const d=dist(n,P);if(!n.beggar&&n.stun<=0&&n.flee<=0&&totalMin-(n.falouEm??-1e9)>=CONV_GAP&&d<vd){v=n;vd=d;}}if(v)near={k:'npc',o:v};}
     if(!near)for(const s of busStops)if(dist(s,P)<16){near={k:'bus',o:s};break;}
     if(!near)for(const c of chairs)if(dist(c,P)<14){near={k:'chair',o:c};break;}
-    const sleepy=near&&(near.k==='bus'||near.k==='chair'),rest=sleepy&&!canRest(near.k);nearK=near&&!rest?near.k:null;
-    setPrompt(rest?`sem sono ainda (cochila de novo em ${restWait(near.k)})`:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',mate:'pegar um mate com o Robson',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
-    if(act&&rest){toast(`Ainda sem sono. ${near.k==='chair'?'Cadeira':'Ponto de ônibus'} só 12h depois do último cochilo (falta ${restWait(near.k)}).`,'',2.8);}
+    const sleepy=near&&(near.k==='bus'||near.k==='chair'),rest=sleepy&&!canRest(near.o);nearK=near?near.k:null;
+    setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
+    if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
-    else if(act&&near&&near.k==='mate'){const r=near.o; // só 2 mates a cada 12h de jogo
-      r.mateLog=(r.mateLog||[]).filter(t=>totalMin-t<720);
-      if(r.mateLog.length>=2){const m=Math.ceil(720-(totalMin-r.mateLog[0]));bubble(r,`Já tomou 2, freguês! Volta daqui a ${Math.floor(m/60)}h.`,2.2);}
-      else{r.mateLog.push(totalMin);gain(10);sfx.gulp();toast(`O Robson te deu um mate. +10 de energia. (${r.mateLog.length}/2 nessas 12h)`,'good');bubble(r,'Toma aí, Markin! Mate gelado!',2);}}
+    else if(act&&near&&near.k==='npc')abreConversa(near.o);
     else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='alt'){startAltinha();return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){startSinuca();return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
@@ -1480,23 +1496,23 @@ function play(dt){
   for(const it of items){
     if(it.type==='shroom'){it.talkCd-=dt;if(it.talkCd<=0&&dist(it,P)<60&&dist(it,P)>12){it.talkCd=rnd(6,10);let s=pick(L.shroomTalk);s=s.replace('{d}',dirWord(mom,it)).replace('{b}',bloco?dirWord(bloco,it):'norte').replace('{h}',Math.floor(totalMin/60));bubble(it,s,2.6,'shroom',20);}}
     if(!P.hidden&&dist(it,P)<10&&P.mode==='free'){it.dead=true;
-      if(it.fake){toast('Era miragem...','bad');lose(2);continue;}
       takeItem(it);}
   }
   items=items.filter(i=>!i.dead);
   spawnT-=dt;if(spawnT<=0){spawnT=1.5;const tg=targets();for(const k in tg){if(k==='shades'&&fx.disguise>0)continue; // de óculos, não aparece outro
-const n=items.filter(i=>i.type===k&&!i.fake).length;if(n<tg[k]){spawnItem(k);break;}}}
-  if(P.energy<22){fakeT-=dt;if(fakeT<=0){fakeT=rnd(2,4);if(items.filter(i=>i.fake).length<3){const ang=rnd(0,Math.PI*2),r=rnd(40,90);const x=P.x+Math.cos(ang)*r,y=P.y+Math.sin(ang)*r;if(!hitsWall(x,y))items.push({type:pick(['beer','zip','shroom']),x,y,h:18,fake:true,talkCd:99});}}}
-  else items=items.filter(i=>!i.fake);
+const n=items.filter(i=>i.type===k&&!i.aluc).length;if(n<tg[k]){spawnItem(k);break;}}}
+  // quase apagando: as alucinações viram itens de verdade, a chance de voltar pro jogo
+  if(P.energy<22){fakeT-=dt;if(fakeT<=0){fakeT=rnd(2,4);if(items.filter(i=>i.aluc).length<3){const ang=rnd(0,Math.PI*2),r=rnd(40,90);const x=P.x+Math.cos(ang)*r,y=P.y+Math.sin(ang)*r;if(!hitsWall(x,y)&&!noNavio(x,y))items.push({type:pick(['beer','zip','shroom']),x,y,h:18,aluc:true,talkCd:99});}}}
+  else items=items.filter(i=>!i.aluc);
   fieldT-=dt;const ptile=idx(clamp(Math.floor(P.x/T),0,MW-1),clamp(Math.floor((P.y-2)/T),0,MH-1));
   if(!playerField||(ptile!==pfTile&&fieldT<=0)){playerField=bfs(ptile%MW,(ptile/MW)|0);pfTile=ptile;fieldT=.25;}
   updMom(dt);updKeys(dt);updTias(dt);updTaxis(dt);updBoss(dt);updNpcs(dt);if(state!=='play')return;
   idleT-=dt;if(idleT<=0){idleT=rnd(12,20);if(P.mode==='free')bubble(P,pick(P.energy<35?L.low:L.idle),2.4);}
-  psyT=Math.max(0,psyT-dt);dragaoCd=Math.max(0,dragaoCd-dt);
+  psyT=fx.trip>0?Math.max(0,psyT-dt):0;dragaoCd=Math.max(0,dragaoCd-dt);
   // quanto mais bêbado/viajando, mais ele fala MERMÃO
   const doido=nivelDoido();if(doido>0){mermT-=dt*doido;if(mermT<=0){mermT=rnd(6,9);if(P.mode==='free'&&!chairS&&!napS)bubble(P,pick(MERMAO),2.2);}}else mermT=Math.min(mermT+dt,4);
-  if(P.energy<35&&!chairS&&!napS){lowLineT-=dt;if(lowLineT<=0){lowLineT=9;toast('A casa tá te puxando... ache energia!','bad',2.2);}}
   if(P.energy<=0){P.energy=0;gameOver('energy');}
+  else if(P.sono>=100){gameOver('sono');return;}
   let filt='';if(psyT>0)filt+=`hue-rotate(${Math.floor(time*260)%360}deg) saturate(2.6) contrast(1.2) `;else if(fx.trip>0)filt+=`hue-rotate(${Math.floor(time*120)%360}deg) saturate(1.8) `;if(fx.turbo>0)filt+='contrast(1.15) saturate(1.3) ';if(P.energy<20)filt+=`blur(${(0.3+Math.sin(time*2)*0.3).toFixed(2)}px) `;
   cv.style.filter=filt;
   cv.style.transform=psyT>0?`rotate(${(Math.sin(time*1.3)*2.6).toFixed(2)}deg) skewX(${(Math.sin(time*.9)*3).toFixed(2)}deg) scale(${(1.06+Math.sin(time*2.2)*.03).toFixed(3)})`:(fx.drunk>0||fx.trip>0)?`rotate(${(Math.sin(time*1.7)*1.2).toFixed(2)}deg) scale(1.03)`:'';
@@ -1518,7 +1534,7 @@ let shroomStreak=0,lastShroomT=-999,psyT=0,dragaoCd=0,mermT=6;
 const DRAGAO_FALAS=['Jovem Markin... cogumelo demais em seguida não é rolê, é roleta. Vai com calma.','Ouça o mestre: muito cogumelo confunde a mente e o corpo. Pare, beba água, descanse.','Cogumelo, cerveja e zero sono? Nem dragão aguenta essa mistura, jovem.','Sabedoria antiga: dose alta traz bad trip, ansiedade e paranoia. Respeite o seu limite.','Cogumelo desconhecido pode ser venenoso. Na dúvida, não coma.'];
 function comeuCogumelo(semDragao){
   shroomStreak=time-lastShroomT<90?shroomStreak+1:1;lastShroomT=time;
-  if(shroomStreak>=4){psyT=30;if(shroomStreak===4)toast('Quatro cogumelos... o mundo derreteu em cores.','',2.6);}
+  if(shroomStreak>=4){psyT=fx.trip||12;if(shroomStreak===4)toast('Quatro cogumelos... o mundo derreteu em cores.','',2.6);}
   if(shroomStreak>=5&&dragaoCd<=0&&!semDragao)chamaDragao();}
 function chamaDragao(){dragaoCd=40;const d=$('dragao');$('dragaoFala').textContent=pick(DRAGAO_FALAS);
   d.hidden=false;d.classList.remove('voa');void d.offsetWidth;d.classList.add('voa');sfx.horn();
@@ -1562,18 +1578,18 @@ function shootWeb(){
 }
 // só dá pra dormir (ponto ou cadeira) de 3 em 3 horas
 let lastSleep=-999,lastRest={chair:-99999,bus:-99999};
-const REST_GAP=720; // 12h de jogo entre um cochilo e outro (cadeira e ponto contam separado)
+const REST_GAP=720; // 12h de jogo pra cochilar de novo no mesmo ponto ou cadeira
 const REST_GAIN={chair:10,bus:20};
-function canRest(k){return totalMin-lastRest[k]>=REST_GAP;}
-function restWait(k){const m=Math.max(0,Math.ceil(REST_GAP-(totalMin-lastRest[k])));return m>=60?Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'):m+'min';}
+const SONO_MIN=100/(48*60); // a barra de sono enche em 48h de jogo acordado
+const SONO_NAP={bus:100,chair:60}; // ponto de ônibus zera o sono, cadeira tira boa parte
+function canRest(o){return totalMin-(o.lastRest??-99999)>=REST_GAP;} // no mesmo lugar só 12h depois; outro lugar pode na hora
 // cochilo: 2,4 s de tela com o relógio correndo 3h, energia subindo aos poucos; se alguém interromper, não ganha nada
-function startNap(stop){napS={kind:'bus',o:stop,t:0,dur:2.4,got:0};P.mode='nap';P.x=stop.x;P.y=stop.y+2;P.dir='down';setPrompt(null);sfx.zzz();toast('Cochilando no ponto... (+3h, +20 de energia)','');}
-function startChair(c){chairS={kind:'chair',c,o:c,oy:P.y,t:0,dur:2.4,got:0};P.mode='chair';P.x=c.x;P.y=c.y-1;P.dir='down';setPrompt(null);sfx.zzz();toast('Cochilando na cadeira... (+3h, +10 de energia)','');}
+function startNap(stop){napS={kind:'bus',o:stop,t:0,dur:2.4,got:0};P.mode='nap';P.x=stop.x;P.y=stop.y+2;P.dir='down';setPrompt(null);sfx.zzz();}
+function startChair(c){chairS={kind:'chair',c,o:c,oy:P.y,t:0,dur:2.4,got:0};P.mode='chair';P.x=c.x;P.y=c.y-1;P.dir='down';setPrompt(null);sfx.zzz();}
 function updCochilo(s,dt){
-  const k=Math.min(dt,s.dur-s.t);s.t+=k;totalMin+=180*k/s.dur;const want=REST_GAIN[s.kind]*s.t/s.dur;gain(want-s.got,'');particles.pop();s.got=want;
+  const k=Math.min(dt,s.dur-s.t);s.t+=k;totalMin+=180*k/s.dur;const want=REST_GAIN[s.kind]*s.t/s.dur;gain(want-s.got,'');particles.pop();s.got=want;P.sono=Math.max(0,P.sono-SONO_NAP[s.kind]*k/s.dur);
   if(Math.random()<dt*3)particles.push({x:P.x+5,y:P.y-22,vx:6,vy:-12,g:0,life:1.2,text:'z',col:'#e9f4ff'});
-  if(s.t>=s.dur){lastRest[s.kind]=totalMin;lastSleep=totalMin;particles.push({x:P.x,y:P.y-40,vx:0,vy:-14,g:0,life:1.6,text:`+3h  +${REST_GAIN[s.kind]}`,col:'#bfe0ff'});
-    toast(`Cochilou. Passaram 3 horas e ganhou ${REST_GAIN[s.kind]} de energia. ${s.kind==='chair'?'Cadeira':'Ponto'} de novo só daqui a 12h.`,'good',3.2);
+  if(s.t>=s.dur){s.o.lastRest=totalMin;lastSleep=totalMin;particles.push({x:P.x,y:P.y-40,vx:0,vy:-14,g:0,life:1.6,text:`+3h  +${REST_GAIN[s.kind]}`,col:'#bfe0ff'});
     if(s.kind==='chair'){P.y=s.c.y+8;chairS=null;}else napS=null;P.mode='free';}
 }
 function updNap(dt){updCochilo(napS,dt);}
@@ -1587,6 +1603,7 @@ function updMom(dt){
   if(grab&&grab.kind==='mae'){m.x=P.x+9;m.y=P.y;m.dir='left';m.chasing=true;m.moving=P.moving;if(m.moving)m.anim+=dt;return;} // segurando pelo braço
   if(m.tonto>0)m.tonto-=dt;
   if(m.stun>0){m.stun-=dt;m.moving=false;return;}
+  if(tregua>0||grab){m.chasing=false;m.moving=dist(m,P)<130&&afasta(m,30,dt);if(m.moving)m.anim+=dt;return;}
   const d=dist(m,P),disg=incog();
   // de óculos escuros (ou de Homem-Aranha) ela não reconhece: só cumprimenta como se fosse um moço qualquer
   if(disg){m.chasing=false;if(d<34&&m.greetCd<=0&&P.mode!=='cut'){m.greetCd=9;bubble(m,pick(fx.spider>0?GREET_ARANHA:GREET_MOM),2.2,'mom');}}
@@ -1601,7 +1618,7 @@ function updMom(dt){
   if(m.moving)m.anim+=dt;
   if(!disg&&!grab&&d<10&&P.mode!=='cut'&&Math.random()<.5){interruptRest();sfx.alert();bubble(m,pick(['Peguei! Bora pra casa!','Agora tu vem comigo!','Chega de rua, Markin!']),2.2,'mom');startGrab('mae',m);return;}
   if(!disg&&!grab&&d<10&&P.mode!=='cut'){ // chinelada
-    interruptRest();lose(22);sfx.hit();bubble(m,'CHINELADA! '+pick(L.momHit),2.4,'mom');particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1,text:'PÁ!',col:'#ffe14f'});m.stun=2.6;m.chasing=false;setTimeout(()=>{if(state==='play'&&!grab)saidaSegura();},900);
+    apanhou();interruptRest();lose(22);sfx.hit();bubble(m,'CHINELADA! '+pick(L.momHit),2.4,'mom');particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1,text:'PÁ!',col:'#ffe14f'});m.stun=2.6;m.chasing=false;setTimeout(()=>{if(state==='play'&&!grab)saidaSegura();},900);
     const dx=P.x-m.x,dy=P.y-m.y,dd=Math.hypot(dx,dy)||1;for(let i=0;i<10;i++)moveP(dx/dd*2.4,dy/dd*2.4);
   }
 }
@@ -1612,6 +1629,7 @@ function updKeys(dt){
   for(const k of keysE){
     if(grab&&grab.ref===k){k.x=P.x+7;k.y=P.y-4;continue;} // presa no Markin
     k.cd=Math.max(0,(k.cd||0)-dt);
+    if(tregua>0||grab){if(dist(k,P)<130)afasta(k,sp,dt);continue;}
     if(incog()||k.cd>0)continue; // de óculos (ou de Homem-Aranha) a chave não te acha
     followField(k,playerField,P,sp,dt);if(dist(k,P)<16)followDirect(k,P,sp,dt);
     if(!grab&&dist(k,P)<9&&P.mode!=='cut'){interruptRest();sfx.key();lose(4);startGrab('chave',k);}
@@ -1627,11 +1645,14 @@ function updTias(dt){
   }
 }
 /* ---------- PRESO: a chave ou a mãe te arrastam pra casa; toque várias vezes pra se soltar ---------- */
-let grab=null,homeField=null;
+let grab=null,homeField=null,tregua=0;
+// depois que alguém pega o Markin, os outros se afastam por um tempo
+function apanhou(){tregua=Math.max(tregua,8);}
+const afasta=(o,sp,dt)=>moveAxis(o,o.x-P.x,o.y-P.y,sp*dt,(x,y)=>!hitsWall(x,y));
 function startGrab(kind,ref){
   if(!homeField)homeField=bfs(DOORT.x,DOORT.y);
   const need=kind==='mae'?14:9;
-  closeBeg();grab={kind,ref,need,left:need,t:0};actionQ=false;
+  closeBeg();grab={kind,ref,need,left:need,t:0};actionQ=false;apanhou();
   toast(kind==='mae'?'A mãe te pegou pelo braço! Toque rápido pra se soltar!':'*plim plim* A chave te prendeu! Toque rápido pra se soltar!','bad',3);
   bubble(kind==='mae'?mom:P,kind==='mae'?pick(['Achei! Pra dentro, agora!','Chega de rua, Markin!','A sopa de chuchu tá esfriando!']):'ME SOLTA!',2.2,kind==='mae'?'mom':'',kind==='mae'?26:46);
 }
@@ -1642,7 +1663,7 @@ function updGrab(dt,act){
   if(g.left<=0){ // soltou!
     if(g.kind==='chave'){g.ref.cd=10;g.ref.tonto=10;g.ref.y+=10;toast('Se soltou da chave! Ela ficou tonta.','good');}
     else{mom.stun=10;mom.tonto=10;mom.chasing=false;bubble(mom,'Volta aqui, menino!!',2,'mom');moveP(0,10);toast('Se soltou da mãe! Corre!','good');}
-    grab=null;flash=.3;return;
+    grab=null;flash=.3;tregua=8;return;
   }
   // arrastado pro rumo da porta
   g.drainT=(g.drainT||0)+dt;if(g.drainT>=2){g.drainT-=2;lose(5);} // arrastado cansa: -5 a cada 2 s
@@ -1661,7 +1682,8 @@ const TASKS=[
   {k:'bar',curto:'Bar',nome:'Beber 6 cervejas',onde:()=>barDoors.find(b=>b.kind==='cabeca'),lugar:'no bar de placa amarela'},
   {k:'sinuca',curto:'Bambina',nome:'Ganhar na bambina',onde:()=>barDoors.find(b=>b.kind==='sinuca'),lugar:'no bar de placa verde'},
   {k:'festa',curto:'Circo Voador',nome:'Conquistar a gatinha',onde:()=>FESTA,lugar:'no Circo Voador, na Lapa'},
-  {k:'maraca',curto:'Maracanã',nome:'Fazer gol no Maracanã',onde:()=>MARACA,lugar:'no estádio ao lado da favela'}
+  {k:'maraca',curto:'Maracanã',nome:'Fazer gol no Maracanã',onde:()=>MARACA,lugar:'no estádio ao lado da favela'},
+  {k:'surf',curto:'Surf',nome:'Surfar 2500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'}
 ];
 let tasksDone={},hintT=12;
 function markTask(k){if(tasksDone[k])return;tasksDone[k]=true;const n=TASKS.filter(t=>tasksDone[t.k]).length;
@@ -1726,7 +1748,7 @@ function updBuddies(dt){
     else if(b.crowd)bubble(b,pick(['FODA-SE A CASA!','Sem volta pra casa!','Bloco do Markin!','ALALAÔ!']),2,'buddy');
     else bubble(b,pick(b.lines),2.4,'buddy');}
 }
-/* ---------- CHEFÃO: o Bloco do Jamal roda pelas ruas depois das 6 tarefas ---------- */
+/* ---------- CHEFÃO: o Bloco do Jamal roda pelas ruas depois das 7 tarefas ---------- */
 function spawnBoss(){
   if(finalStage>0)return;finalStage=1;
   for(let i=0;i<60;i++){const x=(pick(VROADS)+1)*T,y=(pick(TX_H)+1)*T;const b={x,y,h:48,dir:pick([[1,0],[-1,0],[0,1],[0,-1]]),node:'',lineT:rnd(2,4)};if(dist(b,P)>260||i===59){boss=b;break;}}
@@ -1771,7 +1793,7 @@ function mgExit(msg,cls,dE,minutes){
   state='play';mg=null;$('hud').hidden=false;$('festa').hidden=true;if(isTouch)$('touch').hidden=false;cv.style.filter='';
   P.energy=Math.min(maxE(),mgE);if(dE>0)gain(dE); // volta com a energia de quando entrou (+ o prêmio, se ganhou)
   saidaSegura();
-  totalMin+=minutes;toast(msg,cls,3.4);actionQ=false;jumpQ=false;laneQ=0;
+  totalMin+=minutes;P.sono=Math.min(95,P.sono+minutes*SONO_MIN);toast(msg,cls,3.4);actionQ=false;jumpQ=false;laneQ=0;
 }
 function mgQuit(){if(!mg)return;const k=state;mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou o saxofone. O Jamal riu e seguiu tocando pela rua.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
@@ -1791,24 +1813,23 @@ function saidaSegura(){
 }
 /* ---------- GENTE DA CIDADE: meninas na praia, Robson do mate, torcedores e o mendigo da Lapa ---------- */
 const NPC_DEFS=[
-  {k:'mina',area:'praia',rota:[13,45,23,48],sp:14,look:{skin:'#e0b08a',hair:'#3a2210',bikini:'#ff4fa0',long:true,shades:true},lines:['Oi, Markin! Tá sumido, hein?','Bora pro mar?','Você vem sempre aqui, gatinho?','Tu não dorme não, garoto?']},
-  {k:'mina',area:'praia',rota:[27,45,36,48],st:2,sp:12,look:{skin:'#8a5a3a',hair:'#1e140e',bikini:'#ffe14f',long:true},lines:['Markin! Tu tá com uma cara...','Passa protetor, hein!','Vai no bloco hoje?','Olha o Markin aí!']},
-  {k:'robson',area:'robson',rota:[50,45,62,48],sp:9,vende:true,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#f2a02a',shorts:'#1d1d22',cap:'#f2a02a',prop:'beer'},lines:['Vai um mate com acerola hoje, Marcola?','Olha o mate! Limão, mate!','Mate gelaaado!','Vai um mate com acerola hoje, Marcola?']},
-  {k:'bala',area:'praia',rota:[66,45,77,48],st:1,sp:18,kid:true,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#2d6fd1',shorts:'#f2c230',cap:'#d8332f'},lines:['CRL, MONSTRO SAGRADO!','Olha ele! Quebrador de cama box!','Esse dente aí tá avaliado em 2 apartamentos na Barra da Tijuca!','Tio, tu é o Cauã Raymound? Papo reto!','Olha o Brady Pitt aí, monstro!','Monstro sagrado, leva uma bala aí!','Olha a bala! Bala baiana, jujuba, Halls!']},
-  {k:'ze',nome:'Seu Zé',area:'rua',anel:true,sp:12,onipresente:true,look:{skin:'#c08a5a',hair:'#d8d8d8',shirt:'#f4f1e8',shorts:'#2d6fd1',beard:'#d8d8d8'},
+  {k:'mina',quem:'a menina da praia',titulo:'MENINA DA PRAIA',conv:'mina1',area:'praia',rota:[13,45,23,48],sp:14,look:{skin:'#e0b08a',hair:'#3a2210',bikini:'#ff4fa0',long:true,shades:true},lines:['Oi, Markin! Tá sumido, hein?','Bora pro mar?','Você vem sempre aqui, gatinho?','Tu não dorme não, garoto?']},
+  {k:'mina',quem:'a menina da praia',titulo:'MENINA DA PRAIA',conv:'mina2',area:'praia',rota:[27,45,36,48],st:2,sp:12,look:{skin:'#8a5a3a',hair:'#1e140e',bikini:'#ffe14f',long:true},lines:['Markin! Tu tá com uma cara...','Passa protetor, hein!','Vai no bloco hoje?','Olha o Markin aí!']},
+  {k:'robson',quem:'Robson',titulo:'ROBSON DO MATE',area:'robson',rota:[50,45,62,48],sp:9,vende:true,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#f2a02a',shorts:'#1d1d22',cap:'#f2a02a',prop:'beer'},lines:['Vai um mate com acerola hoje, Marcola?','Olha o mate! Limão, mate!','Mate gelaaado!','Vai um mate com acerola hoje, Marcola?']},
+  {k:'bala',quem:'o menino da bala',titulo:'MENINO DA BALA',conv:'bala',area:'praia',rota:[66,45,77,48],st:1,sp:18,kid:true,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#2d6fd1',shorts:'#f2c230',cap:'#d8332f'},lines:['CRL, MONSTRO SAGRADO!','Olha ele! Quebrador de cama box!','Esse dente aí tá avaliado em 2 apartamentos na Barra da Tijuca!','Tio, tu é o Cauã Raymound? Papo reto!','Olha o Brady Pitt aí, monstro!','Monstro sagrado, leva uma bala aí!','Olha a bala! Bala baiana, jujuba, Halls!']},
+  {k:'ze',nome:'Seu Zé',quem:'Seu Zé',titulo:'SEU ZÉ',conv:'ze',area:'rua',anel:true,sp:12,onipresente:true,look:{skin:'#c08a5a',hair:'#d8d8d8',shirt:'#f4f1e8',shorts:'#2d6fd1',beard:'#d8d8d8'},
    lines:[()=>`Ô Markin! ${diasNaRua()} te vendo na rua! Tu mora no meio-fio agora?`,()=>`De novo tu? ${diasNaRua()} seguidos na rua. Já pode pagar IPTU da calçada!`,
      ()=>`${diasNaRua()} na rua, Markin... os pombos já te chamam de vizinho.`,()=>`Te vejo mais na rua que o gari! ${diasNaRua()} já!`,
      ()=>`Olha ele! ${diasNaRua()} na pista. Daqui a pouco a prefeitura te põe no mapa.`,()=>`Markin, ${diasNaRua()} na rua. Tua cama já tá fazendo boletim de ocorrência.`]},
-  {k:'fla',area:'maraca',ring:[1,1],st:0,sp:16,coee:true,look:{skin:'#b8733f',hair:'#1e140e',shirt:'#c8102e',shorts:'#f4f1e8',stripes:'#1a1a1a'},lines:['Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.','Estamos em outro patamar!']},
-  {k:'fla',area:'maraca',ring:[1,1],st:2,sp:14,look:{skin:'#e0b08a',hair:'#6b4423',shirt:'#c8102e',shorts:'#1a1a1a',stripes:'#1a1a1a',cap:'#1a1a1a'},lines:['Estamos em outro patamar!','Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.']},
-  {k:'flu',area:'maraca',ring:[1,1],st:1,rev:true,sp:15,look:{skin:'#d29a6c',hair:'#1e140e',shirt:'#8a1538',shorts:'#f4f1e8',stripes:'#1f6a3a'},lines:['Ganhar Fla x Flu é normal.','Vence o Fluminense!','Saudações tricolores!']},
-  {k:'flu',area:'maraca',ring:[1,1],st:3,rev:true,sp:13,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#8a1538',shorts:'#1f6a3a',stripes:'#f4f1e8',long:true},lines:['Saudações tricolores!','Ganhar Fla x Flu é normal.','Vence o Fluminense!']},
-  {k:'mendigo',nome:'mendigo',area:'lapa',rota:[52,4,66,7],sp:14,beggar:true,look:{skin:'#a0704a',hair:'#8a8a8a',shirt:'#7a6a4a',shorts:'#4a4030',beard:'#9a9a9a',shoe:'#3a2a1a'},lines:['Um real, Markinho!'],
+  {k:'fla',quem:'o flamenguista',titulo:'FLAMENGUISTA',conv:'fla',area:'maraca',ring:[1,1],st:0,sp:16,coee:true,look:{skin:'#b8733f',hair:'#1e140e',shirt:'#c8102e',shorts:'#f4f1e8',stripes:'#1a1a1a'},lines:['Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.','Estamos em outro patamar!']},
+  {k:'fla',quem:'o flamenguista',titulo:'FLAMENGUISTA',conv:'fla',area:'maraca',ring:[1,1],st:2,sp:14,look:{skin:'#e0b08a',hair:'#6b4423',shirt:'#c8102e',shorts:'#1a1a1a',stripes:'#1a1a1a',cap:'#1a1a1a'},lines:['Estamos em outro patamar!','Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.']},
+  {k:'flu',quem:'o tricolor',titulo:'TRICOLOR',conv:'flu',area:'maraca',ring:[1,1],st:1,rev:true,sp:15,look:{skin:'#d29a6c',hair:'#1e140e',shirt:'#8a1538',shorts:'#f4f1e8',stripes:'#1f6a3a'},lines:['Ganhar Fla x Flu é normal.','Vence o Fluminense!','Saudações tricolores!']},
+  {k:'flu',quem:'o tricolor',titulo:'TRICOLOR',conv:'flu',area:'maraca',ring:[1,1],st:3,rev:true,sp:13,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#8a1538',shorts:'#1f6a3a',stripes:'#f4f1e8',long:true},lines:['Saudações tricolores!','Ganhar Fla x Flu é normal.','Vence o Fluminense!']},
+  {k:'mendigo',nome:'mendigo',quem:'o mendigo',titulo:'MENDIGO DA LAPA',area:'lapa',rota:[52,4,66,7],sp:14,beggar:true,look:{skin:'#a0704a',hair:'#8a8a8a',shirt:'#7a6a4a',shorts:'#4a4030',beard:'#9a9a9a',shoe:'#3a2a1a'},lines:['Um real, Markinho!'],
    provoca:['Ô MARKINHO! Me vê um trocado!','Markinho, meu patrão! Vem cá rapidinho!','Aceito Pix, Markinho!','Markinho, só um realzinho! Um só!','Psiu, Markinho! Tenho uma proposta de negócio!']}
 ];
 let npcs=[],mateBuy=-999,beg=null,librasPend=false;
 const diasNaRua=()=>day<=1?'o dia inteiro':day+' dias';
-const falaNpc=n=>{let l=pick(n.lines);if(typeof l==='function'){l=l();l=l[0].toUpperCase()+l.slice(1);}return l;};
 function npcArea(a){const W2=walkTiles;
   if(a==='praia')return W2.filter(t=>tileAt(t.x,t.y)===SAND&&t.y<=48);
   if(a==='robson')return W2.filter(t=>tileAt(t.x,t.y)===SAND&&t.y<=48&&t.x>=50&&t.x<=62);
@@ -1824,15 +1845,9 @@ function spawnNpcs(){npcs=[];mateBuy=-999;
     npcs.push({...d,pool,route,ri:route?(st+(d.rev?3:1))%4:0,x:q.x,y:q.y,h:24,dir:'down',anim:0,moving:false,tgt:null,wait:rnd(0,2),lineT:rnd(3,10),cd:0,stun:0,flee:0,webUntil:0});}}
 function updNpcs(dt){
   for(const n of npcs){n.cd=Math.max(0,n.cd-dt);n.lineT-=dt;
-    if(n.vende){n.mateCd=Math.max(0,(n.mateCd||0)-dt);const dd=dist(n,P);if(dd<80&&!n.saw&&P.mode==='free'){n.saw=true;bubble(P,'Fala ROBSOOON!',2.2);n.resp=1.6;}else if(dd>170)n.saw=false;
-      if(n.resp>0){n.resp-=dt;if(n.resp<=0){n.lineT=rnd(8,12);bubble(n,'Vai um mate com acerola hoje, Marcola?',3,'',28,true);}}}
     if(n.onipresente){n.pulo=(n.pulo??25)-dt;const dd=dist(n,P);
       if(dd>260&&n.pulo<=0&&P.mode==='free'&&state==='play'){n.pulo=rnd(35,50);for(let i=0;i<40;i++){const rg=pick(RINGS),k=ri(0,3),a=rg[k],b=rg[(k+1)%4],u=Math.random(),q={x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u},d=dist(q,P);if(d>150&&d<230){n.x=q.x;n.y=q.y;n.route=rg;n.ri=(k+1)%4;n.rev=false;n.saw=false;break;}}}
-      if(dd<80&&!n.saw&&P.mode==='free'){n.saw=true;n.lineT=rnd(8,12);bubble(n,falaNpc(n),3,'',28);}else if(dd>200)n.saw=false;}
-    // torcedor do Flamengo: o Markin chega cumprimentando e ele responde
-    if(n.coee){const dd=dist(n,P);if(dd<70&&!n.saw&&P.mode==='free'){n.saw=true;bubble(P,'Coee Brother!',2.2);n.resp=1.5;n.lineT=99;}else if(dd>170)n.saw=false;
-      if(n.resp>0){n.resp-=dt;if(n.resp<=0){n.lineT=rnd(8,12);bubble(n,pick(['Coee, Markin! Mengão!','Coee! Uma vez Flamengo, sempre Flamengo!','Fala, Brother! Hoje tem Mengo!']),3,'',28,true);}}}
-    if(n.kid){const dd=dist(n,P);if(dd<70&&!n.saw&&P.mode==='free'){n.saw=true;n.lineT=rnd(5,8);bubble(n,pick(n.lines.slice(0,5)),2.6,'',22);}else if(dd>170)n.saw=false;}
+}
     // o primeiro que passar depois das 3 cervejas repara
     if(librasPend&&fx.drunk<=0)librasPend=false;
     if(librasPend&&!n.beggar&&dist(n,P)<64&&P.mode==='free'){librasPend=false;n.lineT=rnd(8,12);bubble(n,'Caralho Markin, já tá falando em libras!',3.4,'',28,true);}
@@ -1841,7 +1856,7 @@ function updNpcs(dt){
     let gx,gy,sp=n.sp,naRota=false;
     const naLapa=P.x>=49*T&&P.y<=10*T;
     if(n.flee>0){n.flee-=dt;gx=n.x+(n.x-P.x);gy=n.y+(n.y-P.y);sp=n.feliz?30:64;}
-    else if(n.beggar&&n.cd<=0&&!incog()&&dist(n,P)<100&&P.mode==='free'&&!grab&&naLapa){gx=P.x;gy=P.y;sp=34;} // vem atrás pedir dinheiro (não sai da Lapa)
+    else if(n.beggar&&n.cd<=0&&tregua<=0&&!incog()&&dist(n,P)<100&&P.mode==='free'&&!grab&&naLapa){gx=P.x;gy=P.y;sp=34;} // vem atrás pedir dinheiro (não sai da Lapa)
     else if(n.route){const tg=n.route[n.ri];if(Math.hypot(tg.x-n.x,tg.y-n.y)<1.5)n.ri=(n.ri+(n.rev?3:1))%4;gx=n.route[n.ri].x;gy=n.route[n.ri].y;naRota=true;}
     else{if(!n.tgt||dist(n,n.tgt)<3){if(n.wait>0){n.wait-=dt;n.moving=false;}else{n.tgt=npcGoal(n);n.wait=rnd(.5,3);}}
       if(n.tgt){gx=n.tgt.x;gy=n.tgt.y;}}
@@ -1852,11 +1867,9 @@ function updNpcs(dt){
         else if(naRota){n.stuckT=(n.stuckT||0)+dt;if(n.stuckT>1.2&&(Math.abs(n.x-P.x)>W*.6||Math.abs(n.y-P.y)>H*.6)){n.x=gx;n.y=gy;n.stuckT=0;}}}
       else n.moving=false;}
     // mendigo: chegou perto, pede dinheiro
-    if(n.beggar&&!beg&&n.cd<=0&&n.flee<=0&&!incog()&&dist(n,P)<14&&P.mode==='free'&&!grab&&!napS&&!chairS&&state==='play')openBeg(n);
+    if(n.beggar&&!beg&&n.cd<=0&&n.flee<=0&&tregua<=0&&!incog()&&dist(n,P)<14&&P.mode==='free'&&!grab&&!napS&&!chairS&&state==='play')abreConversa(n);
     // ele fica na Lapa chamando o Markinho
-    if(n.provoca&&n.lineT<=0&&dist(n,P)<150&&P.mode!=='cut'&&n.flee<=0&&n.cd<=0){n.lineT=rnd(4.5,7);bubble(n,pick(n.provoca),2.6,'',28);}
-    // falas: meninas e torcedores só conversam
-    if(!n.beggar&&n.lineT<=0&&dist(n,P)<70&&P.mode!=='cut'){n.lineT=rnd(7,13);bubble(n,falaNpc(n),n.onipresente?3:2.2,'',28);}
+    if(n.provoca&&n.lineT<=0&&dist(n,P)<150&&P.mode!=='cut'&&n.flee<=0&&n.cd<=0){n.lineT=rnd(8,12);bubble(n,pick(n.provoca),2.6,'',28);}
   }
 }
 const BEG_PEDE=['Ô Markinho, meu patrão! Me arruma um trocado pro café? O café é cachaça, mas é café.',
@@ -1866,17 +1879,66 @@ const BEG_PEDE=['Ô Markinho, meu patrão! Me arruma um trocado pro café? O caf
   'Markinho, é pra uma causa nobre: a minha.',
   'Markinho, me empresta 10 conto? Te devolvo semana que vem... de 2037.'];
 const BEG_OBRIGADO=['Deus te pague em dobro, Markinho! De preferência no Pix!','Valeu, patrão! Vou investir tudo em pão... e numa cachacinha pro pão descer.','Tu é dos bons, Markinho! Vou rezar pra tua mãe não te achar.','Obrigado, Markinho! Quando eu ficar rico tu vai ser meu sócio.'];
-const BEG_RECUSA=['Tô liso, parceiro.','Hoje não, meu chefe.','Só tenho vale-transporte...','Nem pra mim eu tenho, irmão.'];
-const BEG_FACADA=['MÃO DE VACA! Toma essa!','Sem trocado? Então toma ISSO, Markinho!','Tu vai me negar um real, Markinho?! TOMA!'];
-function openBeg(n){beg={n,t:0};P.mode='beg';setPrompt(null);sfx.alert();
-  abreEspaco('beg');$('bgtext').textContent=pick(BEG_PEDE);$('beg').hidden=false;}
+const BEG_DAR=['Toma aí, parceiro. Vai com Deus.','Pega aí, meu chefe. Não gasta tudo em cachaça, hein.','Toma um trocado aí, irmão.'];
+const BEG_FACADA=['MÃO DE VACA! Toma essa!','Piranha não, mas pão-duro é! TOMA!','Tu vai me negar um real, Markinho?! TOMA!'];
+/* ---------- CONVERSAS: chegou perto, aperta espaço, a pessoa fala e o Markin escolhe uma de duas respostas ---------- */
+// cada conversa: f = o que a pessoa fala; a = as 2 respostas do Markin [o que ele diz, o que a pessoa responde, efeito]
+const bala=()=>{gain(3);sfx.gulp();};
+const CONVERSAS={
+  mina1:[
+    {f:'Oi, Markin! Tá sumido, hein?',a:[['Tava embarcado, gata. 15 dias no mar.','Hmm, marinheiro... gostei.'],['Sumido nada, tô é fugindo da minha mãe.','Hahaha, tu não presta!']]},
+    {f:'Bora pro mar?',a:[['Bora! Se eu dormir na água tu me salva.','Salvo nada, te deixo boiando!'],['Mar eu já vi 15 dias seguidos, obrigado.','Chato!']]},
+    {f:'Tu não dorme não, garoto?',a:[['Dormir é coisa de quem tem casa.','Que papo triste, Markin...'],['Durmo quando morrer.','Desse jeito vai ser hoje!']]},
+    {f:'Você vem sempre aqui, gatinho?',a:[['Só quando a minha mãe não tá olhando.','Então tu vem sempre, né?'],['Venho. E tu, vem sempre aqui?','Essa cantada é de 1998, Markin.']]}],
+  mina2:[
+    {f:'Markin! Tu tá com uma cara...',a:[['Cara de quem tá dias acordado?','Cara de quem tá devendo pra mãe!'],['Cara de galã, né?','De galã de novela das seis, só se for.']]},
+    {f:'Vai no bloco hoje?',a:[['Vou! Se eu achar o Bloco Secreto.','Dizem que ele aparece onde menos se espera...'],['Bloco? Eu SOU o bloco.','Ai, que convencido.']]},
+    {f:'Passa protetor, hein!',a:[['Passa em mim?','Passa tu mesmo, abusado!'],['Protetor é pra fraco.','Vai virar camarão, Markin.']]}],
+  bala:[
+    {f:'CRL, MONSTRO SAGRADO! Leva uma bala aí!',a:[['Me vê uma jujuba aí, monstro.','Tá na mão! Monstro sagrado!',bala],['Tô liso, moleque.','Liso com esse dente aí? Para, tio!']]},
+    {f:'Olha ele! Quebrador de cama box!',a:[['Cama? Faz dias que eu não vejo uma.','Papo reto, tu tá com cara de zumbi, tio!'],['Me vê um Halls que eu tô precisando.','Toma, monstro! Hálito de campeão!',bala]]},
+    {f:'Esse dente aí tá avaliado em 2 apartamentos na Barra da Tijuca!',a:[['Parcelei em 48 vezes, moleque.','Tá pagando até hoje, né, tio?'],['Me vê uma bala baiana pra comemorar.','Bala baiana pro Brady Pitt!',bala]]},
+    {f:'Tio, tu é o Cauã Raymound? Papo reto!',a:[['Sou. Mas não conta pra ninguém.','Eu sabia! Leva uma bala de presente!',bala],['Sou o Markin, moleque.','Markin? Nunca ouvi falar. Mas leva uma bala aí.']]}],
+  ze:[
+    {f:()=>`Ô Markin! ${diasNaRua()} te vendo na rua! Tu mora no meio-fio agora?`,a:[['A rua é a minha casa agora, Seu Zé.','Então paga o aluguel da calçada!'],['E o senhor, que tá em todo lugar?','Eu sou o bairro, Markin. O bairro sou eu.']]},
+    {f:()=>`${diasNaRua()} na rua, Markin... os pombos já te chamam de vizinho.`,a:[['Os pombos são gente boa.','Gente boa é tua mãe, que tá te procurando!'],['Pombo é parceiro, Seu Zé.','Parceiro de quem dorme no banco, né?']]},
+    {f:()=>`Markin, ${diasNaRua()} na rua. Tua cama já tá fazendo boletim de ocorrência.`,a:[['Ela vai superar.','Superar? Ela tá de luto, Markin!'],['Diz pra ela que eu tô bem.','Tu tá com uma cara de quem não tá nada bem.']]}],
+  fla:[
+    {f:'Ô Markin! Hoje tem Mengo!',a:[['Coee Brother! Uma vez Flamengo...','...sempre Flamengo! Coee!'],['Sou Vasco, irmão.','VASCO?! Sai de perto de mim!']]},
+    {f:'Estamos em outro patamar!',a:[['Coee Brother! Outro patamar mesmo!','Isso aí, Markin! Mengão!'],['Patamar do rebaixamento?','Respeita o maior do Brasil, rapaz!']]},
+    {f:'Eu teria um desgosto profundo se faltasse o Flamengo no mundo.',a:[['Coee Brother! Eu também!','Coee! Mengão até morrer!'],['E se faltasse cama no mundo?','Aí tu nem ia sentir falta, né, Markin?']]}],
+  flu:[
+    {f:'Saudações tricolores!',a:[['Saudações! Vence o Fluminense!','Isso aí, tricolor de coração!'],['Sou Flamengo, mermão.','Ganhar Fla x Flu é normal, mermão.']]},
+    {f:'Ganhar Fla x Flu é normal.',a:[['Normal mesmo. Saudações!','Gostei de você, Markin!'],['Normal é o Mengão ser campeão.','Vai sonhando, urubu!']]}]
+};
+function convRobson(r){ // só 2 mates a cada 12h de jogo
+  r.mateLog=(r.mateLog||[]).filter(t=>totalMin-t<720);
+  if(r.mateLog.length>=2){const m=Math.ceil(720-(totalMin-r.mateLog[0]));
+    return{f:`Já tomou 2, Marcola! Volta daqui a ${Math.floor(m/60)}h que eu guardo um bem gelado.`,a:[['Fechou, Robson. Tamo junto!','Tamo junto, Marcola!'],['Pô, só mais unzinho...','Nem vem, Marcola! Mate demais dá piriri.']]};}
+  return{f:'Fala Jogador caro, vai um mate com maracujá?',a:[['Quer me fazer dormir??','Dormir com mate? Tu é doido, Markin!'],['Manda aí, Robgol!','Toma aí, Markin! Mate gelado!',()=>{r.mateLog.push(totalMin);gain(10);sfx.gulp();}]]};}
+function convDe(n){
+  if(n.beggar)return{f:pick(BEG_PEDE),a:[[pick(BEG_DAR),pick(BEG_OBRIGADO),'dar'],['Eu sou alguma piranha, por acaso?',pick(BEG_FACADA),'nega']]};
+  if(n.vende)return convRobson(n);
+  const c=pick(CONVERSAS[n.conv]);return{f:typeof c.f==='function'?c.f():c.f,a:c.a};}
+// a conversa toda acontece na caixa: a pessoa fala, o Markin escolhe, o Markin diz e a pessoa responde (espaço passa)
+function caixa(nome,texto,opcoes){$('bgnome').textContent=nome;$('bgtext').textContent=texto;$('beg').classList.toggle('falando',!opcoes);}
+function marcaSel(){$('bgSim').classList.toggle('sel',beg.sel===0);$('bgNao').classList.toggle('sel',beg.sel===1);}
+const CONV_GAP=720; // 12h de jogo pra conversar de novo com a mesma pessoa
+function abreConversa(n){n.falouEm=totalMin;const c=convDe(n);beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';setPrompt(null);if(n.beggar)sfx.alert();
+  abreEspaco('beg');caixa(n.titulo,c.f,true);$('bgOp1').textContent=c.a[0][0];$('bgOp2').textContent=c.a[1][0];$('beg').hidden=false;}
 function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='beg')P.mode='free';}
-function updBeg(dt){beg.t+=dt;P.moving=false;}
-function begEscolhe(dar){if(!beg||beg.t<.35||state!=='play')return;const n=beg.n;closeBeg();
-  if(dar){sfx.pick();n.cd=70;n.flee=4;n.feliz=true;bubble(n,pick(BEG_OBRIGADO),3,'',28,true);toast('Deu um trocado pro mendigo. Ele foi embora feliz.','good',2.6);}
-  else{bubble(P,pick(BEG_RECUSA),1.8,'',46);interruptRest();lose(14);sfx.hit();shake=.5;flash=.4;n.cd=35;n.flee=3.5;n.feliz=false;
-    setTimeout(()=>{if(state==='play')bubble(n,pick(BEG_FACADA),2.4,'',28,true);},350);
-    particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1.2,text:'FACADA!',col:'#ff4f4f'});toast('Recusou e o mendigo te deu uma facada! -14 de energia. Ele saiu correndo.','bad',3);}}
+function updBeg(dt,act){beg.t+=dt;P.moving=false;if(act&&beg.t>.35){if(beg.fase==='pergunta')escolheResposta(beg.sel);else avancaConversa();}}
+function escolheResposta(i){if(!beg||beg.fase!=='pergunta'||beg.t<.35||state!=='play')return;
+  beg.esc=beg.c.a[i];beg.fase='markin';beg.t=0;caixa('MARKIN',beg.esc[0]);}
+function avancaConversa(){const {n,esc}=beg,[,resp,ef]=esc;
+  if(beg.fase==='markin'&&resp){beg.fase='resposta';beg.t=0;caixa(n.titulo,resp);
+    if(ef==='nega'){apanhou();interruptRest();lose(14);sfx.hit();shake=.5;flash=.4;particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1.2,text:'FACADA!',col:'#ff4f4f'});}
+    else if(ef==='dar')sfx.pick();
+    else if(ef)ef();
+    return;}
+  closeBeg();
+  if(ef==='dar'){n.cd=70;n.flee=4;n.feliz=true;}
+  else if(ef==='nega'){n.cd=35;n.flee=3.5;n.feliz=false;}}
 function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e calcinha)
   x=Math.round(x);y=Math.round(y);const f=o.frame||0,dir=o.dir||'down',sk=b.skin,bk=b.bikini;
   R(c,x-5,y-1,10,2,'rgba(0,0,0,.28)');const l1=f===1?1:0,l2=f===3?1:0;
@@ -1906,7 +1968,9 @@ function galeraMG(g,kind,t){
     sinuca:['Tá vendo 3 vermelhas onde tem uma?','Mira na bola, não no teto!','O Tubarão tá de sacanagem hoje!','Bambina é paciência, Markin!'],
     maraca:['Vai, Markin! Agora!','A gente distrai o segurança!','Pula esse alambrado!','Invade logo, parça!']}[kind];
   const k=Math.floor(t/3.2),i=k%list.length,[x,y,s]=spots[i];
-  if(t%3.2<2.4)outlineText(g,FALAS[k%FALAS.length],clamp(x,56,W-56),y-24*s-8,7,'#fff1c2');
+  // a galera só fala quando não tem outra frase na tela
+  const ocupado=!mg||mg.msgT>0||mg.t<6||mg.phase==='pick'||(mg.me&&mg.me.x>=100);
+  if(!ocupado&&t%3.2<2.4)outlineText(g,FALAS[k%FALAS.length],clamp(x,56,W-56),y-24*s-8,7,'#fff1c2');
 }
 function mgInput(){ // teclado + analógico
   let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;
@@ -1971,7 +2035,7 @@ function drawMkCorpo(g,x,y,o={}){
   // pernas
   if(o.kick){R(g,x-4,y-9,4,9,leg);R(g,face>0?x:x-12,y-9,12,4,leg);R(g,face>0?x+11:x-15,y-10,4,4,tenis);R(g,x-5,y-2,5,2,tenis);R(g,x-5,y-1,5,1,sola);}
   else if(o.agachado){R(g,x-6,y-6,5,4,leg);R(g,x+1,y-6,5,4,leg);R(g,x-6,y-2,6,2,o.bermuda?sk:tenis);R(g,x+1,y-2,6,2,o.bermuda?sk:tenis);}
-  else{const a=f?2:0,b=f?0:2,lh=o.bermuda?5:7;
+  else{const a=o.firme?0:f?2:0,b=o.firme?0:f?0:2,lh=o.bermuda?5:7;
     R(g,x-5,y-9,5,lh-a,leg);R(g,x+1,y-9,5,lh-b,leg);R(g,x-1,y-9,2,3,leg);R(g,x-2,y-8,1,lh-2-a,legD);R(g,x+4,y-8,1,lh-2-b,legD);
     if(o.bermuda){R(g,x-4,y-4-a,3,3,sk);R(g,x+2,y-4-b,3,3,sk);}
     R(g,x-6+(face<0?-1:0),y-2-a,6,2,tenis);R(g,x+1+(face<0?-1:0),y-2-b,6,2,tenis);R(g,x-6+(face<0?-1:0),y-1-a,6,1,sola);R(g,x+1+(face<0?-1:0),y-1-b,6,1,sola);}
@@ -2008,87 +2072,126 @@ const DUDU_BORA=['Rema, Markin! Rema!','Olha a série chegando!','Essa é tua! P
 const DUDU_ZOA=['Tomou uma vaca, hein!','Isso é surf ou natação?','Caiu igual jaca do pé!','Engoliu meio litro de mar!','Tá bebendo a praia, Markin?','Até o boto riu dessa!','Ô, a prancha é pra ficar EM CIMA!'];
 const DUDU_MANOBRA=['ISSO!','QUE BATIDA!','Rasgou!','Tá voando, mermão!','Classe A!'];
 const DUDU_POCKET=['Volta pro pocket!','Tá longe da onda, volta!','Cola na espuma!'];
-/* SURF estilo California Games: 3 ondas. Em cada uma: o Markin rema deitado na prancha (visto de cima) e tem que
-   apertar MANOBRA quando a onda chega nele (o drop). Aí entra a onda de lado: o tubo vai fechando atrás dele e a tela
-   anda junto. Sobe e desce na parede (↑ ↓): descer ganha velocidade, subir gasta. Pontos: TUBO (dentro do tubo; o lábio
-   fica transparente pra ver o Markin), CRISTA (andar lá em cima), RASGADA (MANOBRA na parede), AÉREO (sobe rápido até o
-   lábio e aperta MANOBRA; no ar, MANOBRA gira) e batida/cavada/cutback. Manobras variadas multiplicam.
-   O tubo fechando em cima, a espuma ou pouso torto = vaca. Soma 2500 pontos nas 3 ondas pra vencer. */
-const SF={TOPO:66,BASE:150,MX:150,CX:84,META:2500,ONDA:18};
-const surfR=r=>36-11*clamp(r.t/SF.ONDA,0,1)+Math.sin(r.t*1.3)*3; // raio do tubo: vai fechando ao longo da onda
+/* SURF (visual igual ao surf do Mega Drive): a câmera fica de frente pra parede da onda e o Markin anda pra direita.
+   3 ondas. Em cada uma: o Markin já está na parede, deitado remando na diagonal pra baixo, e a barra anda: aperta
+   ESPAÇO na hora certa pra dropar. Ele levanta rápido e fica em pé (sempre com os 2 pés na prancha).
+   A QUEBRA (a coluna branca de espuma) anda conforme a velocidade dele: → acelera (a quebra vai pra esquerda e some da
+   tela), ← freia (a quebra alcança e ele entra no TUBO). Descer a parede (↓) dá velocidade, subir (↑) tira.
+   Freou demais e a quebra empurrou ele até o fim da tela = vaca. Só 2 manobras:
+   - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Conta o TEMPO NO TUBO.
+   - AÉREO: ESPAÇO só funciona lá em cima da onda. No ar, ← → (ou ↑ ↓) giram a prancha; dá pra fazer 360°,
+     mas tem que cair com o bico da prancha apontando pra baixo, senão é vaca.
+   Soma 2500 pontos nas 3 ondas pra vencer. */
+const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80};
+// tartarugas: aparecem depois de 5 s em pé, nadando na parede. Bater nelas = vaca (dá pra pular por cima no aéreo)
+const TARTA_FALAS=['Kd meu canudo?'];
+// frente da quebra na altura y: embaixo fica em cx, e o lábio lá em cima se inclina pra direita (como no jogo)
+const surfFrente=(cx,y)=>{const u=clamp((y-SF.CREST)/(H-SF.CREST),0,1);return cx+50*Math.pow(1-u,4);};
 function startSurf(){
   mgEnter('surf');
-  mg={t:0,phase:'espera',waves:3,onda:0,wave:null,msg:'Rema e espera a onda! Aperta MANOBRA quando ela chegar em você!',msgT:3,result:null,done:0,fala:pick(DUDU_BORA),falaT:2.6,
-    me:{x:150},mx:SF.MX,total:0,pts:0,combo:1,comboT:0,splash:[],pops:[],cai:0,r:null,scroll:0,wipe:0};
+  mg={t:0,phase:'espera',waves:3,onda:0,wave:null,msg:'',msgT:0,result:null,done:0,fala:pick(DUDU_BORA),falaT:2.6,
+    me:{x:150},mx:SF.MX,total:0,pts:0,splash:[],pops:[],cai:0,r:null,scroll:0,wipe:0,lev:0,cx:-200};
   surfOnda();
 }
-function surfOnda(){const m=mg;m.ultMan=null;m.cdM={};m.phase='espera';m.wave={x:W+70,sp:rnd(70,90),h:0};m.cai=0;m.onda++;m.pts=0;m.combo=1;m.comboT=0;m.fala=pick(DUDU_BORA);m.falaT=2.2;}
-function surfPts(n,txt){const m=mg;m.cdM=m.cdM||{};const k=txt.split(' ')[0],tubo=k==='TUBO'||k==='CRISTA';
-  if(!tubo&&m.t-(m.cdM[k]??-9)<2)return;if(!tubo)m.cdM[k]=m.t; // a mesma manobra só pontua de novo depois de 2 s
-  // combo (igual no Kelly Slater): só cresce variando as manobras; repetir a mesma zera
-  if(!tubo&&k!=='DROP'){if(k===m.ultMan)m.combo=1;else if(m.ultMan)m.combo=Math.min(3,m.combo+.5);m.ultMan=k;m.comboT=2.5;}
-  const v=Math.round(n*(tubo?1:m.combo));m.pts+=v;m.pops.push({x:m.mx,y:m.r?m.r.y-30:90,t:1.2,txt:`${txt} +${v}`});
-  if(n>=70&&!tubo){m.fala=pick(DUDU_MANOBRA);m.falaT=1.6;}beep(760+n,.08,'square',.05);}
-function surfCai(txt){const m=mg;m.phase='caiu';m.cai=2;m.msg=txt;m.msgT=2;m.fala=pick(DUDU_ZOA);m.falaT=2.4;sfx.hit();shake=.35;
+function surfOnda(){const m=mg;m.phase='espera';m.wave={x:150+80,sp:rnd(70,85),h:0};m.cai=0;m.onda++;m.pts=0;m.tart=[];m.tartT=0;m.cx=-200;m.mx=SF.MX;m.fala=pick(DUDU_BORA);m.falaT=2.2;}
+function surfPts(n,txt){const m=mg;m.pts+=n;m.pops.push({x:m.mx,y:m.r?m.r.y-44:90,t:1.2,txt:`${txt} +${n}`});
+  if(n>=200){m.fala=pick(DUDU_MANOBRA);m.falaT=1.6;}beep(760+Math.min(n,600),.08,'square',.05);}
+function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.msgT=2;m.fala=pick(DUDU_ZOA);m.falaT=2.4;sfx.hit();shake=.35;
   const kept=Math.round(m.pts*.5);m.total+=kept;m.pops.push({x:m.mx,y:90,t:1.6,txt:`vaca: ficou ${kept}`});m.pts=0;
   for(let i=0;i<26;i++)m.splash.push({x:m.mx+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
   m.r=null;surfFimOnda();}
 function surfFimOnda(){const m=mg;if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
 function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.25)iy=clamp(iy+joy.y,-1,1);
-  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;if(Math.abs(joy.x)>.25)ix=clamp(ix+joy.x,-1,1);
-  const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,act:a};}
+  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
+  const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,act:a,held:keys.has('Space')||aHeld};}
+// ângulo da prancha em graus (0 = reta, 90 = bico pra baixo), entre 0 e 360
+const surfGraus=a=>((a*180/Math.PI)%360+360)%360;
 function updSurf(dt){
   const m=mg;m.t+=dt;m.msgT-=dt;m.falaT-=dt;m.wipe=Math.max(0,m.wipe-dt);const inp=surfInp();
+  m.scroll+=(m.r?m.r.v*(m.r.air?m.r.air.hx:Math.cos(m.r.dir||0)):40)*dt; // a parede corre pra esquerda conforme a velocidade
   for(const s of m.splash){s.t-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=260*dt;}m.splash=m.splash.filter(s=>s.t>0);
   for(const q of m.pops){q.t-=dt;q.y-=16*dt;}m.pops=m.pops.filter(q=>q.t>0);
   if(m.result){m.done-=dt;if(m.done<=0){
-    if(m.result==='win'){const first=surfDay!==day;surfDay=day;if(!buddies.some(b=>b.k==='surf')){const b=addBuddy('surf');if(b)setTimeout(()=>bubble(b,DUDU.oi,3,'buddy'),400);}
+    if(m.result==='win'){const first=surfDay!==day;surfDay=day;markTask('surf');
       mgExit(first?`Surfou ${m.total} pontos! +3h acordado e +20 de energia. O Lucas entrou pro teu bloco.`:`Mais uma sessão boa (${m.total} pontos)! +3h acordado (+6 de energia).`,'good',first?20:6,180);}
     else mgLost(`Somou ${m.total} de ${SF.META} pontos nas 3 ondas. O Lucas tá rindo até agora.`);}return;}
   if(m.phase==='caiu'){m.cai-=dt;if(m.cai<=0&&!m.result)surfOnda();return;}
   if(m.phase==='espera'){const w=m.wave;w.x-=w.sp*dt;w.h=Math.min(1,w.h+dt*.7);const dx=w.x-m.me.x;
-    if(inp.act){if(Math.abs(dx)<16){m.phase='ride';m.wipe=.6;m.r={y:118,vy:0,v:78,dist:55,t:0,air:null,rot:0,tubo:0,crista:0,rasg:0,longe:0,ultDir:0,ang:0};m.mx=SF.CX+55;m.msg='DROPOU! Entra no tubo, rasga, voa e anda na crista!';m.msgT=2.6;beep(700,.1,'square',.05);beep(900,.1,'square',.05,0,.1);surfPts(100,'DROP');}
-      else surfCai(dx>0?'Cedo demais! Remou antes da onda chegar.':'Tarde demais! A onda passou e quebrou na tua cabeça.');}
+    m.cx=100-dx*.85; // a quebra vem chegando pela esquerda (mesmo ritmo de quando ele tá em pé) e tá quase nele quando a barra chega no verde
+    if(inp.act){if(Math.abs(dx)<13){m.phase='levanta';m.lev=0;m.wipe=.4;m.mx=140;
+        m.r={y:110,vy:0,v:56,t:0,air:null,ang:.5,dir:.5,face:1,giro:0,tubo:0};beep(700,.1,'square',.05);beep(900,.1,'square',.05,0,.1);surfPts(100,'DROP');}
+      else surfCai(dx>0?'Cedo demais! A onda ainda não tava em pé.':'Tarde demais! A onda passou por baixo de você.');}
     else if(dx<-26)surfCai('Perdeu a onda! Ela passou direto.');
     return;}
-  // ---- surfando a parede da onda ----
-  const r=m.r;r.t+=dt;m.comboT-=dt;if(m.comboT<=0)m.combo=1;r.rasg=Math.max(0,r.rasg-dt);const R0=surfR(r);
-  const curl=62; // a espuma anda sempre nessa velocidade atrás do Markin
-  if(r.air){ // no ar: MANOBRA (ou ← →) gira; tem que pousar com a prancha reta
-    const a=r.air;a.t+=dt;a.vz-=260*dt;a.z+=a.vz*dt;if(inp.act)a.spin+=1;const girando=a.spin>0||Math.abs(inp.ix)>.5;
-    if(girando){r.rot+=dt*720;a.spin=Math.max(0,a.spin-dt*2.4);}
-    r.dist+=(r.v-curl)*dt;
-    if(a.z<=0){const resto=((r.rot%360)+360)%360,limpo=resto<50||resto>310,voltas=Math.round(r.rot/360);r.air=null;r.rot=0;
-      if(limpo){r.vy=10;r.y=SF.TOPO+6;r.v=Math.max(r.v,80);surfPts(voltas>0?300+voltas*250:250,voltas?`AÉREO ${voltas*360}°`:'AÉREO');}
-      else{surfCai('Pousou torto! A prancha foi pra um lado, tu pro outro.');return;}}
+  const r=m.r;r.t+=dt;
+  // ---- ficando em pé: animação rápida, ele ainda não controla ----
+  if(m.phase==='levanta'){m.lev+=dt;r.y+=18*dt;m.cx+=(SF.CURL-r.v)*dt;m.mx+=(SF.MX-m.mx)*Math.min(1,dt*6);if(m.lev>=SF.LEVANTA){m.phase='ride';m.msg='';m.msgT=0;}return;}
+  // ---- surfando: as setas (ou o analógico) apontam pra onde a prancha vai; dá pra virar 360° na onda ----
+  // r.dir = direção da prancha (0 = direita, 90° = baixo). Indo pra esquerda o Markin é desenhado espelhado (nunca de cabeça pra baixo).
+  const mag=Math.min(1,Math.hypot(inp.ix,inp.iy)),aponta=mag>.2;
+  if(r.air){ // no ar: as setas giram a prancha; tem que pousar com o bico pra baixo
+    const a=r.air;a.vz-=SF.G*dt;a.z+=a.vz*dt;
+    const giro=clamp(inp.ix*r.face+inp.iy,-1,1);r.ang+=giro*7.4*dt;a.tot+=Math.abs(giro*7.4*dt);
+    if(a.z<=0){const g=surfGraus(r.ang),bico=g>=8&&g<=115,voltas=Math.floor((a.tot*180/Math.PI+40)/360);r.air=null;a.z=0;
+      if(bico){r.ang=.6;r.dir=r.face>0?.6:Math.PI-.6;r.giro=0;r.y=SF.LABIO+10;r.v=Math.max(r.v,85);surfPts(voltas>0?250+voltas*350:250,voltas?`AÉREO ${voltas*360}°`:'AÉREO');
+        for(let i=0;i<12;i++)m.splash.push({x:m.mx+rnd(-8,8),y:r.y+2,vx:rnd(-60,60),vy:rnd(-90,-30),t:rnd(.4,.7)});}
+      else{surfCai(g<8||g>300?'Caiu reto demais! Tem que cair com o bico pra baixo.':'Pousou torto! A prancha foi pra um lado, tu pro outro.');return;}}
   }else{
-    // subir/descer na parede: descendo ganha velocidade, subindo perde
-    const alvoVy=inp.iy*110;r.vy+=(alvoVy-r.vy)*Math.min(1,dt*6);r.y=clamp(r.y+r.vy*dt,SF.TOPO,SF.BASE);
-    r.v+=(r.vy>0?r.vy*.55:r.vy*.4)*dt*2;r.v+=(64-r.v)*dt*.35;
-    // ← cutback: vira de volta pra espuma (freia); → bombeia a prancha (acelera)
-    if(inp.ix<-.5){r.v-=95*dt;if(!r.cut&&r.dist>85){surfPts(70,'CUTBACK');}r.cut=true;}else r.cut=false;
-    if(inp.ix>.5)r.v+=28*dt;
-    r.v=clamp(r.v,25,150);
-    r.ang=clamp(r.vy/110,-1,1)*.55;
-    // batida: virar pra baixo lá em cima, rápido
-    const dir=Math.sign(inp.iy);if(dir&&dir!==r.ultDir){if(dir>0&&r.y<SF.TOPO+12&&r.v>80)surfPts(80,'BATIDA');else if(dir<0&&r.y>SF.BASE-14&&r.v>75)surfPts(40,'CAVADA');r.ultDir=dir;}
-    // aéreo: sobe rápido até o lábio e aperta MANOBRA
-    if(inp.act){if(r.y<=SF.TOPO+4&&r.vy<-40&&r.v>85){r.air={z:0,vz:120+r.v*.4,t:0,spin:1};sfx.pick();}
-      else if(r.y>SF.TOPO+14&&r.v>60){surfPts(60,'RASGADA');r.v-=8;r.rasg=.35;
-        for(let i=0;i<14;i++)m.splash.push({x:m.mx+8,y:r.y,vx:rnd(10,90),vy:rnd(-120,-50),t:rnd(.4,.8)});}}
-    r.dist+=(r.v-curl)*dt;
-    // tubo: alto e dentro do tubo (que vai fechando)
-    const noTubo=r.dist<R0+2&&r.dist>-R0*.45&&r.y<SF.TOPO+44;
-    if(noTubo){r.tubo+=dt;if(Math.floor(r.tubo*2)!==Math.floor((r.tubo-dt)*2))surfPts(25,'TUBO');if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}else r.tubo=0;
-    // crista: andando lá em cima, fora do tubo
-    if(!noTubo&&r.y<=SF.TOPO+6&&r.v>70){r.crista+=dt;if(Math.floor(r.crista*2)!==Math.floor((r.crista-dt)*2))surfPts(15,'CRISTA');}else r.crista=0;
-    if(r.dist<-R0*.45-4||(r.dist<8&&!noTubo)){surfCai(noTubo||r.dist<0?'O tubo fechou em cima!':'A espuma te engoliu!');return;}
-    if(r.dist>150){r.longe+=dt;r.v-=18*dt;if(r.longe>.2&&m.falaT<0){m.fala=pick(DUDU_POCKET);m.falaT=1.8;}if(r.longe>4){surfCai('Saiu da onda: ela morreu no raso.');return;}}else r.longe=0;
+    // vira a prancha na direção apontada, pelo caminho mais curto (não pula de uma vez)
+    if(aponta){let dd=Math.atan2(inp.iy,inp.ix)-r.dir;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-4.6*dt,4.6*dt);r.dir+=passo;r.giro=(r.giro||0)+passo;}
+    // volta completa na onda = 360°
+    if(Math.abs(r.giro||0)>=Math.PI*2){r.giro-=Math.sign(r.giro)*Math.PI*2;surfPts(400,'360°');}
+    const cs=Math.cos(r.dir),sn=Math.sin(r.dir);r.face=cs>=0?1:-1;
+    r.ang=Math.atan2(sn,Math.abs(cs)); // ângulo da prancha do jeito que ele tá virado (entre -90° e 90°)
+    // velocidade: cada coisa soma um pedaço e só juntando tudo chega no máximo:
+    // apontar (até a metade) + segurar ESPAÇO + prancha virada pra cima ou pra baixo (até 90°). Soltando, ele perde velocidade.
+    // bombear: cada troca entre subir e descer soma mais velocidade (até +70); andando reto ela vai se perdendo
+    const vert=sn<-.3?-1:sn>.3?1:0;if(vert&&r.ultVert&&vert!==r.ultVert)r.bomba=Math.min(70,(r.bomba||0)+14);if(vert)r.ultVert=vert;
+    r.bomba=Math.max(0,(r.bomba||0)-(vert?3:9)*dt);
+    const alvoV=(aponta?52+mag*38:22)+(inp.held?40:0)+Math.abs(sn)*40+r.bomba;
+    r.v+=(alvoV-r.v)*(alvoV<r.v?(aponta?1.4:2.6):1.1)*dt;r.v=clamp(r.v,22,SF.VMAX);
+    r.vy=sn*clamp(r.v,60,120);r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2);
+    if(r.y>SF.FUNDO){surfCai('Desceu demais e afundou na base da onda!');return;}
+    // perdendo velocidade: a rabeta afunda e espirra um jato de água pra trás
+    const freia=r.v-alvoV>25;
+    if(freia)for(let k=0;k<2;k++)m.splash.push({x:m.mx-18*cs+rnd(-2,2),y:r.y+3-18*sn,vx:-cs*rnd(50,110),vy:rnd(-100,-40),t:rnd(.25,.45)});
+    const alvoL=inp.held?.8:freia?-1:aponta&&mag>.6?mag:0;r.lean=(r.lean||0)+(alvoL-(r.lean||0))*Math.min(1,dt*10); // abaixa acelerando ou freando
+    if(inp.held)r.carga=Math.min(1,(r.carga||0)+dt); // segurando ESPAÇO: ganha velocidade e prepara o salto
   }
-  r.dist=clamp(r.dist,-40,200);m.scroll+=curl*dt; // a tela anda junto com o tubo
-  m.mx=clamp(SF.CX+r.dist,16,W-16);
-  if(r.t>=SF.ONDA){m.total+=m.pts+100;m.pops.push({x:m.mx,y:80,t:1.6,txt:'ONDA COMPLETA +100'});m.phase='caiu';m.cai=1.6;m.msg=`Fim da onda ${m.onda}: ${m.pts+100} pontos!`;m.msgT=1.6;m.pts=0;m.r=null;surfFimOnda();}
+  // a quebra anda: indo pra direita mais rápido que ela = ela vai embora; devagar ou indo pra esquerda = ela te alcança
+  const hv=r.v*(r.air?r.air.hx:Math.cos(r.dir));
+  m.cx=clamp(m.cx+(SF.CURL-hv)*dt,-160,W+60);
+  // tartarugas (depois de 5 s em pé): vêm da direita junto com a parede
+  if(m.phase==='ride'&&r.t>5){m.tartT-=dt;if(m.tartT<=0){m.tartT=rnd(4.4,7.6);m.tart.push({x:W+20,y:rnd(SF.TOPO+12,SF.BASE-4),t:rnd(0,6),fala:null,falaT:0,falou:false});}}
+  for(const q of m.tart){q.x-=hv*.9*dt;q.t+=dt;q.falaT-=dt;
+    if(!q.falou&&q.x<W-30&&!m.tart.some(o=>o.falaT>0)&&Math.random()<.25){q.fala=pick(TARTA_FALAS);q.falaT=1.8;}if(q.x<W-30)q.falou=true;
+    if(!r.air&&Math.abs(q.x-m.mx)<22&&Math.abs(q.y-r.y)<11){surfCai('Bateu numa tartaruga!');q.fala='Achei que nós éramos amigos @#$';q.falaT=2.5;m.tart=[q];return;}}
+  m.tart=m.tart.filter(q=>q.x>-30&&q.x<W+60);
+  const xb=surfFrente(m.cx,r.y+4); // frente da quebra na altura da prancha
+  m.mx+=((xb-32>SF.MX?xb-32:SF.MX)-m.mx)*Math.min(1,dt*5); // depois que ele sumiu na espuma, a quebra empurra ele pra direita
+  const noTubo=!r.air&&surfFrente(m.cx,r.y-15)>=m.mx; // metade do corpo já atrás da espuma
+  // crista (o meio da linha branca): subindo, ele sai da onda. O salto depende da velocidade, e soltar o ESPAÇO
+  // bem no meio da linha branca (depois de segurar) faz voar muito mais. Subindo e apontando pra baixo = BATIDA.
+  // Chegar na crista devagar, ou em cima da espuma (da quebra pra esquerda), = vaca.
+  if(!r.air&&m.phase==='ride'){
+    const subindo=Math.sin(r.dir)<-.3,sf=clamp((r.v-28)/(SF.VMAX-28),0,1),base=20+150*sf,solta=r.segurava&&!inp.held,naEspuma=surfFrente(m.cx,SF.CREST)>m.mx-12;
+    const salta=hh=>{r.air={z:0,vz:Math.sqrt(2*SF.G*Math.min(250,hh)),tot:0,hx:Math.cos(r.dir)};r.ang=Math.max(r.ang,-.8);r.carga=0;sfx.pick();m.fala='VOA, MARKIN!';m.falaT=1;};
+    if(solta&&subindo&&r.y<=SF.LABIO+12&&!naEspuma&&r.v>=SF.VSAI){const p=1-(r.y-SF.LABIO)/12;salta(base*(1+1.6*p*(r.carga||0)));} // soltou na hora certa
+    else if(solta)r.carga=0; // soltou fora da hora: perde a carga
+    else if(subindo&&r.y<=SF.LABIO){
+      if(naEspuma){surfCai('Subiu na espuma e a onda quebrou em cima!');return;}
+      if(aponta&&inp.iy>.3){ // batida: bate no lábio e volta pra baixo jogando um leque de água
+        r.dir=Math.atan2(-Math.sin(r.dir),Math.cos(r.dir));r.y=SF.LABIO+3;
+        const perto=m.mx-surfFrente(m.cx,SF.CREST),pts=Math.round(150*clamp(1+(140-perto)/70,1,3)/10)*10;surfPts(pts,'BATIDA');
+        for(let i=0;i<22;i++)m.splash.push({x:m.mx-r.face*rnd(6,20),y:r.y,vx:-r.face*rnd(20,120),vy:rnd(-170,-60),t:rnd(.5,.9)});}
+      else if(r.v<SF.VSAI){surfCai('Chegou devagar na crista e a onda quebrou em cima!');return;}
+      else salta(base);} // saiu da onda (segurando ESPAÇO ou não, pulo normal)
+  }
+  r.segurava=inp.held;
+  if(noTubo){r.tubo+=dt;if(Math.floor(r.tubo*2)!==Math.floor((r.tubo-dt)*2))surfPts(25,'TUBO');if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}else r.tubo=0;
+  if(m.mx>W-12){surfCai('O tubo fechou em cima de você!');return;}
+  if(m.total+m.pts>=SF.META&&!r.air){m.total+=m.pts;m.pts=0;surfFimOnda();} // a onda não acaba: vai até cair ou bater a meta
 }
 function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   R(g,x-14,y,28,3,'#f4f1e8');R(g,x-14,y+1,28,1,'#e84a4a');
@@ -2102,27 +2205,45 @@ function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na arei
   R(g,x+10,y-2,8,3,'rgba(0,0,0,.25)');R(g,x+11,y-32,6,30,'#f4f1e8');R(g,x+12,y-34,4,2,'#f4f1e8');R(g,x+13,y-31,2,28,'#e84a4a');R(g,x+11,y-4,6,2,'#d9bf7c');
   drawBuddy(g,x-2,y,DUDU,{dir:'down',frame:Math.sin(t*2)>.7?1:0,t});
 }
-// Markin em pé na prancha (inclina com a curva; no aéreo gira)
-function drawSurfista(g,x,y,ang,rot,agacha){
-  g.save();g.translate(Math.round(x),Math.round(y));g.rotate(ang+rot*Math.PI/180);
-  R(g,-17,0,34,4,'#f4f1e8');R(g,-17,1,34,1,'#ffb347');R(g,14,-1,4,3,'#f4f1e8');R(g,-3,4,6,2,'#1d1d22');
-  drawMkCorpo(g,0,0,{bermuda:true,sombra:false,agachado:agacha||Math.abs(ang)>.3,arms:'abre',face:1,frame:0});
-  drawMkCabeca(g,0,agacha?-15:-19,agacha?21:24);g.restore();}
-// Markin deitado na prancha remando, visto de cima (igual ao California Games): os braços giram
+// Markin na prancha. pose: 'deitado' (remando), 'flexao' (empurrando a prancha), 'agacha' ou 'pe'.
+// Prancha grande, vista meio de cima (igual ao jogo); os dois pés ficam sempre em cima dela (inclusive no aéreo).
+function drawPrancha(g){
+  g.fillStyle='#8a8ab0';g.beginPath();g.ellipse(4,4,24,5,0,0,Math.PI*2);g.fill();
+  g.fillStyle='#f4f4f0';g.beginPath();g.ellipse(4,2.5,24,4.5,0,0,Math.PI*2);g.fill();
+  g.fillStyle='#ffffff';g.fillRect(-14,0,30,1);
+  R(g,16,1,6,1,'#e8f060');R(g,14,2,9,1,'#c8e040');R(g,18,3,4,1,'#e8f060');}
+function drawSurfista(g,x,y,ang,pose,lean=0,reto=false,face=1){
+  // acelerando o bico desce um pouco; freando o bico levanta (rabeta afunda)
+  const ab=ang+(lean>0?.15*lean:.28*lean);
+  g.save();g.translate(Math.round(x),Math.round(y));if(face<0)g.scale(-1,1);g.rotate(ab);drawPrancha(g);
+  if(Math.abs(lean)>.25&&pose==='pe')pose='agacha'; // acelerando ou freando ele abaixa (só o joelho dobra)
+  if(reto)g.rotate(-ab*.2); // virando, o corpo inclina junto com a prancha pros pés ficarem no mesmo lugar
+  const bracos=lean>.4?'frente':lean<-.4?'up':'abre'; // acelerando: braços pra frente · freando: braços pra cima equilibrando
+  if(pose==='deitado'||pose==='flexao'){const sobe=pose==='flexao'?4:0;
+    R(g,-15,-3,9,3,'#d29a6c');R(g,-16,-2,2,2,'#b8804f'); // pernas e pés
+    R(g,-7,-4,7,4,'#2d8fe8'); // bermuda
+    R(g,0,-5-sobe,10,5,'#5a3a26');R(g,0,-5-sobe,10,1,'#6e4a32'); // camiseta
+    R(g,5,-sobe-1,3,sobe+1,'#d29a6c');R(g,5,-1,3,1,'#b8804f'); // braço empurrando a prancha
+    drawMkCabeca(g,13,-2-sobe,12);}
+  else{const ag=pose==='agacha';
+    drawMkCorpo(g,0,0,{bermuda:true,sombra:false,agachado:ag,firme:true,arms:bracos,face:1,frame:0});
+    drawMkCabeca(g,0,ag?-16:-19,24);} // abaixado: só o joelho dobra, a cabeça não muda
+  g.restore();}
+// Markin deitado na prancha remando na diagonal pra baixo, na parede da onda (igual ao "APERTE UM BOTÃO")
 function drawRemada(g,x,y,t){
-  g.save();g.translate(Math.round(x),Math.round(y));g.rotate(-.5);
-  // rastro de espuma atrás da prancha
-  for(let i=0;i<10;i++){const yy=22+i*3,s=Math.sin(t*9+i);R(g,-6-i*.6+s,yy,2,2,'rgba(233,244,255,.7)');R(g,4+i*.6-s,yy,2,2,'rgba(233,244,255,.7)');}
+  g.save();g.translate(Math.round(x),Math.round(y));g.rotate(Math.PI-.55);
+  // espuma em volta da prancha
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2+t*3,rr=13+Math.sin(t*9+i*2)*3;R(g,Math.cos(a)*rr*.8,Math.sin(a)*rr*1.7,2,2,i%3?'rgba(220,230,255,.8)':'#ffffff');}
   // prancha
-  for(let yy=-26;yy<=22;yy++){const u=(yy+2)/24.5,w=Math.round(7.5*Math.sqrt(Math.max(0,1-u*u)));if(w>0){R(g,-w,yy,w*2,1,'#f4f1e8');R(g,-w,yy,1,1,'#c9c2b2');}}
-  R(g,0,-24,1,44,'#ffb347');
+  for(let yy=-26;yy<=22;yy++){const u=(yy+2)/24.5,w=Math.round(7.5*Math.sqrt(Math.max(0,1-u*u)));if(w>0){R(g,-w,yy,w*2,1,'#f4f4f0');R(g,-w,yy,1,1,'#8a8ab0');}}
+  R(g,-1,-24,2,8,'#e8f060');
   // pernas e pés
   R(g,-4,5,3,13,'#d29a6c');R(g,1,5,3,13,'#d29a6c');R(g,-4,17,3,2,'#b8804f');R(g,1,17,3,2,'#b8804f');
   // bermuda e camiseta
   R(g,-5,-1,10,8,'#2d8fe8');R(g,-5,5,10,1,'#1f6ab8');
   R(g,-6,-14,12,14,'#5a3a26');R(g,-6,-14,12,1,'#6e4a32');R(g,-1,-14,2,3,'#e3b341');
   // braços girando (um na frente, o outro atrás, alternando)
-  const a=t*7.5;
+  const a=t*9;
   for(const [sx,ph] of [[-6,a],[6,a+Math.PI]]){
     const reach=Math.cos(ph)*13,naAgua=Math.sin(ph)<0,hx=sx+Math.sign(sx)*(naAgua?5:3),hy=-12-reach;
     g.strokeStyle=naAgua?'#b8804f':'#d29a6c';g.lineWidth=3;g.beginPath();g.moveTo(sx,-12);g.lineTo(hx,hy);g.stroke();
@@ -2131,78 +2252,122 @@ function drawRemada(g,x,y,t){
   // cabeça (de cima: cabelo)
   R(g,-4,-22,8,8,'#d29a6c');R(g,-4,-22,8,5,'#2a1d16');R(g,-5,-21,1,4,'#2a1d16');R(g,4,-21,1,4,'#2a1d16');
   g.restore();}
-// lábio da onda: arco grosso que sai da crista e cai por cima do tubo
-function drawLabio(g,cx,cy,Ri,Ro,a0,a1,t){
-  const gr=g.createLinearGradient(cx-Ro,cy-Ro,cx+Ro,cy);gr.addColorStop(0,'#ffffff');gr.addColorStop(.6,'#d8f0ff');gr.addColorStop(1,'#7fcaf0');
-  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,Ro,a0,a1,true);g.arc(cx,cy,Ri,a1,a0,false);g.closePath();g.fill();
-  g.strokeStyle='rgba(20,80,140,.5)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,Ri,a0,a1,true);g.stroke();
-  const n=28;for(let k=0;k<=n;k++){const an=a0+(a1-2*Math.PI-a0)*k/n,rr=Ro+Math.abs(Math.sin(k*1.7+t*9))*3;R(g,cx+Math.cos(an)*rr-1,cy+Math.sin(an)*rr-1,2,2,'#ffffff');}}
+// texturas da onda em pixel art pontilhada (feitas uma vez só): céu, mar lá no fundo, parede e água já quebrada
+let surfTex=null;
+function surfTexturas(){if(surfTex)return surfTex;
+  const hex=s=>[parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16)];
+  const lerp=(a,b,k)=>a+(b-a)*k;
+  const hx=(a,b)=>((Math.imul(a+11,73856093)^Math.imul(b+7,19349663))>>>0)%997/997;
+  const mk=(w,h,cor)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),id=x.createImageData(w,h);
+    for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const k=cor(xx,yy),i=(yy*w+xx)*4;id.data[i]=k[0];id.data[i+1]=k[1];id.data[i+2]=k[2];id.data[i+3]=255;}
+    x.putImageData(id,0,0);return c;};
+  const dith=(pal,s,xx,yy)=>{const i=Math.floor(s),f=s-i;return pal[clamp(i+(hx(xx,yy)<f?1:0),0,pal.length-1)];};
+  const ceuP=['#2a1ac0','#3e2ee0','#5a50ec','#7a78f4','#a0a4fa','#c4c8ff'].map(hex);
+  const marP=['#06205a','#0a3478','#10508e','#2a76b0','#6aa0d8','#ffffff'].map(hex);
+  const parP=['#04043c','#08085e','#0c0c84','#1414aa','#2028cc','#3442e4','#5a68f2','#8e9cfa','#d0d8ff','#ffffff'].map(hex);
+  const queP=['#1414b8','#2a2ad8','#4646ee','#6464f6','#8a8afa','#b4b4fc','#e0e0ff','#ffffff'].map(hex);
+  const ceu=mk(W,27,(x,y)=>dith(ceuP,(y/27)*4.6+(y%4===0?.4:0),x,y));
+  const mar=mk(384,22,(x,y)=>{const esp=(y===5||y===11||y===16)&&hx(x>>1,y)<.32;if(esp)return marP[hx(x,y+50)<.6?5:4];
+    return dith(marP,1+y/22*1.6+Math.sin(x/9+y)*.5,x,y);});
+  // parede: "escamas" em V invertido, claras em cima e embaixo e escuras no meio; a crista branca no topo
+  const PH=H-SF.CREST;
+  const parede=mk(384,PH,(x,y)=>{
+    if(y<4){const h=hx(x,y);return y<2?(h<.75?parP[9]:parP[7]):(h<.45?parP[9]:h<.8?parP[8]:parP[6]);}
+    const tri=Math.abs(((x%48)/48)*2-1),v=(((y-10*tri+3*Math.sin(x/7))%16)+16)%16/16,n=(hx(x,y+99)-.5)*1.4;
+    const base=y<10?5.4:y<40?lerp(4.6,1.6,(y-10)/30):y<95?lerp(1.6,.3,Math.min(1,(y-40)/30)):lerp(.3,2.4,(y-95)/(PH-95));
+    const k=y<40?1.3:y<95?.35:1.1;return dith(parP,clamp(base+k*Math.pow(1-v,3)+n-.3,0,9),x,y);});
+  // água já quebrada (à esquerda da quebra): faixas onduladas claras, pontinhos escuros e espuma embaixo
+  const quebrada=mk(384,PH+4,(x,y)=>{const h=hx(x,y+300);if(h<.05)return parP[1];
+    const ond=Math.sin((y+6*Math.sin(x*Math.PI/24))/7);let s=2.6+ond*1.6+(y>PH-30?(y-(PH-30))/30*4:0)+(y<8?2:0);
+    return dith(queP,clamp(s,0,7),x,y);});
+  return surfTex={ceu,mar,parede,quebrada};}
+// a quebra: coluna branca de espuma que ferve, com o lábio inclinado pra direita lá em cima
+// tartaruga de lado (casco marrom, cabeça verde de bochecha rosa), com metade do corpo dentro d'água balançando.
+// O desenho é virado pra esquerda; dir=1 vira pra direita. Y é a linha d'água.
+const TARTA_PX=[
+  '.........KKKKKKKK.......',
+  '.GGGG..KKwBBKBBwBKK.....',
+  'GGGGGG.KBBBBKBBBBBBK....',
+  'GwGGGGKBBBBBKBBBBBBBK...',
+  'GEGGEGKBBBKKKKKBBBBBBK..',
+  'PGGGGPKBBKbbbbbKKBBBBK..',
+  'GGGGGGKBKbbbbbbbbKBBBK..',
+  '.GGGGGKKbbbbbbbbbbKBBKGG',
+  '..GGGGKKKKKKKKKKKKKKKKGG',
+  '....GGGGGGGGGGGGGGGGGG..',
+  '...gGGGG.........GGGGg..',
+  '...gGGGg.........gGGGg..',
+  '...ggggg.........ggggg..'];
+const TARTA_COR={K:'#2a1a0e',B:'#7a4520',b:'#94562a',w:'#f4e4d4',G:'#3ad84a',g:'#1e9a2e',P:'#ff7a8a',E:'#111111'};
+function drawTartaruga(g,X,Y,t,dir){
+  const s=1.1,bob=Math.sin(t*3)*1.2,top=Math.round(Y-9*s+bob);
+  g.save();g.beginPath();g.rect(X-30,Y-30,60,30);g.clip(); // só a metade de cima aparece, o resto tá dentro d'água
+  for(let r=0;r<TARTA_PX.length;r++)for(let c=0;c<24;c++){const k=TARTA_PX[r][c];if(k==='.')continue;
+    const cc=dir>0?23-c:c;g.fillStyle=TARTA_COR[k];g.fillRect(Math.round(X-12*s+cc*s),top+Math.round(r*s),Math.ceil(s),Math.ceil(s));}
+  g.restore();
+  // marolinha em volta, na linha d'água
+  for(let i=-8;i<=8;i++){const yy=Y+Math.round(Math.sin(i*.9+t*6)*1);R(g,X+i*2.4-1,yy,2,1,i%2?'#d8e4ff':'#ffffff');}
+}
+function drawQuebra(g,cx,t){const c=Math.floor(t*12),cores=['#ffffff','#ffffff','#e4e4ff','#b8b8f8','#7c7cf0'];
+  for(let y=SF.CREST-6;y<H;y+=2){const u=clamp((y-SF.CREST)/(H-SF.CREST),0,1),xf=surfFrente(cx,y)+Math.sin(y/5+t*8)*1.5,wc=16+u*24;
+    if(xf<-4||xf-wc>W)continue;
+    for(let x=Math.floor(xf-wc);x<xf+4;x+=2){const h=((Math.imul(x+400,73856093)^Math.imul(y,19349663)^Math.imul(c,83492791))>>>0)%100,borda=x>xf-2||x<xf-wc+4;
+      if(borda&&h>45)continue;if(y<SF.CREST&&h>55)continue;R(g,x,y,2,2,cores[h%5]);}
+    if(((y*7+c)%9)===0)R(g,xf+3+((y+c)%5),y,2,2,'#d0d0ff');}
+  for(let k=0;k<10;k++){const p=(t*.8+k*.1)%1,x0=surfFrente(cx,SF.CREST)-6+(k*5)%14;R(g,x0+p*10,SF.CREST-4-p*14,2,2,'rgba(255,255,255,'+(1-p).toFixed(2)+')');}}
 function renderSurf(){
-  const g=ctx,m=mg,t=m.t;
-  if(m.phase==='ride'&&m.r){
-    const r=m.r,R0=surfR(r),Ro=R0+14,cx=SF.CX,cy=SF.TOPO-6+R0,mx=m.mx,sc=m.scroll;
-    // céu e mar lá atrás (anda devagar pra dar sensação de movimento)
-    const sky=g.createLinearGradient(0,0,0,40);sky.addColorStop(0,'#3a3ab8');sky.addColorStop(1,'#8a9ae8');g.fillStyle=sky;g.fillRect(0,0,W,40);
-    g.fillStyle='#1c2f9a';g.fillRect(0,40,W,SF.TOPO-40);
-    for(let i=0;i<30;i++){const yy=42+(i*7)%(SF.TOPO-46),xx=((i*67-sc*(.15+yy/400))%(W+30)+W+30)%(W+30)-15;R(g,xx,yy,10+(i%3)*4,1,'rgba(200,230,255,.45)');}
-    // parede da onda
-    const wall=g.createLinearGradient(0,SF.TOPO-8,0,H);wall.addColorStop(0,'#5fb8f0');wall.addColorStop(.3,'#2a6fd6');wall.addColorStop(1,'#12308e');g.fillStyle=wall;g.fillRect(0,SF.TOPO-8,W,H-SF.TOPO+8);
-    for(let i=0;i<40;i++){const yy=SF.TOPO+((i*37)%(H-SF.TOPO)),xx=((i*83-sc*(1+(yy-SF.TOPO)/120))%(W+40)+W+40)%(W+40)-20;R(g,xx,yy,10+(i%3)*6,1,'rgba(200,236,255,.3)');}
-    // crista com espuma, da boca do tubo pra direita
-    const a0=-Math.PI/2+.62,a1=Math.PI*.92,x0=cx+Math.cos(a0)*Ro;
-    for(let x=Math.floor(x0);x<W;x+=3){const yy=SF.TOPO-9+Math.round(Math.sin(x/9+t*5)*1.5);R(g,x,yy,3,3,'#e9f6ff');}
-    // dentro do tubo (mais escuro)
-    g.fillStyle='rgba(6,24,80,.72)';g.beginPath();g.ellipse(cx+2,cy+4,R0,R0*1.12,0,0,Math.PI*2);g.fill();
-    g.fillStyle='rgba(40,110,200,.35)';g.beginPath();g.ellipse(cx+R0*.35,cy+R0*.3,R0*.55,R0*.7,0,0,Math.PI*2);g.fill();
-    // espuma quebrando atrás (esquerda), sempre fechando
-    const ly=cy+Math.sin(a1)*Ro;
-    for(let y=SF.TOPO-6;y<H;y+=3){const w=Math.max(0,(y<ly?cx-Ro*.85:cx-R0*.6+(y-ly)*.3)+Math.sin(y/6+t*12)*5);R(g,0,y,w,3,(y+Math.floor(t*20))%6<3?'#f4fbff':'#cfe6f8');}
-    for(let i=0;i<22;i++)R(g,cx-R0*.6+rnd(-10,6),ly+rnd(-6,H-ly),2,2,'#ffffff');
-    // rastro da prancha
-    const ay=r.air?r.y-r.air.z:r.y;
-    for(let i=1;i<8;i++)R(g,mx-18-i*6,r.y+3+Math.sin(i+t*8),4,1,'rgba(233,244,255,.6)');
-    if(r.air)R(g,mx-8,r.y+2,16,2,'rgba(0,0,0,.2)');
-    drawSurfista(g,mx,ay,r.ang-r.rasg*1.4,r.rot,r.tubo>0);
-    // o lábio passa POR CIMA do Markin: dentro do tubo fica transparente pra dar pra ver ele
-    g.globalAlpha=r.tubo>0?.5:.96;drawLabio(g,cx,cy,R0+1,Ro,a0,a1,t);g.globalAlpha=1;
-    // velocidade e tempo da onda
-    R(g,W-70,168,60,5,'#0a1e30');R(g,W-70,168,60*clamp((r.v-25)/125,0,1),5,r.v>85?'#ffe14f':'#8be08b');outlineText(g,'VELOCIDADE',W-40,166,6,'#e9f4ff');
-    R(g,10,168,60,5,'#0a1e30');R(g,10,168,60*(1-r.t/SF.ONDA),5,'#4fd8ff');outlineText(g,'ONDA',40,166,6,'#e9f4ff');
-    if(r.dist>150)outlineText(g,'← cutback: volta pra perto do tubo',W/2,150,8,'#ffe14f');
-    if(r.tubo>0)outlineText(g,'NO TUBO!',mx,SF.TOPO-16,11,'#ffe14f');
-    else if(r.crista>0)outlineText(g,'NA CRISTA!',mx,SF.TOPO-16,9,'#8be08b');
-  }else{
-    // remando: mar visto de cima, a onda vem lá do fundo (igual ao California Games)
-    const sea=g.createLinearGradient(0,0,0,H);sea.addColorStop(0,'#1a2a9a');sea.addColorStop(.25,'#1f3fc8');sea.addColorStop(1,'#0e1e8a');g.fillStyle=sea;g.fillRect(0,0,W,H);
-    const sky=g.createLinearGradient(0,0,0,14);sky.addColorStop(0,'#2a2a90');sky.addColorStop(1,'#5a6ad8');g.fillStyle=sky;g.fillRect(0,0,W,14);
-    for(let i=0;i<150;i++){const yy=16+(i*29)%(H-16),xx=((i*53+t*(8+yy/10))%(W+10))-5;R(g,xx,yy,1+(i%3),1,i%4?'rgba(90,120,255,.55)':'rgba(170,200,255,.45)');}
-    const w=m.wave||{x:-999,h:0},dx=w.x-m.me.x,my=118;
-    if(m.phase==='espera'||dx>-60){
-      const wy=my-dx*.32,th=6+w.h*12; // a onda desce pela tela até chegar no Markin
-      g.fillStyle='rgba(12,26,110,.7)';g.fillRect(0,wy,W,th+6);
-      for(let x=0;x<W;x+=2){const yy=wy+Math.round(Math.sin(x/7+t*6)*1.5);R(g,x,yy,2,3,'#e9f4ff');if((x+Math.floor(t*30))%5===0)R(g,x,yy-2,2,2,'#c8e0ff');}
-      for(let x=0;x<W;x+=4)R(g,x,wy+3,3,1,'rgba(200,225,255,.5)');}
-    if(m.phase==='espera'){
-      const bob=Math.sin(t*3)*1.5+(Math.abs(dx)<30?-4*(1-Math.abs(dx)/30):0);
-      drawRemada(g,m.me.x,my+bob,t);
-      const ok=Math.abs(dx)<16;R(g,m.me.x-40,158,80,5,'#0a1e30');R(g,m.me.x-8,158,16,5,'#3fa34d');
-      R(g,clamp(m.me.x+dx*.5,m.me.x-40,m.me.x+38),155,2,11,ok?'#ffe14f':'#f4f1e8');
-      outlineText(g,ok?'APERTA AGORA!!!':'rema... espera a onda',W/2,58,ok?12:8,ok?'#ffe14f':'#f3ecd8');}
-  }
+  const g=ctx,m=mg,t=m.t,TX=surfTexturas(),sc=m.scroll,r=m.r;
+  const tile=(img,off,y)=>{const o=((off%img.width)+img.width)%img.width;g.drawImage(img,-o,y);if(img.width-o<W)g.drawImage(img,img.width-o,y);};
+  g.imageSmoothingEnabled=false;
+  // câmera: no aéreo ela sobe junto com o Markin
+  const camY=r&&r.air?Math.max(0,Math.round(78-(r.y-r.air.z))):0;
+  g.save();g.translate(0,camY);
+  if(camY>0){const ce=g.createLinearGradient(0,-camY,0,0);ce.addColorStop(0,'#14086e');ce.addColorStop(1,'#2a1ac0');g.fillStyle=ce;g.fillRect(0,-camY,W,camY);}
+  g.drawImage(TX.ceu,0,0);tile(TX.mar,sc*.12+t*4,27);
+  tile(TX.parede,Math.round(sc),SF.CREST);
+  const temQuebra=m.cx>-150&&(m.phase==='espera'||m.phase==='ride'||m.phase==='levanta'||m.phase==='caiu');
+  let aperta=false;
+  if(m.phase==='espera'){
+    const w=m.wave||{x:-999},dx=w.x-m.me.x,ok=Math.abs(dx)<13,bob=Math.sin(t*3)*1.5;aperta=ok;
+    drawRemada(g,140,100+bob,t);
+    R(g,m.me.x-40,158,80,5,'#0a1e30');R(g,m.me.x-8,158,16,5,'#3fa34d');
+    R(g,clamp(m.me.x+dx*.5,m.me.x-40,m.me.x+38),155,2,11,ok?'#ffe14f':'#f4f1e8');}
+  for(const q of m.tart||[])drawTartaruga(g,q.x,q.y,q.t,q.x<m.mx?1:-1);
+  if(r&&(m.phase==='ride'||m.phase==='levanta')){
+    const mx=m.mx,ay=r.air?r.y-r.air.z:r.y;
+    // rastro de espuma atrás da prancha
+    const nr=r.lean>.4?18:10; // acelerando: rastro de espuma maior
+    const tc=Math.cos(r.dir||0),ts=Math.sin(r.dir||0); // rastro fica atrás da prancha, pra onde ela estiver indo
+    for(let i=1;i<nr;i++){const s=Math.sin(i*1.7+t*14),k=20+i*4;R(g,mx-tc*k+s,r.y+2-ts*k*.7+s,2,2,i%2?'rgba(170,190,255,.8)':'#ffffff');}
+    if(r.air)R(g,mx-10,r.y+3,20,2,'rgba(0,0,30,.35)');
+    const pose=m.phase==='levanta'?(m.lev<SF.LEVANTA*.35?'deitado':m.lev<SF.LEVANTA*.7?'flexao':'agacha'):r.tubo>0?'agacha':'pe';
+    drawSurfista(g,mx,ay,m.phase==='levanta'?.3:r.ang,pose,r.air?0:r.lean||0,!r.air,r.face||1);}
+  // a parte clara que vem da esquerda (água quebrada + coluna de espuma) passa POR CIMA do Markin;
+  // quando ela tá em cima dele (tubo), fica transparente pra dar pra ver ele lá dentro
+  const cobre=r&&(m.phase==='ride'||m.phase==='levanta')&&surfFrente(m.cx,r.y-15)>m.mx-26;
+  if(cobre)g.globalAlpha=.45;
+  if(temQuebra){ // água já quebrada, à esquerda da coluna de espuma
+    g.save();g.beginPath();g.moveTo(-2,SF.CREST-2);
+    for(let y=SF.CREST-2;y<=H;y+=3){const u=clamp((y-SF.CREST)/(H-SF.CREST),0,1);g.lineTo(surfFrente(m.cx,y)-16-u*24+4,y);}
+    g.lineTo(-2,H);g.closePath();g.clip();tile(TX.quebrada,Math.round(sc*.45-t*10),SF.CREST-2);g.restore();}
+  if(temQuebra)drawQuebra(g,m.cx,t);
+  g.globalAlpha=1;
   for(const s of m.splash)R(g,s.x,s.y,2,2,'#e9f4ff');
-  // o Lucas na água, lá no ombro da onda
-  const ly=m.phase==='ride'?SF.BASE+8:122;drawDudu(g,m.phase==='ride'?W-34:42,ly+Math.sin(t*2)*1.5,t,true);
-  if(m.falaT>0)outlineText(g,'LUCAS: '+m.fala,m.phase==='ride'?W-110:100,m.phase==='ride'?ly-28:ly-30,7,'#fff1c2');
-  for(const q of m.pops){g.globalAlpha=clamp(q.t,0,1);outlineText(g,q.txt,q.x,q.y,8,'#ffe14f');g.globalAlpha=1;}
+  const pop=m.pops[m.pops.length-1]; // só o último ponto ganho aparece
+  if(pop){g.globalAlpha=clamp(pop.t,0,1);outlineText(g,pop.txt,pop.x,pop.y,8,'#ffe14f');g.globalAlpha=1;}
+  // UMA frase por vez: aviso > tempo no tubo > aperta > tartaruga > Lucas
+  const tq=(m.tart||[]).find(q=>q.falaT>0);
+  if(m.msgT>0&&m.msg&&m.result!=='win')outlineText(g,m.msg,W/2,40-camY,8,'#ffffff');
+  else if(r&&r.tubo>0)outlineText(g,`TEMPO NO TUBO: ${r.tubo.toFixed(1)}`,W/2,40-camY,10,'#ffffff');
+  else if(aperta)outlineText(g,'APERTA AGORA!!!',W/2,40,12,'#ffe14f');
+  else if(tq)outlineText(g,tq.fala,clamp(tq.x,50,W-50),tq.y-20,7,'#c8ffb0');
+  else if(m.falaT>0)outlineText(g,'LUCAS: '+m.fala,W/2,150,7,'#fff1c2');
+  g.restore();
   // placar
+  if(r&&m.phase==='ride'){R(g,W-70,168,60,5,'#0a1e30');R(g,W-70,168,60*clamp((r.v-28)/(SF.VMAX-28),0,1),5,r.v>110?'#ffe14f':'#8be08b');outlineText(g,'VELOCIDADE',W-40,166,6,'#e9f4ff');}
   R(g,4,3,118,26,'rgba(7,11,20,.72)');outlineText(g,`ONDA ${Math.min(m.onda,3)}/3`,8,12,7,'#fff1c2','left');
   outlineText(g,`TOTAL ${m.total}  · onda ${m.pts}`,8,24,7,'#8be08b','left');
-  if(m.combo>1)outlineText(g,`x${m.combo.toFixed(1)}`,W/2,14,10,'#ff8fc2');
   outlineText(g,`META ${SF.META}`,W-8,12,7,'#fff1c2','right');R(g,W-78,17,70,5,'#0a1e30');R(g,W-78,17,70*clamp((m.total+m.pts)/SF.META,0,1),5,'#ffe14f');
-  if(m.msgT>0)outlineText(g,m.msg,W/2,40,8,'#ffffff');
-  const bt=isTouch?'MANOBRA':'ESPAÇO';
-  if(m.phase==='espera'&&!m.result)outlineText(g,'aperta '+bt+' quando a onda chegar em você = DROP',W/2,178,7,'#fff1c2');
-  else if(m.r&&m.r.t<5&&!m.result)outlineText(g,'↑↓ sobe e desce · '+bt+' na parede = rasgada · subindo na crista = aéreo',W/2,178,7,'#fff1c2');
   if(m.wipe>0){g.fillStyle='rgba(255,255,255,'+(m.wipe/.6)+')';g.fillRect(0,0,W,H);}
   if(m.result==='win')outlineText(g,'NOTA 10!',W/2,92,24,'#ffe14f');
 }
@@ -2341,7 +2506,7 @@ function renderAltinha(){
   for(let i=0;i<m.maxDrops;i++){const alive=i<m.maxDrops-m.drops;g.globalAlpha=alive?1:.25;if(ballImg.complete)g.drawImage(ballImg,8+i*11,8,9,9);g.globalAlpha=1;}
   outlineText(g,`recorde ${Math.max(m.best,m.touches)}`,W-8,15,8,'#f3ecd8','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,62,10,'#ffffff');
-  if(m.t<4&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA':'← → anda · ↑ pula · ESPAÇO chuta · ESC sai',W/2,174,8,'#fff1c2');
+  else if(m.t<4&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA':'← → anda · ↑ pula · ESPAÇO chuta · ESC sai',W/2,174,8,'#fff1c2');
 }
 
 /* ---------- BLOCO SECRETO (corrida estilo Subway Surfers) ---------- */
@@ -2504,7 +2669,9 @@ function renderBloco(){
   // chão
   quad(g,[bp(-3.2,0,BZ.FAR),bp(3.2,0,BZ.FAR),{x:W+200,y:H+20},{x:-200,y:H+20}],'#bdb5a6');
   quad(g,[bp(-1.55,0,BZ.FAR),bp(1.55,0,BZ.FAR),bp(1.55,0,-2.4),bp(-1.55,0,-2.4)],'#3a3d48');
-  quad(g,[bp(-.5,0,BZ.FAR),bp(.5,0,BZ.FAR),bp(.5,0,-2.4),bp(-.5,0,-2.4)],'#9a3c34'); // a faixa vermelha do meio da Rio Branco
+  quad(g,[bp(.5,0,BZ.FAR),bp(1.55,0,BZ.FAR),bp(1.55,0,-2.4),bp(.5,0,-2.4)],'#9a3c34'); // faixa de ônibus (vermelha) na direita da Rio Branco
+  for(let z=-(m.dist%9)+2;z<BZ.FAR-3;z+=9){if(z<-1.5)continue;const a=bp(1.02,0,z),b=bp(1.02,0,z+1.8),w=Math.abs(bp(1.5,0,z).x-bp(.55,0,z).x);if(w<10)continue;
+    g.save();g.translate(a.x,(a.y+b.y)/2);g.scale(1,Math.max(.15,(a.y-b.y)/(w*.26)));g.fillStyle='rgba(244,241,232,.85)';g.font=`700 ${Math.round(w*.26)}px monospace`;g.textAlign='center';g.textBaseline='middle';g.fillText('ÔNIBUS',0,0);g.restore();}
   // prédios
   const seg=7,off=m.dist%seg;
   for(let k=Math.floor(BZ.FAR/seg);k>=0;k--){const z=k*seg-off,id=Math.floor((m.dist+k*seg)/seg);
@@ -2554,7 +2721,7 @@ function renderBloco(){
   outlineText(g,'HETEROTOP',W-6,11,7,'#9fd0ff','right');R(g,W-58,15,52,5,'#1a1030');R(g,W-58,15,52*m.gap,5,m.gap>.5?'#8be08b':m.gap>.25?'#ffb347':'#ff6b5d');
   for(const q of m.pops)if(q.txt){g.globalAlpha=clamp(q.t,0,1);outlineText(g,q.txt,BZ.CX+m.lx*BZ.LW,BZ.BOT-70-(1-q.t)*20,9,'#8be08b');g.globalAlpha=1;}
   if(m.msgT>0)outlineText(g,m.msg,W/2,50,9,'#ffffff');
-  if(t<4&&!m.result)outlineText(g,isTouch?'deslize pros lados: troca de faixa · toque: pula':'← → troca de faixa · ↑ ou ESPAÇO pula · pegue os itens pra não dormir',W/2,62,7,'#f3ecd8');
+  else if(t<4&&!m.result)outlineText(g,isTouch?'deslize pros lados: troca de faixa · toque: pula':'← → troca de faixa · ↑ ou ESPAÇO pula · pegue os itens pra não dormir',W/2,62,7,'#f3ecd8');
 }
 /* ---------- BAR: beber e equilibrar a cabeça pra não dormir sentado ---------- */
 let barDoors=[],barDay=0;
@@ -2654,7 +2821,7 @@ function renderBar(){
   if(m.hold>0)outlineText(g,`SEGURA! ${Math.ceil(m.hold)}`,W/2,58,16,'#ff8a6a');
   R(g,W/2-40,18,80,4,'#0a1020');const e=clamp(P.energy,0,100);R(g,W/2-40,18,80*e/100,4,e>60?'#8be08b':e>30?'#ffb347':'#ff6b5d');
   if(m.msgT>0)outlineText(g,m.msg,W/2,34,9,'#ffffff');
-  if(t<4&&!m.result)outlineText(g,isTouch?'setas seguram a cabeça · BEBE':'← → equilibra a cabeça · ESPAÇO bebe · ESC sai',W/2,178,7,'#fff1c2');
+  else if(t<4&&!m.result)outlineText(g,isTouch?'setas seguram a cabeça · BEBE':'← → equilibra a cabeça · ESPAÇO bebe · ESC sai',W/2,178,7,'#fff1c2');
 }
 /* ---------- BAMBINA: 4 vermelhas x 4 amarelas contra o Tubarão, um de cada vez; cerveja a cada tacada do Markin ----------
    A primeira bola que a branca tocar define a cor de quem tacou. Branca na caçapa: quem tacou perde.
@@ -2834,7 +3001,7 @@ function renderSinuca(){
   outlineText(g,`CERVEJAS ${m.beers}`,W/2,25,7,'#f2b63a');
   if(m.drinkT>0){R(g,188,16,6,9,'rgba(230,240,250,.6)');R(g,189,18,4,6,'#f2b63a');}
   if(m.msgT>0)outlineText(g,m.msg,W/2,40,8,'#ffffff');
-  if(m.phase==='pick'&&!m.result)outlineText(g,isTouch?'toque na bola que vai cair (ou ◀ ▶ e ESCOLHE)':'← → troca a bola · ESPAÇO derruba',W/2,178,7,'#fff1c2');
+  else if(m.phase==='pick'&&!m.result)outlineText(g,isTouch?'toque na bola que vai cair (ou ◀ ▶ e ESCOLHE)':'← → troca a bola · ESPAÇO derruba',W/2,178,7,'#fff1c2');
   else if(t<5&&!m.result)outlineText(g,isTouch?'◀ ▶ mira · FORÇA e depois TACAR':'← → mira · ESPAÇO: força · ESPAÇO de novo: tacada · ESC sai',W/2,178,7,'#fff1c2');
 }
 
@@ -2850,7 +3017,7 @@ function updTaxis(dt){
   const want=day>=2?1:0;
   if(taxis.length<want){taxiT-=dt;if(taxiT<=0){taxiT=rnd(15,25);spawnTaxi();}}
   for(const c of taxis){
-    const d=dist(c,P),sees=d<170&&!incog()&&P.mode!=='cut';
+    const d=dist(c,P),sees=d<170&&!incog()&&P.mode!=='cut'&&tregua<=0&&!grab;
     if(c.stuck>0){c.stuck-=dt;c.chase=false;continue;} // grudado na teia
     if(sees&&!c.chase){bubble(c,pick(['Táxi! Tua mãe que chamou!','Markin? Corrida já tá paga!','Bora pra casa, parceiro!']),2.2,'mom',16);beep(440,.25,'square',.05);beep(370,.3,'square',.05,0,.28);}
     c.chase=sees;
@@ -2864,7 +3031,7 @@ function updTaxis(dt){
     else c.node='';
     c.x+=c.dir[0]*sp;c.y+=c.dir[1]*sp;
     if(c.x<8||c.x>MW*T-8||c.y<8||c.y>(ORLA_Y+1)*T+1){c.dir=[-c.dir[0],-c.dir[1]];c.x=clamp(c.x,8,MW*T-8);c.y=clamp(c.y,8,(ORLA_Y+1)*T);}
-    if(d<16&&P.mode!=='cut'&&state==='play'){
+    if(d<16&&P.mode!=='cut'&&state==='play'&&tregua<=0&&!grab){
       interruptRest();lose(6);sfx.horn();c.dead=true;taxiT=25;
       // o táxi larga ele na porta e a mãe já segura pelo braço
       P.x=HOME.x;P.y=HOME.y+58;P.dir='up';flash=.5;mom.stun=0;mom.x=P.x+9;mom.y=P.y;if(!grab)startGrab('mae',mom);
@@ -3180,8 +3347,9 @@ function renderGuitarra(){
   outlineText(g,`${m.streak} seguidas`,W-6,11,7,'#ffb347','right');outlineText(g,`lição ${Math.min(m.lesson+1,3)}/3`,W-6,21,6,'#f3ecd8','right');
   for(const q of m.pops){g.globalAlpha=clamp(q.t*2,0,1);outlineText(g,q.txt,q.lane!=null?gtLaneX(q.lane):W/2,q.lane!=null?GT_HIT-18-(1-q.t/.6)*14:60,q.lane!=null?6:9,q.col);g.globalAlpha=1;}
   if(m.phase==='talk'&&!m.result){const ls=wrapTxt('Jamal: '+m.msg,36);R(g,60,40,200,10+ls.length*11,'rgba(10,6,20,.92)');R(g,60,40,200,1,'#ffe14f');ls.forEach((s,i)=>outlineText(g,s,W/2,52+i*11,7,'#ffffff'));
-    if(m.lesson===0)outlineText(g,isTouch?'toque na coluna quando a nota chegar na linha':'← ↓ ↑ → (ou 1 2 3 4) quando a nota chegar na linha',W/2,58+ls.length*11,6,'#ffe14f');}
+}
   else if(m.msgT>0)outlineText(g,m.msg,W/2,64,m.result?11:9,m.result==='lose'?'#ff6b5d':m.result==='win'?'#8be08b':'#ffffff');
+  else if(m.lesson===0&&m.phase==='play'&&!m.result&&m.t-m.beatT0<4)outlineText(g,isTouch?'toque na coluna quando a nota chegar na linha':'← ↓ ↑ → (ou 1 2 3 4) quando a nota chegar na linha',W/2,64,7,'#ffe14f');
 }
 /* marcadores no mapa */
 function drawAltinhaSpot(g,x,y,t){
@@ -3333,7 +3501,7 @@ function renderMaraca(){
     if(me.climb>0)mcDrawMe(g,me.x,MC_G-Math.min(1,me.climb/.8)*50,true,false);
     else mcDrawMe(g,me.x,MC_G,false,me.moving,me.face);
     R(g,40,175,240,3,'#2a2a2a');R(g,40,175,240*clamp((me.x-24)/(262-24),0,1),3,'#8be08b');
-    if(me.x>=262&&!me.climb&&!m.caught)outlineText(g,isTouch?'PULA pelo buraco do alambrado':'↑ pula pelo buraco do alambrado',me.x-40,MC_G-58,9,'#ffe14f');
+    if(me.x>=262&&!me.climb&&!m.caught&&!(m.msgT>0))outlineText(g,isTouch?'PULA pelo buraco do alambrado':'↑ pula pelo buraco do alambrado',me.x-40,MC_G-58,9,'#ffe14f');
   }else{
     R(g,0,64,W,116,'#2f8a3a');for(let i=0;i<8;i++)R(g,i*40,64,20,116,'#349a41');R(g,0,64,W,2,'#e8f4e0');R(g,0,MC_G+10,W,1,'rgba(232,244,224,.7)');
     const gx=298;g.strokeStyle='rgba(240,240,240,.35)';g.lineWidth=1;g.beginPath();for(let y=MC_G-48;y<MC_G;y+=4){g.moveTo(gx+2,y);g.lineTo(W,y);}for(let x=gx+4;x<W;x+=4){g.moveTo(x,MC_G-48);g.lineTo(x,MC_G);}g.stroke();
@@ -3345,13 +3513,13 @@ function renderMaraca(){
     mcDrawMe(g,m.me.x,MC_G-m.me.z,false,m.me.moving,m.me.face);
     const b=m.ball;if(b){R(g,b.x-3,MC_G+1,6,2,'rgba(0,0,0,.25)');g.fillStyle='#f4f4f4';g.beginPath();g.arc(b.x,MC_G-3-b.z,3,0,Math.PI*2);g.fill();R(g,b.x-1,MC_G-4-b.z,2,2,'#1a1a1a');}
     if(m.result==='win')outlineText(g,'GOOOOOL!',W/2,100,26,'#ffe14f');
-    if(!m.shot&&!m.result&&m.me.x>=100)outlineText(g,'chute quando a mira vermelha estiver longe do goleiro',W/2,176,8,'#fff1c2');
+    if(!m.shot&&!m.result&&m.me.x>=100&&!(m.msgT>0))outlineText(g,'chute quando a mira vermelha estiver longe do goleiro',W/2,176,8,'#fff1c2');
   }
   for(let i=0;i<3;i++){g.globalAlpha=i<m.tries?1:.25;g.fillStyle='#f4f4f4';g.beginPath();g.arc(12+i*12,12,4,0,Math.PI*2);g.fill();R(g,11+i*12,11,2,2,'#1a1a1a');g.globalAlpha=1;}
   outlineText(g,sneak?'INVASÃO':'RUMO AO GOL',W-8,15,9,'#fff1c2','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,42,10,'#ffffff');
   for(const q of m.pops){g.globalAlpha=clamp(q.t,0,1);outlineText(g,q.txt,q.x,q.y,10,'#ffe14f');g.globalAlpha=1;}
-  if(m.t<5&&!m.result&&sneak)outlineText(g,isTouch?'segura CORRE · fora da área vermelha · PULA no buraco':'segura → (ou ESPAÇO) pra correr · fuja da área vermelha · ↑ pula no buraco',W/2,168,8,'#fff1c2');
+  if(m.t<5&&!m.result&&sneak&&!(m.msgT>0)&&m.me.x<262)outlineText(g,isTouch?'segura CORRE · fora da área vermelha · PULA no buraco':'segura → (ou ESPAÇO) pra correr · fuja da área vermelha · ↑ pula no buraco',W/2,168,8,'#fff1c2');
 }
 
 /* ================= HUD ================= */
@@ -3360,6 +3528,7 @@ function updHUD(){
   // o painel do Markin fica transparente quando está na frente do Cristo Redentor
   const hl=document.querySelector('.hud-l');if(hl)hl.style.opacity=(26-cam.x<112&&47-cam.y<39&&108-cam.y>5)?'.28':'';
   const hr=document.querySelector('.hud-r');if(hr)hr.style.opacity=(71*T-cam.x<W&&3*T-cam.y<80&&7*T-cam.y>0)?'.28':'';
+  $('sbar').style.width=P.sono+'%';$('sbar').parentNode.classList.toggle('alerta',P.sono>75);
   const e=P.energy;$('ebar').style.width=e+'%';$('ecap').style.width=(100-maxE())+'%';$('ebar').style.background=e>60?'#8be08b':e>30?'#ffb347':'#ff6b5d';$('enum').textContent=Math.ceil(e);
   $('dayl').textContent=`DIA ${day}/15`;
   // relógio digital 24h: meia-noite = 00:00
@@ -3410,7 +3579,7 @@ function render(){
   if(vis(SURF))list.push({y:SURF.y,d:()=>drawSurfSpot(ctx,SURF.x-cx,SURF.y-cy,time)});
   if(bloco&&vis(bloco,60))list.push({y:bloco.y,d:()=>drawBlocoSpot(ctx,bloco.x-cx,bloco.y-cy,time)});
   for(const c of chairs)if(vis(c)){list.push({y:c.y-2,d:()=>drawChair(ctx,c.x-cx,c.y-cy)});list.push({y:c.y+4,d:()=>drawUmbrella(ctx,c.x-cx-2,c.y-cy-4)});}
-  for(const it of (items||[]))if(vis(it))list.push({y:it.y,d:()=>drawItem(ctx,it.type,it.x-cx,it.y-cy,time,it.fake?(.35+.35*Math.sin(time*9)):1)});
+  for(const it of (items||[]))if(vis(it))list.push({y:it.y,d:()=>drawItem(ctx,it.type,it.x-cx,it.y-cy,time,it.aluc?(.55+.35*Math.sin(time*9)):1)});
   if(mom&&state!=='title')list.push({y:mom.y,d:()=>drawMom(ctx,mom.x-cx,mom.y-cy,{dir:mom.dir,frame:mom.moving?Math.floor(mom.anim*8)%4:0,chase:mom.chasing,angry:mom.chasing||mom.stun>0})});
   if(tias)for(const t of tias)if(vis(t))list.push({y:t.y,d:()=>drawTia(ctx,t.x-cx,t.y-cy,{dir:t.dir,frame:t.moving?Math.floor(t.anim*6)%4:0,alert:t.alert>0})});
   if(keysE)for(const k of keysE)if(vis(k))list.push({y:k.y,d:()=>drawKey(ctx,k.x-cx,k.y-cy,time)});
@@ -3425,6 +3594,7 @@ function render(){
     drawMarkin(ctx,P.x-cx,py,{dir:P.dir,frame:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});}});
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
+  if(navioDX===0)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy);
   drawBandeira(ctx,cx,cy);drawBotoMar(ctx,cx,cy);
   for(const o of [mom,...(keysE||[])])if(o&&o.tonto>0&&vis(o)){const hx=o.x-cx,hy=o.y-cy-(o===mom?27:20);for(let i=0;i<3;i++){const a=time*5+i*2.1;outlineText(ctx,'★',hx+Math.cos(a)*7,hy+Math.sin(a)*2.5,6,['#ffe14f','#ffffff','#ff8fc2'][i]);}}
   for(const o of [mom,...keysE,...tias,...taxis,...npcs])if(o&&o.webUntil>time&&vis(o))drawWebWrap(ctx,o.x-cx,o.y-cy,o.h||20);
