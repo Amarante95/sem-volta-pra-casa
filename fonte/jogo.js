@@ -1110,7 +1110,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1450,6 +1450,9 @@ function play(dt){
   decay*=1-.04*buddies.filter(b=>!b.crowd).length; // a galera anima: energia cai mais devagar
   if(!chairS)P.energy-=decay*dt;if(P.energy>maxE())P.energy=maxE();
   if(!chairS&&!napS)P.sono=Math.min(100,P.sono+dt*clockRate*SONO_MIN*(fx.sleepy>0?2:1)); // o sono só passa cochilando
+  // faltando 25% pra apagar: um aviso só (volta a avisar depois de cochilar)
+  if(P.sono>=75&&!P.sonoAviso){P.sonoAviso=true;toast(pick(['Arranja um canto pra encostar a cabeça...','Tô pescando... preciso de um ponto de ônibus.','Meu olho tá fechando sozinho. Cadê uma cadeira?']),'bad',3);}
+  else if(P.sono<70)P.sonoAviso=false;
   let ix=0,iy=0;
   if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;
   if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;
@@ -1548,6 +1551,7 @@ function chamaDragao(){dragaoCd=40;const d=$('dragao');$('dragaoFala').textConte
 const MERMAO=['MERMÃO...','MERMÃÃÃO!','Mermão, olha isso, mermão...','MERMÃO, eu tô bem, MERMÃO.','Mermão... que que eu tava falando?','MERMÃO, te amo, mermão!'];
 function nivelDoido(){return (fx.drunk>0?1:0)+(fx.drunk>10?1:0)+(fx.trip>0?1:0)+(psyT>0?1:0)+(shroomStreak>=3&&time-lastShroomT<90?1:0);}
 function takeItem(it){
+  if(it.type!=='shroomRoxo')P.sono=Math.max(0,P.sono-5); // item dá uma acordada (o cogumelo estragado não)
   if(it.type.startsWith('shroom'))comeuCogumelo();
   sfx.pick();if(mus&&it.type.startsWith('shroom'))mus.shroomT=it.type==='shroomAranha'?16:it.type==='shroomRoxo'?9:12;
   if(it.type==='beer'){gain(12);sfx.gulp();fx.beers=fx.beers.filter(t=>time-t<40);fx.beers.push(time);
@@ -1586,7 +1590,7 @@ function shootWeb(){
 let lastSleep=-999,lastRest={chair:-99999,bus:-99999};
 const REST_GAP=720; // 12h de jogo pra cochilar de novo no mesmo ponto ou cadeira
 const REST_GAIN={chair:10,bus:20};
-const SONO_MIN=100/(48*60); // a barra de sono enche em 48h de jogo acordado
+const SONO_MIN=100/(96*60); // a barra de sono enche em 96h de jogo acordado
 const SONO_NAP={bus:100,chair:60}; // ponto de ônibus zera o sono, cadeira tira boa parte
 function canRest(o){return totalMin-(o.lastRest??-99999)>=REST_GAP;} // no mesmo lugar só 12h depois; outro lugar pode na hora
 // cochilo: 2,4 s de tela com o relógio correndo 3h, energia subindo aos poucos; se alguém interromper, não ganha nada
