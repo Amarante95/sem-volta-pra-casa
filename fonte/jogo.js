@@ -1279,7 +1279,7 @@ function drawBandeira(g,cx,cy){if(bandeira<=0)return;
   outlineText(g,'PARTIU PAQUETAAAAA!',mx+49,fy+11+Math.round(wv),7,'#ffe14f');}
 function* winGen(){
   P.mode='cut';bandeira=0;
-  yield* talk('Markin','Chegamo no porto, galera!! Embarca todo mundo!');
+  yield* talk('Markin','Chegamo no porto, galera!! Embarca todo mundo!',true);
   yield* walkTo(P,6*T+8,50*T+4,46);
   yield* walkTo(P,9*T+4,52*T+10,46);
   yield* walkTo(P,15*T,52*T+10,46);
@@ -1294,15 +1294,15 @@ function* winGen(){
   yield* wait(1);
   sfx.ring();bubble(P,'bizz bizz',1.2,'treme',46);
   yield* wait(.8);
-  yield* talk('Chefe (ligação)','Markin?! Que barulheira é essa no convés?');
-  yield* talk('Markin','É o BLOCO DO MARKIN, chefe. Vai todo mundo pro mar.');
-  yield* talk('Mãe (mensagem)','MARKIN!!! A SOPA DE CHUCHU!!!');
-  yield* talk('Markin','SEM VOLTA PRA CASA!! FODA-SE A CASA!!');
-  yield* talk('Markin','Capitão, muda a rota! Tem bloco em PAQUETÁ!');
+  yield* talk('Chefe (ligação)','Markin?! Que barulheira é essa no convés?',true);
+  yield* talk('Markin','É o BLOCO DO MARKIN, chefe. Vai todo mundo pro mar.',true);
+  yield* talk('Mãe (mensagem)','MARKIN!!! A SOPA DE CHUCHU!!!',true);
+  yield* talk('Markin','SEM VOLTA PRA CASA!! FODA-SE A CASA!!',true);
+  yield* talk('Markin','Capitão, muda a rota! Tem bloco em PAQUETÁ!',true);
   // um boto cor de rosa aparece pulando no mar, vindo da esquerda pra direita
   boto={x:P.x-150,y:55*T+6,t:0};
   {let t=0;while(t<2.4){const dt=yield;t+=dt;boto.t+=dt;boto.x+=60*dt;}}
-  yield* talk('Markin','Olha lá! Um BOTO COR DE ROSA de chapéu! É sinal, galera!');
+  yield* talk('Markin','Olha lá! Um BOTO COR DE ROSA de chapéu! É sinal, galera!',true);
   sfx.horn();bubble({x:21*T,y:49*T},'FOOOOOOM!',1.6,'big',8);shake=.4;
   // o navio zarpa (com o Markin e a galera a bordo) e o boto vem pulando do lado
   {const bordo=[P,...buddies];let v=0,t=0;while(t<6.5){const dt=yield;t+=dt;v=Math.min(46,v+dt*16);const dx=v*dt;navioDX+=dx;for(const o of bordo)o.x+=dx;boto.x+=dx+24*dt;boto.t+=dt;
@@ -3913,7 +3913,7 @@ function render(){
   for(const c of taxis)if(vis(c))list.push({y:c.y+6,d:()=>{drawTaxi(ctx,c,c.x-cx,c.y-cy);if(c.stuck>0)for(let i=0;i<4;i++){ctx.strokeStyle='rgba(240,240,255,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(c.x-cx-10+i*6,c.y-cy-8);ctx.lineTo(c.x-cx-4+i*3,c.y-cy+8);ctx.stroke();}}});
   if(boss&&finalStage===1&&vis(boss,80))list.push({y:boss.y,d:()=>{drawBossBloco(ctx,boss.x-cx,boss.y-cy,time);outlineText(ctx,'BLOCO DO JAMAL',boss.x-cx,boss.y-cy-50,7,'#ffe14f');}});
   for(const b of buddies)if(vis(b))list.push({y:b.y,d:()=>{drawBuddy(ctx,b.x-cx,b.y-cy,b,{frame:b.moving?Math.floor(b.anim*8)%4:0,t:time,dir:b.dir});
-    if(b.banner)drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true});}});
+    if(b.banner&&finalStage<3)drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true});}});
   const pf=P.moving?Math.floor(P.anim*8)%4:0,respira=!P.moving&&!chairS&&!napS&&!grab&&Math.sin(time*2.6)>.2;
   list.push({y:P.y+(chairS?6:0),d:()=>{
     const py=P.y-cy-(P.jumpZ||0);
@@ -3922,6 +3922,7 @@ function render(){
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
   if(navioDX===0)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy);
+  if(finalStage>=3)for(const b of buddies)if(b.banner&&vis(b))drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true}); // a bordo: o estandarte fica na frente do navio
   drawBandeira(ctx,cx,cy);drawBotoMar(ctx,cx,cy);
   for(const o of [mom,...(keysE||[])])if(o&&o.tonto>0&&vis(o)){const hx=o.x-cx,hy=o.y-cy-(o===mom?27:20);for(let i=0;i<3;i++){const a=time*5+i*2.1;outlineText(ctx,'★',hx+Math.cos(a)*7,hy+Math.sin(a)*2.5,6,['#ffe14f','#ffffff','#ff8fc2'][i]);}}
   for(const o of [mom,...keysE,...tias,...taxis,...npcs])if(o&&o.webUntil>time&&vis(o))drawWebWrap(ctx,o.x-cx,o.y-cy,o.h||20);

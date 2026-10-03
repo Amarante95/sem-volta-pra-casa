@@ -2,3 +2,11 @@
 sem-volta-pra-casa.html
 # fotos de referência e documento de alterações: ficam só no computador
 referencias/
+
+# caches e resíduos locais; não esconder fontes, músicas ou mapas
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
