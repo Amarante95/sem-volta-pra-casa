@@ -1164,7 +1164,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;fimOferecido=false;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1346,6 +1346,12 @@ function skipToFinal(stage){
   }
   trail=[];
 }
+// atalho de teste: dia 15, faltando 14h, com o sax, a Música do Tempo e as 3 palhetas (em 2h aparece a pergunta)
+function skipToFim(){
+  skipToFinal(1);
+  totalMin=15*1440-14*60;day=15;lastDay=15;diaSnap[15]={energy:P.energy,sono:P.sono};sabeMusica=true;palhetas=3;
+  banner('ATALHO: MÚSICA DO TEMPO','Faltam 14h. Daqui a 2h o Markin pode tocar o sax e voltar 2 dias.',4);
+}
 function startMarch(){
   finalStage=2;boss=null;P.mode='free';state='play';
   mom.alertT=25;mom.chasing=true;mom.stun=0;
@@ -1385,18 +1391,19 @@ function goTitle(){
   $('hud').hidden=true;$('touch').hidden=true;$('skip').hidden=true;$('festa').hidden=true;
   showScreen(`<div class="card"><div class="kicker">um jogo sobre o Markin</div><h2>SEM VOLTA<br>PRA CASA</h2><p>Depois de 15 dias embarcado, o Markin pisa em terra firme. O desafio: mais 15 dias acordado, sem voltar pra casa.</p><div class="btns"><button data-act="intro" type="button">COMEÇAR</button><button data-act="skipintro" class="ghost" type="button">Pular intro</button><button data-act="fases" class="ghost" type="button">Escolher fase</button><button data-act="controle" class="ghost" type="button">Controle</button></div><div class="difrow">Dificuldade: ${Object.keys(DIFFS).map(k=>`<button data-act="dif" data-d="${k}" type="button" class="${k===diff?'':'ghost'}">${DIFFS[k].nome}</button>`).join('')}</div></div>`);
 }
-const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['chefao','★ Chefão: Guerra dos Músicos'],['barco','★ Marcha ao barco']];
+const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['chefao','★ Chefão: Guerra dos Músicos'],['barco','★ Marcha ao barco'],['tempo','★ Música do Tempo (14h pro fim)']];
 let fasesBack='title';
 function showFases(back){
   fasesBack=back;
   showScreen(`<div class="card"><div class="kicker">escolher fase</div><h2>FASES</h2><p>${back==='pause'?'Os desafios continuam a partida atual. O chefão e a marcha começam uma partida nova, já com as 6 tarefas feitas.':'Cada fase começa uma partida nova. O chefão e a marcha já vêm com as tarefas feitas e a galera junta.'}</p>
-  <div class="fases">${FASES.map(([k,n])=>`<button data-act="fase" data-f="${k}" type="button" class="${k==='chefao'||k==='barco'?'':'ghost'}">${n}</button>`).join('')}</div>
+  <div class="fases">${FASES.map(([k,n])=>`<button data-act="fase" data-f="${k}" type="button" class="${k==='chefao'||k==='barco'||k==='tempo'?'':'ghost'}">${n}</button>`).join('')}</div>
   <div class="btns"><button data-act="fasesVoltar" class="ghost" type="button">Voltar</button></div></div>`);
 }
 function playFase(f){
   hideScreen();
   if(f==='chefao'){skipToFinal(1);startGuitarra();return;}
   if(f==='barco'){skipToFinal(2);return;}
+  if(f==='tempo'){skipToFim();return;}
   if(fasesBack==='pause')state='play';else{resetGame();startPlay();clearBubbles();}
   ({surf:startSurf,altinha:startAltinha,bloco:startBloco,bar:startBar,sinuca:startSinuca,festa:startFesta,maraca:startMaraca})[f]();
 }
@@ -1501,6 +1508,7 @@ function play(dt){
   totalMin+=dt*clockRate;
   day=Math.min(15,Math.floor(totalMin/1440)+1);
   if(totalMin>=15*1440){gameOver(TASKS.every(t=>tasksDone[t.k])?'navio':'tarefas');return;}
+  if(!fimOferecido&&totalMin>=15*1440-720&&temSax()&&sabeMusica&&palhetas>0){fimOferecido=true;abreTempo('fim');return;} // faltam 12h: oferece a Música do Tempo
   if(bloco&&dist(bloco,P)<150){bloco.lineT-=dt;if(bloco.lineT<=0){bloco.lineT=rnd(4,7);bubble(bloco,pick(['Ô abre alas!','ALALAÔ-Ô-Ô!','Vem pro bloco, Markin!','Mamãe eu quero!','Cadê o tamborim?!']),2.2,'tia',44);}}
   if(day!==lastDay){lastDay=day;diaSnap[day]={energy:P.energy,sono:P.sono};abreCapitulo(day);while(keysE.length<nKeys()){const p=randTileFrom(walkTiles,240);keysE.push({x:p.x,y:p.y,h:18});}}
   const wasTurbo=fx.turbo>0,wasSpider=fx.spider>0;
@@ -3918,7 +3926,7 @@ const K7890=GT_KEYS;
 const TECLA=['7','8','9','0'];
 const MUSICA_TEMPO=[0,2,1,3,0,0]; // 7 9 8 0 7 7
 const FAVELA_ENT={x:3*T+8,y:21*T+12,h:30}; // escadaria do Santo Amaro
-let sabeMusica=false,palhetas=3,usosTempo=0,diaSnap={},tempoS=null,palhetaT=60;
+let sabeMusica=false,palhetas=3,usosTempo=0,diaSnap={},tempoS=null,palhetaT=60,fimOferecido=false; // fimOferecido: já perguntou se quer tocar nas 12h finais
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
 function* saxGen(){
@@ -3942,14 +3950,16 @@ function updTempo(dt){const s=tempoS;s.t+=dt;for(let i=0;i<4;i++)s.press[i]=Math
       s.phase='toca';s.t=0;s.miss=0;s.notes=MUSICA_TEMPO.map((l,i)=>({lane:l,t:1.4+i*gap,hit:false,miss:false}));}return;}
   if(s.phase==='toca'){for(const n of s.notes)if(!n.hit&&!n.miss&&s.t-n.t>.18){n.miss=true;s.miss++;beep(110,.15,'sawtooth',.05,70);}
     const ult=s.notes[s.notes.length-1];if(s.t>ult.t+.5){s.phase='fim';s.fimT=1.8;s.ok=s.miss<=1;if(s.ok)sfx.win();else sfx.lose();}return;}
-  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
+  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else if(s.reason==='fim')tempoSegue('Desafinou... o tempo seguiu. Faltam 12 horas.');else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
 function tempoPress(ln){const s=tempoS;if(state!=='tempo'||!s||s.phase!=='toca')return;s.press[ln]=.15;
   let best=null,bd=.2;for(const n of s.notes){if(n.hit||n.miss||n.lane!==ln)continue;const d=Math.abs(n.t-s.t);if(d<bd){bd=d;best=n;}}
   if(best){best.hit=true;beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);beep(GT_SCALE[[2,4,5,7][ln]]*2,.15,'square',.012);}
   else{s.miss++;beep(150,.08,'square',.03);}}
-function tempoDesiste(){if(state!=='tempo')return;const r=tempoS.reason;state='play';$('hud').hidden=false;gameOver(r,true);}
+function tempoDesiste(){if(state!=='tempo')return;const r=tempoS.reason;if(r==='fim'){tempoSegue('O Markin guardou o sax. Faltam 12 horas, bora até o fim!');return;}state='play';$('hud').hidden=false;gameOver(r,true);}
+// nas 12h finais, se não tocou (ou desafinou), o jogo só segue
+function tempoSegue(msg){state='play';P.mode='free';$('hud').hidden=false;toast(msg,'',3.4);}
 function voltaNoTempo(reason){
-  palhetas--;usosTempo++;
+  palhetas--;usosTempo++;fimOferecido=false; // se chegar de novo nas 12h finais, pergunta de novo
   totalMin=Math.max(0,totalMin-2880);day=Math.min(15,Math.floor(totalMin/1440)+1);lastDay=day;
   for(const k in diaSnap)if(+k>day)delete diaSnap[k];
   const sn=diaSnap[day]||{energy:P.energy,sono:P.sono};
@@ -3962,12 +3972,12 @@ function renderTempo(){const g=ctx,s=tempoS;headCv.hidden=true;
   outlineText(g,'MÚSICA DO TEMPO',W/2,26,14,'#ffe14f');
   const pal='●'.repeat(palhetas)+'○'.repeat(Math.max(0,3-palhetas));
   if(s.phase==='pergunta'){
-    outlineText(g,{energy:'A energia acabou...',sono:'O sono venceu...',door:'Chegou na porta de casa...'}[s.reason],W/2,52,9,'#ff6b5d');
+    outlineText(g,{energy:'A energia acabou...',sono:'O sono venceu...',door:'Chegou na porta de casa...',fim:'Faltam só 12 horas pro fim...'}[s.reason],W/2,52,9,'#ff6b5d');
     outlineText(g,'Tocar o sax e voltar 2 dias?',W/2,72,9,'#f3ecd8');
     outlineText(g,'palhetas '+pal,W/2,88,8,'#ffe14f');
     outlineText(g,'a música: '+MUSICA_TEMPO.map(l=>TECLA[l]).join(' '),W/2,104,8,'#4fffd2');
-    if(isTouch){R(g,40,128,110,30,'#2f9a55');outlineText(g,'TOCAR',95,147,10,'#ffffff');R(g,170,128,110,30,'#8a2a2a');outlineText(g,'DESISTIR',225,147,10,'#ffffff');}
-    else outlineText(g,'ESPAÇO toca · ESC desiste',W/2,146,9,'#fff1c2');
+    if(isTouch){R(g,40,128,110,30,'#2f9a55');outlineText(g,'TOCAR',95,147,10,'#ffffff');R(g,170,128,110,30,'#8a2a2a');outlineText(g,s.reason==='fim'?'NÃO TOCAR':'DESISTIR',225,147,10,'#ffffff');}
+    else outlineText(g,s.reason==='fim'?'ESPAÇO toca · ESC não toca':'ESPAÇO toca · ESC desiste',W/2,146,9,'#fff1c2');
     return;}
   const hitY=146;
   for(const n of s.notes){if(n.hit)continue;const y=hitY-(n.t-s.t)*90;if(y<34||y>H+8)continue;const x=gtLaneX(n.lane);
