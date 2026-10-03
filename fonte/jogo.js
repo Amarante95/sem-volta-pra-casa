@@ -506,8 +506,8 @@ const TRIPC=['#ff4fd8','#4fffd2','#ffe14f','#6f7ff0','#ff8a3d'];
 const fc=$('face').getContext('2d');
 function faceLayers(st){
   const e=st.e;
-  const eyes=st.sleep?'closed':st.turbo?'wide':st.trip?'trip':st.drunk?'drunk':st.crash?'crash':e>65?'base':e>40?'soft':e>18?'half':'dead';
-  let mouth=st.sleep?'o':st.turbo?'mega':st.trip?'goofy':st.drunk?'crooked':st.crash?'frown':e>65?'base':e>40?'smile':e>18?'open':'wobbly';
+  const eyes=st.sleep?'closed':st.turbo?'wide':st.trip?'trip':st.drunk?'drunk':st.crash?'crash':(st.sono||0)>=90?'dead':(st.sono||0)>=75&&e>18?'half':e>65?'base':e>40?'soft':e>18?'half':'dead';
+  let mouth=st.sleep?'o':st.turbo?'mega':st.trip?'goofy':st.drunk?'crooked':st.crash?'frown':(st.sono||0)>=90?'wobbly':(st.sono||0)>=75&&e>18?'open':e>65?'base':e>40?'smile':e>18?'open':'wobbly';
   if(st.mood==='sad')mouth='frown';else if(st.mood==='hype')mouth='mega';
   return{eyes,mouth};
 }
@@ -616,7 +616,7 @@ function drawFace(g,st,o={}){
 }
 /* cabeçona na tela do jogo */
 const headCv=$('head'),hc=headCv.getContext('2d');
-function faceState(){return{e:P.energy,glasses:!!fx&&fx.disguise>0,turbo:!!fx&&fx.turbo>0,trip:!!fx&&fx.trip>0,drunk:!!fx&&fx.drunk>0,crash:!!fx&&fx.crash>0,burn:!!fx&&fx.burn>0,sleep:!!chairS||!!napS,spider:!!fx&&fx.spider>0};}
+function faceState(){return{e:P.energy,sono:P.sono||0,glasses:!!fx&&fx.disguise>0,turbo:!!fx&&fx.turbo>0,trip:!!fx&&fx.trip>0,drunk:!!fx&&fx.drunk>0,crash:!!fx&&fx.crash>0,burn:!!fx&&fx.burn>0,sleep:!!chairS||!!napS,spider:!!fx&&fx.spider>0};}
 function renderHead(cx,cy){
   headCv.hidden=false;
   const sx=(P.x-cx)/W*100,sy=(P.y-cy-(P.jumpZ||0)-12+(chairS?2:0))/H*100;
@@ -773,7 +773,7 @@ function musWant(){
   if(chase)mus.chaseT=3;
   if(mus.shroomT>0)return 'cogumelo';
   if(mus.chaseT>0)return 'fuga';
-  if(P.energy<25)return 'sono';
+  if(P.energy<25||P.sono>=75)return 'sono'; // energia baixa ou barra de sono quase cheia
   return nightA()>.4?'noite':'rua';
 }
 function musTick(){
@@ -887,9 +887,9 @@ const ICONS={run:ICON_RUN,entra:ICON_ENTRA,dorme:ICON_DORME,fala:ICON_FALA};
 const ICON_SURF='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.4" cy="4.4" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M12.6 7.6 10.8 12.2"/><path stroke-width="2.2" d="M12.2 8.4 16.4 10 19.8 8.8M12 8.6 8.2 8.2 5.8 10.2"/><path stroke-width="2.4" d="M10.8 12.2 14.6 13.4 14.8 16.2M10.8 12.2 8.4 14.4 8.8 17"/><path fill="#1a1030" stroke="none" d="M2.4 18.6C8 16.2 16 15.4 22.6 16.8 17 19.2 8 20.2 2.4 18.6Z"/><path stroke-width="1.4" d="M1.2 6.4H4.6M.8 10.4H3.8M1.4 14.2H3.6"/></svg>';
 // ícones dos botões de toque, no estilo do bonequinho correndo
 const SVG=(b,c='#1a1030')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round">${b}</svg>`;
-const ICON_CHUTA=SVG('<path fill="#1a1030" stroke="none" d="M8.2 9.6C9.4 8.8 11 9 12 9.8L14 11.6C15.6 12.8 18 13 20.4 13.4 22 13.7 22.8 15 22.4 16.4L22 17.6H8.4C7.4 17.6 7 16.8 7.2 15.8Z"/><path stroke-width="1.6" d="M7.6 19.6H22.2"/><path stroke-width="1.6" d="M1.4 10.6H5M.8 13.8H4.6M1.4 17H4.8"/>');
-const ICON_PULA=SVG('<circle cx="14.4" cy="3.2" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M13.4 6.4 11.6 11.6"/><path stroke-width="2.3" d="M13.2 7 16.8 5.2 18.2 2.6M13 7.2 9.6 5.8 7.8 3.6"/><path stroke-width="2.5" d="M11.6 11.6 15.2 13 13.8 16.4M11.6 11.6 8.6 13.8 6.2 13.4"/><path stroke-width="1.6" d="M7.6 19.4H15.6M9.4 22H13.8"/>');
-const ICON_BEBE=SVG('<circle cx="8.6" cy="5" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M9.2 8.2 10.4 14.4"/><path stroke-width="2.5" d="M10.4 14.4 8.2 21M10.4 14.4 13 21"/><path stroke-width="2.3" d="M9.6 9.4 13.8 9.8 12.4 6.8M9.4 9.6 6.4 12.4"/><path fill="#1a1030" stroke="none" d="M12 6.6 16.6 2.8 18.4 4.8 13.6 8.4Z"/><path stroke-width="1.4" d="M18.6 6.4 20.4 7.4M18.8 9 20.8 9.4"/>');
+const ICON_CHUTA=SVG('<g transform="rotate(35 13 13)"><path fill="#1a1030" stroke="none" d="M8.2 9.6C9.4 8.8 11 9 12 9.8L14 11.6C15.6 12.8 18 13 20.4 13.4 22 13.7 22.8 15 22.4 16.4L22 17.6H8.4C7.4 17.6 7 16.8 7.2 15.8Z"/><path stroke-width="1.6" d="M1.4 10.6H5M.8 13.8H4.6M1.4 17H4.8"/></g>'); // tênis chutando pra baixo, traços na direção da sola
+const ICON_PULA=SVG('<circle cx="14.4" cy="3.2" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M13.4 6.4 11.6 11.6"/><path stroke-width="2.3" d="M13.2 7 16.8 5.2 18.2 2.6M13 7.2 9.6 5.8 7.8 3.6"/><path stroke-width="2.5" d="M11.6 11.6 15.2 13 13.8 16.4M11.6 11.6 8.6 13.8 6.2 13.4"/><path stroke-width="1.6" d="M8.6 18.6V22.4M11.4 19V23M14.2 18.6V22.4"/>');
+const ICON_BEBE=SVG('<path stroke-width="2.2" d="M6.4 3.6H17.6L16 21H8Z"/><path fill="#1a1030" stroke="none" d="M7.5 9H16.5L15.5 20H8.5Z"/>'); // um copo
 const ICON_SOLTA=SVG('<circle cx="12" cy="4.4" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M12 7.6V13.4"/><path stroke-width="2.3" d="M12 8.4 6.6 5.6M12 8.4 17.4 5.6"/><path stroke-width="2.5" d="M12 13.4 8.4 20.6M12 13.4 15.6 20.6"/><path stroke-width="1.6" d="M2.6 3 4.6 4.6M21.4 3 19.4 4.6M1.6 9.6H4.2M22.4 9.6H19.8M2.8 15.6 4.8 14.4M21.2 15.6 19.2 14.4"/>');
 // taco da bambina: traço preto grosso, com a pontinha separada (o anel)
 const ICON_FORCA=SVG('<path stroke-width="3.2" d="M3.4 20.6 16 8"/><path stroke-width="2.4" d="M17.6 6.4 19.8 4.2"/>');
@@ -946,11 +946,11 @@ function updTouchUI(){
   if(mode==='sinuca'&&mg)setIc($('btnA'),mg.phase==='pick'?'escolhe':mg.turn==='pc'?'espera':mg.phase==='power'?'tacar':'forca');
   if(mode==='play'&&touchMode==='play'){const ic=!nearK?'toque':nearK==='bus'||nearK==='chair'?'dorme':nearK==='npc'?'fala':'entra';
     setIc($('btnA'),ic);$('btnA').classList.toggle('acao',ic!=='toque');$('btnA').hidden=ic==='toque';} // sem nada perto, o botão de ação some
-  if(mode==='maracaS'&&mg)setIc($('btnA'),mg.me.x>=262?'pula':'run');
+  if(mode==='maracaS'&&mg)setIc($('btnA'),mg.me.x>=MC_BURACO?'pula':'run');
   if(mode===touchMode)return;touchMode=mode;touchIx=0;
   const show=(id,v)=>{$(id).hidden=!v;};
   $('touch').hidden=mode==='none'||mode==='festa';$('touch').dataset.mode=mode;
-  show('stick',mode==='play'||mode==='altinha'||mode==='maraca'||mode==='surf');
+  show('stick',mode==='play'||mode==='altinha'||mode==='maraca'||mode==='maracaS'||mode==='surf');
   const lr=['bar','sinuca'].includes(mode);show('btnL',lr);show('btnR',lr);
   show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
   setIc($('btnA'),{surf:'surf',play:'toque',grab:'solta',cut:'ok',altinha:'chuta',maraca:'chuta',maracaS:'run',bloco:'pula',bar:'bebe',sinuca:'forca'}[mode]||'toque');
@@ -1147,7 +1147,7 @@ function spawnItem(type,initial=false){
   if(!p)p=randTileFrom(pool,minP);
   items.push({type,x:p.x,y:p.y,h:18,fake:false,talkCd:rnd(0,3)});
 }
-function nKeys(){return 1;} // uma chave só, mas ela prende
+function nKeys(){return 0;} // a chave saiu do jogo
 
 /* ================= CUTSCENES ================= */
 function* wait(s){let t=0;while(t<s){t+=(yield);}}
@@ -1368,14 +1368,14 @@ const L={
   momHit:['MARKIN! Olha essa cara!','Tá comendo direito, filho?','Seu quarto tá arrumadinho te esperando...','Fiz sopa de chuchu. SOPA DE CHUCHU, Markin.','Nem me deu um abraço!','Que olheira é essa?!','Vou contar pro seu pai!'],
   momSpot:['MARKIN!!!','Achei você!','Vem cá, menino!','Ô MARKIN!'],
   decline:['Recusou. A mãe mandou 12 áudios de 4 minutos.','Recusou. "Visualizou e não respondeu, né?"','Recusou. O grupo da família já tá sabendo.','Recusou. Chegou foto da sopa de chuchu.','Recusou. "Tô rezando por você."'],
-  shroomTalk:['Psiu, Markin... sua mãe tá pro {d}.','Me come não... ou come. Sei lá.','A chave tá chegando. Eu sinto o metal.','Dormir é coisa de cogumelo velho.','{h} horas acordado. Respeito.','Aquela tia de bobe tá de olho.','Ouvi um tamborim... o Bloco Secreto tá pro {b}.','Tem altinha rolando na areia. Vai lá.'],
+  shroomTalk:['Psiu, Markin... sua mãe tá pro {d}.','Me come não... ou come. Sei lá.','Dormir é coisa de cogumelo velho.','{h} horas acordado. Respeito.','Aquela tia de bobe tá de olho.','Ouvi um tamborim... o Bloco Secreto tá pro {b}.','Tem altinha rolando na areia. Vai lá.'],
   shroomEat:['AAAH! Tudo bem... eu renasço.','Cuidado com as cores!','Bem-vindo ao outro lado.'],
   beer:['Gelada! Desceu redonda.','Só mais uma. Só mais uma.','Essa é pra lembrar do navio.'],
   zip:['SNIFF! Tô vendo sons.','Energia infinita (por enquanto).','Tô ligado no 220V.'],
   idle:['Eu durmo quando morrer.','Tô ótimo. Tô ÓTIMO.','Que dia é hoje? Não importa.','Pisquei ou dormi?','Meu olho tá tremendo sozinho.','Casa? Nunca ouvi falar.','15 dias no mar, 15 na terra.'],
   low:['A cama tá me chamando...','Só um cochilinho em casa... NÃO!','Tô vendo a sopa de chuchu...','Minhas pernas tão indo sozinhas...'],
   tia:['Ó o Markin ali!!','Vou contar pra sua mãe!','NEIDE! Liga pra mãe dele!','Tá magrinho, hein?'],
-  days:{2:'Ainda de pé.',3:'O olho começou a tremer.',4:'Tem mais uma chave na rua.',5:'As tias do bairro foram avisadas.',6:'A sopa de chuchu foi congelada.',7:'Uma semana. O corpo pede arrego.',8:'Metade do caminho.',9:'O táxi da mãe segue rodando o bairro.',10:'O cogumelo virou seu melhor amigo.',11:'A cerveja tá acabando no bairro.',12:'A mãe comprou um tênis de corrida.',13:'Já fez todas as tarefas?',14:'Falta pouco. Falta muito.',15:'ÚLTIMO DIA.'}
+  days:{2:'Ainda de pé.',3:'O olho começou a tremer.',4:'O café já não faz efeito.',5:'As tias do bairro foram avisadas.',6:'A sopa de chuchu foi congelada.',7:'Uma semana. O corpo pede arrego.',8:'Metade do caminho.',9:'O táxi da mãe segue rodando o bairro.',10:'O cogumelo virou seu melhor amigo.',11:'A cerveja tá acabando no bairro.',12:'A mãe comprou um tênis de corrida.',13:'Já fez todas as tarefas?',14:'Falta pouco. Falta muito.',15:'ÚLTIMO DIA.'}
 };
 // teto de energia: a barra sempre vale 100, mas com o passar dos dias ele só recupera até um máximo menor (no fim, metade)
 function maxE(){return 100-50*clamp((totalMin||0)/(15*1440),0,1);}
@@ -1386,7 +1386,9 @@ function nightA(){const h=hourF();if(h>=20||h<5)return .62;if(h>=18)return (h-18
 function isDay(){const h=hourF();return h>=7&&h<18;}
 // de Homem-Aranha ele escala prédio, árvore, grade, Arcos, morro e favela (a casa da mãe e o mar não)
 const CLIMB=new Set([BLD,TREE,FENCE,ARCH,MORRO,FAVELA]);
-const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));return SOLID.has(t)&&!(fx&&fx.spider>0&&CLIMB.has(t));};
+// Pão de Açúcar: a grama em volta dá pra andar; só as duas pedras (Urca e Pão) seguram
+const naPedraPao=(px,py)=>((px-71*T-26)/22)**2+((py-21*T+34)/30)**2<1||((px-71*T-100)/30)**2+((py-21*T+70)/64)**2<1;
+const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t)&&!(fx&&fx.spider>0&&CLIMB.has(t));};
 function incog(){return fx.disguise>0||fx.spider>0;} // disfarçado: de óculos ou de Homem-Aranha
 function hitsWall(x,y){return solidAt(x-4,y-5)||solidAt(x+4,y-5)||solidAt(x-4,y)||solidAt(x+4,y);}
 function moveP(dx,dy){if(dx&&!hitsWall(P.x+dx,P.y))P.x+=dx;if(dy&&!hitsWall(P.x,P.y+dy))P.y+=dy;P.x=clamp(P.x,6,MW*T-6);P.y=clamp(P.y,8,MH*T-2);}
@@ -1833,7 +1835,6 @@ function saidaSegura(){
   const longe=o=>{const p=randTileFrom(walkTiles,220,480);o.x=p.x;o.y=p.y;};
   if(mom&&dist(mom,P)<140){longe(mom);mom.chasing=false;mom.alertT=0;mom.stun=2;mom.target=null;}
   for(const k of keysE){k.cd=Math.max(k.cd||0,4);if(dist(k,P)<140)longe(k);}
-  for(const t of tias){t.cd=Math.max(t.cd,8);}
   taxis=taxis.filter(c=>dist(c,P)>200);
   for(const n of npcs)if(n.beggar){n.cd=Math.max(n.cd,8);}closeBeg();
 }
@@ -2599,7 +2600,7 @@ function updBloco(dt){
     else mgLost('O Bloco Heterotop te engoliu e o Bloco Secreto sumiu.');}return;}
   // efeitos dos itens (os mesmos do mundo aberto)
   if(tickFx(dt)){m.msg='Bateu a bad... tudo pesado.';m.msgT=2;}
-  cv.style.filter=fx.trip>0?`hue-rotate(${Math.floor(m.t*120)%360}deg) saturate(1.6)`:fx.turbo>0?'contrast(1.15) saturate(1.3)':P.energy<20?'saturate(.6)':'';
+  cv.style.filter=fx.turbo>0?'contrast(1.15) saturate(1.3)':P.energy<20?'saturate(.6)':'';
   // a energia acaba bem mais rápido aqui
   P.energy-=2.7*(fx.crash>0?1.6:1)*dt;
   if(P.energy<=0){P.energy=0;m.result='sleep';m.done=2;m.msg='Markin dormiu no meio do bloco...';m.msgT=2;sfx.lose();return;}
@@ -2713,7 +2714,7 @@ function renderBloco(){
   // chão
   quad(g,[bp(-3.2,0,BZ.FAR),bp(3.2,0,BZ.FAR),{x:W+200,y:H+20},{x:-200,y:H+20}],'#bdb5a6');
   quad(g,[bp(-1.55,0,BZ.FAR),bp(1.55,0,BZ.FAR),bp(1.55,0,-2.4),bp(-1.55,0,-2.4)],'#3a3d48');
-  quad(g,[bp(.5,0,BZ.FAR),bp(1.55,0,BZ.FAR),bp(1.55,0,-2.4),bp(.5,0,-2.4)],'#9a3c34'); // faixa de ônibus (vermelha) na direita da Rio Branco
+  quad(g,[bp(.5,0,BZ.FAR),bp(1.55,0,BZ.FAR),bp(1.55,0,-2.4),bp(.5,0,-2.4)],'#2d5fa8'); // faixa de ônibus (azul) na direita da Rio Branco
   for(let z=-(m.dist%9)+2;z<BZ.FAR-3;z+=9){if(z<-1.5)continue;const a=bp(1.02,0,z),b=bp(1.02,0,z+1.8),w=Math.abs(bp(1.5,0,z).x-bp(.55,0,z).x);if(w<10)continue;
     g.save();g.translate(a.x,(a.y+b.y)/2);g.scale(1,Math.max(.15,(a.y-b.y)/(w*.26)));g.fillStyle='rgba(244,241,232,.85)';g.font=`700 ${Math.round(w*.26)}px monospace`;g.textAlign='center';g.textBaseline='middle';g.fillText('ÔNIBUS',0,0);g.restore();}
   // prédios
@@ -2913,8 +2914,15 @@ function snAiPlan(m,cue){
   const r0=Math.random(),acerta=r0<.25,erraBola=r0>=.9;
   if(!acerta&&!erraBola){const alvo=best.b||m.balls.find(b=>!b.in&&!b.cue&&(!cor||b.team===cor));
     if(alvo){const dx=alvo.x-cue.x,dy=alvo.y-cue.y,dl=Math.hypot(dx,dy)||1,lado=Math.asin(Math.min(1,r*1.5/dl))*pick([-1,1])*rnd(.55,.9);
-      return{ang:Math.atan2(dy,dx)+lado,pw:clamp(.3+dl/600+rnd(-.05,.12),.3,.8),t:0,from:m.ang};}}
-  return{ang:best.ang+(acerta?rnd(-.008,.008):pick([-1,1])*rnd(.16,.42)),pw:clamp((.34+best.d/520)*(acerta?1:rnd(.8,1.25)),.3,1),t:0,from:m.ang};}
+      return snAiConfere(m,cue,{ang:Math.atan2(dy,dx)+lado,pw:clamp(.3+dl/600+rnd(-.05,.12),.3,.8),t:0,from:m.ang});}}
+  const fim={ang:best.ang+(acerta?rnd(-.008,.008):pick([-1,1])*rnd(.16,.42)),pw:clamp((.34+best.d/520)*(acerta?1:rnd(.8,1.25)),.3,1),t:0,from:m.ang};
+  return erraBola?fim:snAiConfere(m,cue,fim);} // só 10% das vezes ele erra a bola dele
+// confere se a tacada bate primeiro numa bola dele; se não, procura outro ângulo que bata
+function snAiConfere(m,cue,plan){const cor=bbCor(m,'pc'),ok=a=>{const pr=snPredict(m,cue,a);return pr.b&&(!cor||pr.b.team===cor);};
+  if(ok(plan.ang))return plan;
+  for(const b of m.balls){if(b.in||b.cue||(cor&&b.team!==cor))continue;const base=Math.atan2(b.y-cue.y,b.x-cue.x),dl=Math.hypot(b.x-cue.x,b.y-cue.y)||1;
+    for(const off of [0,.5,-.5,1,-1,1.4,-1.4]){const a=base+Math.asin(Math.min(1,off*SN.r/dl));if(ok(a))return{...plan,ang:a,pw:clamp(.3+dl/600+rnd(0,.15),.3,.85)};}}
+  return plan;}
 function snAiTick(m,dt,cue){
   if(!m.ai)m.ai=snAiPlan(m,cue);const ai=m.ai;ai.t+=dt;
   let dA=ai.ang-ai.from;dA=Math.atan2(Math.sin(dA),Math.cos(dA));m.ang=ai.from+dA*Math.min(1,ai.t/1.1);
@@ -3010,7 +3018,8 @@ function renderSinuca(){
   const lg=g.createRadialGradient(160,100,10,160,100,170);lg.addColorStop(0,'rgba(255,230,160,.18)');lg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=lg;g.fillRect(0,0,W,H);
   R(g,24,32,272,138,'#6d4322');R(g,26,34,268,134,'#8a5a2e');R(g,30,38,260,126,'#1f6a3a');R(g,SN.x0,SN.y0,SN.x1-SN.x0,SN.y1-SN.y0,'#2f8a4a');
   for(let i=1;i<4;i++){R(g,36+i*62,35,2,2,'#f4f1e8');R(g,36+i*62,166,2,2,'#f4f1e8');}
-  for(const [px,py] of POCKETS){g.fillStyle='#0a0a0a';g.beginPath();g.arc(px,py,9,0,Math.PI*2);g.fill();}
+  for(const [px,py] of POCKETS){g.save();if(px===160){g.beginPath();g.rect(30,py<100?38:158,260,6);g.clip();} // buracos do meio: só na faixa da tabela
+    g.fillStyle='#0a0a0a';g.beginPath();g.arc(px,py,9,0,Math.PI*2);g.fill();g.restore();}
   const cue=m.balls.find(b=>b.cue);
   // raio de direcionamento (antes das bolas, por baixo delas)
   if(m.phase!=='roll'&&m.phase!=='pick'&&!m.result&&!cue.in){
@@ -3021,6 +3030,8 @@ function renderSinuca(){
       g.strokeStyle=pr.b.c;g.lineWidth=2;g.beginPath();g.moveTo(pr.b.x,pr.b.y);g.lineTo(pr.b.x+pr.nx*46,pr.b.y+pr.ny*46);g.stroke();
       const hx=pr.b.x+pr.nx*46,hy=pr.b.y+pr.ny*46,an=Math.atan2(pr.ny,pr.nx);g.fillStyle=pr.b.c;g.beginPath();g.moveTo(hx+Math.cos(an)*4,hy+Math.sin(an)*4);g.lineTo(hx+Math.cos(an+2.5)*4,hy+Math.sin(an+2.5)*4);g.lineTo(hx+Math.cos(an-2.5)*4,hy+Math.sin(an-2.5)*4);g.fill();
       // e a branca desvia pro lado
+      // mirando na bola do Tubarão: um X em cima dela
+      const minha=bbCor(m,'me');if(m.turn==='me'&&minha&&pr.b.team!==minha){g.strokeStyle='#ff3b3b';g.lineWidth=2;g.beginPath();g.moveTo(pr.b.x-5,pr.b.y-5);g.lineTo(pr.b.x+5,pr.b.y+5);g.moveTo(pr.b.x+5,pr.b.y-5);g.lineTo(pr.b.x-5,pr.b.y+5);g.stroke();}
       const dot=ca*pr.nx+sa*pr.ny,tx=ca-dot*pr.nx,ty=sa-dot*pr.ny,tl=Math.hypot(tx,ty);if(tl>.05){g.fillStyle='rgba(255,255,255,.35)';for(let d=4;d<20;d+=4)g.fillRect(pr.gx+tx/tl*d-.5,pr.gy+ty/tl*d-.5,1.5,1.5);}}
   }
   for(const b of m.balls){if(b.in)continue;g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.arc(b.x+1,b.y+1.5,SN.r,0,Math.PI*2);g.fill();
@@ -3423,6 +3434,7 @@ function drawMaracaSpot(g,x,y,t){x=Math.round(x);y=Math.round(y);
   const by=y-40-Math.abs(Math.sin(t*4))*6;g.fillStyle='#f4f4f4';g.beginPath();g.arc(x,by,3,0,Math.PI*2);g.fill();R(g,x-1,by-1,2,2,'#1a1a1a');}
 function mcGuards(){return [{x:98,st:'away',t:rnd(1.6,2.8),look:0},{x:222,st:'away',t:rnd(2.4,3.8),look:0}];} // mais separados
 const MC_CONE=48; // meia largura da área vermelha na altura do Markin: só ali o segurança enxerga (mesmo parado)
+const MC_BURACO=282; // buraco do alambrado: fora da visão do segundo segurança
 function mcVisto(m){return m.guards.some(g=>g.st==='look'&&g.look>.18&&Math.abs(m.me.x-g.x)<MC_CONE);}
 function startMaraca(){
   mgEnter('maraca');
@@ -3459,10 +3471,10 @@ function mcUpdSneak(dt,inp){
   // na área vermelha o segurança te vê, andando ou parado
   if(mcVisto(m)){mcCaught('O SEGURANÇA TE VIU NA ÁREA VERMELHA!');return;}
   // antes de invadir só tem um botão: segura pra correr (no teclado, → ou ESPAÇO; ← volta)
-  const noBuraco=me.x>=262;
-  let ix=inp.ix;if(!noBuraco&&(aHeld||keys.has('Space')))ix=1;
-  if(Math.abs(ix)>.15){me.x=clamp(me.x+ix*58*dt,14,noBuraco?272:264);me.face=ix>0?1:-1;me.run+=dt;me.moving=true;}else me.moving=false;
-  if(noBuraco&&(inp.jump||inp.act)){me.climb=.001;me.x=268;beep(400,.1,'square',.04);}
+  const noBuraco=me.x>=MC_BURACO;
+  const corre=!noBuraco&&(aHeld||keys.has('Space'));let ix=inp.ix;if(corre)ix=1; // o botão de correr vai 25% mais rápido que o analógico
+  if(Math.abs(ix)>.15){me.x=clamp(me.x+ix*58*(corre?1.25:1)*dt,14,noBuraco?MC_BURACO+10:MC_BURACO+2);me.face=ix>0?1:-1;me.run+=dt;me.moving=true;}else me.moving=false;
+  if(noBuraco&&(inp.jump||inp.act)){me.climb=.001;me.x=MC_BURACO+6;beep(400,.1,'square',.04);}
 }
 function mcPitch(){const m=mg;m.phase='pitch';m.msg='DENTRO! Corre pro gol e chuta com '+(isTouch?'CHUTA':'ESPAÇO')+'!';m.msgT=2.4;sfx.alert();
   m.me={x:26,y:MC_G,z:0,zv:0,face:1,run:0,ground:true};m.ball={x:40,z:0,vx:0,vz:0,state:'dribble'};
@@ -3538,14 +3550,14 @@ function renderMaraca(){
     // passarela
     R(g,0,121,W,59,'#6f6a64');for(let x=0;x<W;x+=32)R(g,x,121,1,59,'#5f5a55');R(g,0,121,W,2,'#8a857e');
     // trecho do alambrado quebrado: tela rasgada e dobrada, é por ali que ele pula
-    R(g,258,103,26,17,'#6f6a64');g.strokeStyle='rgba(180,190,205,.7)';g.beginPath();g.moveTo(258,103);g.lineTo(266,112);g.lineTo(262,120);g.moveTo(284,103);g.lineTo(276,109);g.lineTo(281,120);g.moveTo(266,112);g.lineTo(276,109);g.stroke();
-    R(g,258,100,2,6,'#6a7280');R(g,282,99,2,5,'#6a7280');R(g,270,101,1,3,'#9aa3b0');
+    {const bx=MC_BURACO-4;R(g,bx,103,26,17,'#6f6a64');g.strokeStyle='rgba(180,190,205,.7)';g.beginPath();g.moveTo(bx,103);g.lineTo(bx+8,112);g.lineTo(bx+4,120);g.moveTo(bx+26,103);g.lineTo(bx+18,109);g.lineTo(bx+23,120);g.moveTo(bx+8,112);g.lineTo(bx+18,109);g.stroke();
+    R(g,bx,100,2,6,'#6a7280');R(g,bx+24,99,2,5,'#6a7280');R(g,bx+12,101,1,3,'#9aa3b0');}
     for(const s of m.guards)drawGuard(g,s.x,134,s.st==='look'?'front':s.st==='turn'?'side':'back',t,s);
     const me=m.me;
     if(me.climb>0)mcDrawMe(g,me.x,MC_G-Math.min(1,me.climb/.8)*50,true,false);
     else mcDrawMe(g,me.x,MC_G,false,me.moving,me.face);
-    R(g,40,175,240,3,'#2a2a2a');R(g,40,175,240*clamp((me.x-24)/(262-24),0,1),3,'#8be08b');
-    if(me.x>=262&&!me.climb&&!m.caught&&!(m.msgT>0))outlineText(g,isTouch?'PULA pelo buraco do alambrado':'↑ pula pelo buraco do alambrado',me.x-40,MC_G-58,9,'#ffe14f');
+    R(g,40,175,240,3,'#2a2a2a');R(g,40,175,240*clamp((me.x-24)/(MC_BURACO-24),0,1),3,'#8be08b');
+    if(me.x>=MC_BURACO&&!me.climb&&!m.caught&&!(m.msgT>0))outlineText(g,isTouch?'PULA pelo buraco do alambrado':'↑ pula pelo buraco do alambrado',me.x-40,MC_G-58,9,'#ffe14f');
   }else{
     R(g,0,64,W,116,'#2f8a3a');for(let i=0;i<8;i++)R(g,i*40,64,20,116,'#349a41');R(g,0,64,W,2,'#e8f4e0');R(g,0,MC_G+10,W,1,'rgba(232,244,224,.7)');
     const gx=298;g.strokeStyle='rgba(240,240,240,.35)';g.lineWidth=1;g.beginPath();for(let y=MC_G-48;y<MC_G;y+=4){g.moveTo(gx+2,y);g.lineTo(W,y);}for(let x=gx+4;x<W;x+=4){g.moveTo(x,MC_G-48);g.lineTo(x,MC_G);}g.stroke();
@@ -3563,7 +3575,7 @@ function renderMaraca(){
   outlineText(g,sneak?'INVASÃO':'RUMO AO GOL',W-8,15,9,'#fff1c2','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,42,10,'#ffffff');
   for(const q of m.pops){g.globalAlpha=clamp(q.t,0,1);outlineText(g,q.txt,q.x,q.y,10,'#ffe14f');g.globalAlpha=1;}
-  if(m.t<5&&!m.result&&sneak&&!(m.msgT>0)&&m.me.x<262)outlineText(g,isTouch?'segura CORRE · fora da área vermelha · PULA no buraco':'segura → (ou ESPAÇO) pra correr · fuja da área vermelha · ↑ pula no buraco',W/2,168,8,'#fff1c2');
+  if(m.t<5&&!m.result&&sneak&&!(m.msgT>0)&&m.me.x<MC_BURACO)outlineText(g,isTouch?'segura CORRE · fora da área vermelha · PULA no buraco':'segura → (ou ESPAÇO) pra correr · fuja da área vermelha · ↑ pula no buraco',W/2,168,8,'#fff1c2');
 }
 
 /* ================= HUD ================= */
