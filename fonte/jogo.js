@@ -1140,7 +1140,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1165,8 +1165,9 @@ function nKeys(){return 0;} // a chave saiu do jogo
 
 /* ================= CUTSCENES ================= */
 function* wait(s){let t=0;while(t<s){t+=(yield);}}
-function* talk(name,text){showDialog(name,text);let t=0;actionQ=false;
+function* talk(name,text,sozinha){showDialog(name,text);let t=0;actionQ=false;
   while(true){const dt=yield;t+=dt;
+    if(sozinha){takeAction();if(t>text.length*.055+1.8)break;continue;} // fala que roda no tempo dela, sem pular
     if(takeAction()&&t>.2){if(dlg.shown<dlg.full.length){dlg.shown=dlg.full.length;$('dtext').textContent=dlg.full;}else break;}
     if(t>text.length*.06+3.2)break;}
   hideDialog();}
@@ -1187,21 +1188,21 @@ function* introGen(){
   yield* wait(.6);
   sfx.horn();bubble({x:21*T,y:49*T},'FOOOOOOM!',1.6,'big',8);shake=.6;
   yield* wait(1.4);
-  yield* talk('Markin','15 dias no mar... MERMÃO, QUINZE. DIAS.');
+  yield* talk('Markin','15 dias no mar... MERMÃO, QUINZE. DIAS.',true);
   yield* walkTo(P,9*T+4,52*T+10,40);
   yield* walkTo(P,6*T+8,52*T+10,40);
   yield* walkTo(P,6*T+8,50*T+4,40);
-  yield* talk('Markin','Terra firme... minha linda!');
+  yield* talk('Markin','Terra firme... minha linda!',true);
   yield* jumpTo(P,3*T+8,47*T+10,.7);
   P.dir='down';
   yield* wait(.3);
-  yield* talk('Markin','Esse macacão? Nunca mais.');
+  yield* talk('Markin','Esse macacão? Nunca mais.',true);
   sfx.rip();shake=.3;
   for(let i=0;i<22;i++)particles.push({x:P.x+rnd(-5,5),y:P.y-rnd(4,14),vx:rnd(-70,70),vy:rnd(-90,-30),g:160,life:rnd(.8,1.4),col:pick(['#e8742a','#b8561b','#f5e663']),s:2});
   particles.push({x:P.x,y:P.y-20,vx:55,vy:-110,g:180,life:1.6,col:'#f5f5f5',s:4,helmet:true});
   P.outfit='casual';P.helmet=false;
   yield* wait(1.2);
-  yield* talk('Markin','Ahhh... liberdade.');
+  yield* talk('Markin','Ahhh... liberdade.',true);
   // o celular toca: MÃE na tela
   // a mãe liga: a intro só continua (e só dá pra pular) depois que o jogador recusar
   placePhone(true);$('phone').hidden=false;P.phoneOut=false; // toca no bolso
@@ -1389,7 +1390,7 @@ const L={
   idle:['Eu durmo quando morrer.','Tô ótimo. Tô ÓTIMO.','Que dia é hoje? Não importa.','Pisquei ou dormi?','Meu olho tá tremendo sozinho.','Casa? Nunca ouvi falar.','15 dias no mar, 15 na terra.'],
   low:['A cama tá me chamando...','Só um cochilinho em casa... NÃO!','Tô vendo a sopa de chuchu...','Minhas pernas tão indo sozinhas...'],
   tia:['Ó o Markin ali!!','Vou contar pra sua mãe!','NEIDE! Liga pra mãe dele!','Tá magrinho, hein?'],
-  days:{1:'TERRA FIRME',2:'SOPA DE CHUCHU',3:'O OLHO TREMENDO',4:'O CAFÉ NÃO FAZ MAIS EFEITO',5:'AS TIAS FORAM AVISADAS',6:'PURPURINA',7:'UMA SEMANA',8:'METADE DO CAMINHO',9:'O TÁXI DA MÃE',10:'MELHOR AMIGO COGUMELO',11:'A ÚLTIMA GELADA',12:'A MÃE DE TÊNIS',13:'CONTAGEM REGRESSIVA',14:'VÉSPERA',15:'SEM VOLTA PRA CASA'}
+  days:{1:'TERRA FIRME',2:'CADÊ MEUS AMIGOS',3:'O OLHO TREMENDO',4:'O CAFÉ NÃO FAZ MAIS EFEITO',5:'AS TIAS FORAM AVISADAS',6:'NUNCA MAIS EU VOU DORMIR',7:'UMA SEMANA',8:'MICHAEL DOUGLAS',9:'O TÁXI DA MÃE',10:'NA ONDA DO COGU',11:'A ÚLTIMA GELADA',12:'DESERDADO',13:'CONTAGEM REGRESSIVA',14:'ÚLTIMAS 24H',15:'SEM VOLTA PRA CASA'}
 };
 // teto de energia: a barra sempre vale 100, mas com o passar dos dias ele só recupera até um máximo menor (no fim, metade)
 function maxE(){return 100-50*clamp((totalMin||0)/(15*1440),0,1);}
@@ -1399,10 +1400,10 @@ function hourF(){return((360+totalMin)%1440)/60;}
 function nightA(){const h=hourF();if(h>=20||h<5)return .62;if(h>=18)return (h-18)/2*.62;if(h<7)return (7-h)/2*.62;return 0;}
 function isDay(){const h=hourF();return h>=7&&h<18;}
 // de Homem-Aranha ele escala prédio, árvore, grade, Arcos, morro e favela (a casa da mãe e o mar não)
-const CLIMB=new Set([BLD,TREE,FENCE,ARCH,MORRO,FAVELA]);
+const CLIMB=new Set([BLD,CIRCO]); // de Homem-Aranha ele escala prédios, bares e o Circo Voador
 // Pão de Açúcar: a grama em volta dá pra andar; só as duas pedras (Urca e Pão) seguram
 const naPedraPao=(px,py)=>((px-71*T-26)/22)**2+((py-21*T+34)/30)**2<1||((px-71*T-100)/30)**2+((py-21*T+70)/64)**2<1;
-const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t);};
+const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t)&&!(fx&&fx.spider>0&&CLIMB.has(t));};
 function incog(){return fx.disguise>0||fx.spider>0;} // disfarçado: de óculos ou de Homem-Aranha
 function hitsWall(x,y){return solidAt(x-4,y-5)||solidAt(x+4,y-5)||solidAt(x-4,y)||solidAt(x+4,y);}
 function moveP(dx,dy){if(dx&&!hitsWall(P.x+dx,P.y))P.x+=dx;if(dy&&!hitsWall(P.x,P.y+dy))P.y+=dy;P.x=clamp(P.x,6,MW*T-6);P.y=clamp(P.y,8,MH*T-2);}
@@ -1509,6 +1510,7 @@ function play(dt){
   else if(grab){updGrab(dt,act);setPrompt(null);if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){grab=null;gameOver('door');return;}}
   else if(napS)updNap(dt,act);
   else if(chairS)updChair(dt,act,im);
+  else if(P.queda)updQueda(dt);
   else{
     let sp=52.5*(fx.turbo>0?1.55:1)*(fx.crash>0?.8:1)*(fx.spider>0?1.25:1)*(fx.sleepy>0?.6:1)*(runHeld||keys.has('ShiftLeft')||keys.has('ShiftRight')?1.275:1); // segurar SHIFT (ou o botão de correr) corre
     let vx=ix*sp,vy=iy*sp;if(fx.trip>0){vx=-vx;vy=-vy;}
@@ -1537,6 +1539,9 @@ function play(dt){
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
   }
+  // Homem-Aranha no telhado: sobe escalando e fica lá em cima (o desenho sobe e ganha sombra)
+  if(!P.queda){const tt=tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T)),alvo=fx.spider>0&&CLIMB.has(tt)?12:0;
+    P.escalando=alvo>0&&P.jumpZ<alvo-1;P.jumpZ=(P.jumpZ||0)+(alvo-(P.jumpZ||0))*Math.min(1,dt*(alvo?5:9));if(P.jumpZ<.2&&!alvo)P.jumpZ=0;}
   for(const it of items){
     if(it.type==='shroom'){it.talkCd-=dt;if(it.talkCd<=0&&dist(it,P)<60&&dist(it,P)>12){it.talkCd=rnd(6,10);let s=pick(L.shroomTalk);s=s.replace('{d}',dirWord(mom,it)).replace('{b}',bloco?dirWord(bloco,it):'norte').replace('{h}',Math.floor(totalMin/60));bubble(it,s,2.6,'shroom',20);}}
     if(!P.hidden&&dist(it,P)<10&&P.mode==='free'){it.dead=true;
@@ -1605,9 +1610,14 @@ function takeItem(it){
 }
 // quando acaba o efeito de Homem-Aranha em cima de um prédio, ele desce pro chão mais perto
 function endSpider(){
+  if(hitsWall(P.x,P.y)){const t=nearestTile(Math.floor(P.x/T),Math.floor((P.y-2)/T),(tt,x,y)=>walkable(tt)&&tt!==DOOR&&y<50);
+    if(t){interruptRest();P.queda={t:0,x0:P.x,y0:P.y,x1:t.x*T+8,y1:t.y*T+12,z0:P.jumpZ||12};toast('O efeito passou lá em cima do prédio... PULA!','bad',2.2);return;}}
   toast('O efeito de Homem-Aranha passou.','',2.2);
-  if(hitsWall(P.x,P.y)){const t=nearestTile(Math.floor(P.x/T),Math.floor((P.y-2)/T),(tt,x,y)=>walkable(tt)&&tt!==DOOR&&y<50);if(t){P.x=t.x*T+8;P.y=t.y*T+12;}flash=.3;bubble(P,'Opa... desci!',1.6);}
 }
+// o pulo do telhado: arco até o chão mais perto e -10 de energia na aterrissagem
+function updQueda(dt){const q=P.queda;q.t+=dt;const u=Math.min(1,q.t/.7);
+  P.x=q.x0+(q.x1-q.x0)*u;P.y=q.y0+(q.y1-q.y0)*u;P.jumpZ=q.z0*(1-u)+Math.sin(u*Math.PI)*18;P.dir=q.x1<q.x0?'left':'right';P.moving=false;
+  if(u>=1){P.queda=null;P.jumpZ=0;lose(10);sfx.hit();shake=.45;particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1.1,text:'AI!',col:'#ff6b5d'});}}
 // teia: gruda a mãe, a chave, as tias e o táxi mais perto
 function shootWeb(){
   if(webCd>0)return;
@@ -1986,7 +1996,7 @@ function convDe(n){
 function convCria(){
   if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Tu nem tem um instrumento, parceiro.']]};
   if(sabeMusica)return{f:'Coe, Markin! O Tavin tá bem graças a tu. Tamo junto!',a:[['Tamo junto, Cria!','Qualquer coisa, a favela é tua.'],['Toca aquela do Tavin aí?','Toca tu, que agora tu sabe!']]};
-  return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá.... Esse menó tá a 3 dias perdido nos becos, deve ter dado teto de Black...',
+  return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá... esse mlk tá a dias aí...',
     a:[['Deixa comigo, vou achar o Tavin!',null,()=>startLabirinto()],['Agora não, depois eu volto.','Não demora não, o Tavin tá sofrendo lá dentro.']]};}
 // a aranha da parte verde: se o Markin for grosso, ela pica e ele vira Homem-Aranha
 function picadaAranha(){lose(5);fx.spider=16;fx.trip=0;sfx.rip();shake=.4;
@@ -3709,7 +3719,7 @@ function render(){
   list.push({y:P.y+(chairS?6:0),d:()=>{
     const py=P.y-cy-(P.jumpZ||0);
     if(P.jumpZ)R(ctx,P.x-cx-4,P.y-cy-1,8,2,'rgba(0,0,0,.25)');
-    drawMarkin(ctx,P.x-cx,py,{dir:P.dir,frame:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});}});
+    drawMarkin(ctx,P.x-cx,py,{dir:P.escalando?'up':P.dir,frame:P.escalando?Math.floor(time*12)%4:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});}});
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
   if(navioDX===0)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy);
