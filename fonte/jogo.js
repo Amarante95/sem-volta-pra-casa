@@ -848,6 +848,7 @@ window.addEventListener('keydown',e=>{initAudio();
   const k=e.code;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(k)&&state!=='title')e.preventDefault();
   if(e.repeat){keys.add(k);return;}
+  if(state==='mglost'&&(k==='Space'||k==='Enter')){const b=screenEl.querySelector('[data-act="mgRetry"]');if(b){b.click();actionQ=false;return;}} // perdeu o desafio: ESPAÇO tenta de novo
   keys.add(k);
   if(k==='Space'||k==='KeyE'||k==='Enter')actionQ=true;
   if(k==='KeyR')declineQ=true;
@@ -2108,7 +2109,8 @@ function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.ms
 function surfFimOnda(){const m=mg;if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
 function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.25)iy=clamp(iy+joy.y,-1,1);
-  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;const kx=ix,joyOn=Math.hypot(joy.x,joy.y)>.2;if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
+  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;const kx=ix,joyOn=isTouch||Math.hypot(joy.x,joy.y)>.2; // no celular é sempre o analógico (mesmo solto)
+  if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
   const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,kx,joyOn,act:a,held:keys.has('Space')||aHeld};}
 // ângulo da prancha em graus (0 = reta, 90 = bico pra baixo), entre 0 e 360
 const surfGraus=a=>((a*180/Math.PI)%360+360)%360;
@@ -2150,8 +2152,10 @@ function updSurf(dt){
         for(let i=0;i<12;i++)m.splash.push({x:m.mx+rnd(-8,8),y:r.y+2,vx:rnd(-60,60),vy:rnd(-90,-30),t:rnd(.4,.7)});}
       else{surfCai(g<8||g>300?'Caiu reto demais! Tem que cair com o bico pra baixo.':'Pousou torto! A prancha foi pra um lado, tu pro outro.');return;}}
   }else{
-    // vira a prancha na direção apontada, pelo caminho mais curto (não pula de uma vez)
-    if(aponta){let dd=Math.atan2(inp.iy,inp.ix)-r.dir;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-4.6*dt,4.6*dt);r.dir+=passo;r.giro=(r.giro||0)+passo;}
+    // PC: ← → giram a prancha na onda (dá pra dar a volta inteira). Celular: a prancha vira pra onde o analógico aponta, pelo caminho mais curto
+    if(!inp.joyOn){if(inp.kx){const passo=inp.kx*3.6*dt; // → gira no sentido do relógio, ← no contrário
+      r.dir+=passo;r.giro=(r.giro||0)+passo;}}
+    else if(aponta){let dd=Math.atan2(inp.iy,inp.ix)-r.dir;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-4.6*dt,4.6*dt);r.dir+=passo;r.giro=(r.giro||0)+passo;}
     // volta completa na onda = 360°
     if(Math.abs(r.giro||0)>=Math.PI*2){r.giro-=Math.sign(r.giro)*Math.PI*2;surfPts(400,'360°');}
     const cs=Math.cos(r.dir),sn=Math.sin(r.dir);r.face=cs>=0?1:-1;
@@ -2161,14 +2165,16 @@ function updSurf(dt){
     // bombear: cada troca entre subir e descer soma mais velocidade (até +70); andando reto ela vai se perdendo
     const vert=sn<-.3?-1:sn>.3?1:0;if(vert&&r.ultVert&&vert!==r.ultVert)r.bomba=Math.min(70,(r.bomba||0)+14);if(vert)r.ultVert=vert;
     r.bomba=Math.max(0,(r.bomba||0)-(vert?3:9)*dt);
-    const alvoV=(aponta?52+mag*38:22)+(inp.held?40:0)+Math.abs(sn)*40+r.bomba;
-    r.v+=(alvoV-r.v)*(alvoV<r.v?(aponta?1.4:2.6):1.1)*dt;r.v=clamp(r.v,22,SF.VMAX);
+    // PC: ↑ acelera e ↓ freia. Celular: afastar o analógico regula a velocidade (solto = perde velocidade) e segurar o botão acelera
+    const acel=inp.joyOn?(aponta?mag:0):(inp.iy<0?1:0),freiaK=!inp.joyOn&&inp.iy>0,solto=inp.joyOn?!aponta:(!acel&&!freiaK&&!inp.kx);
+    const alvoV=(acel>0?52+acel*38:22)+(inp.held?40:0)+Math.abs(sn)*40+r.bomba;
+    r.v+=(alvoV-r.v)*(alvoV<r.v?(solto?3.9:freiaK?2.6:1.4):1.1)*dt;r.v=clamp(r.v,22,SF.VMAX); // sem mexer no analógico ou nas setas perde velocidade 1,5x mais rápido
     r.vy=sn*clamp(r.v,60,120)*1.5;r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2); // sobe e desce na parede mais rápido (1,5x)
     if(r.y>SF.FUNDO){surfCai('Desceu demais e afundou na base da onda!');return;}
     // perdendo velocidade: a rabeta afunda e espirra um jato de água pra trás
     const freia=r.v-alvoV>25;
     if(freia)for(let k=0;k<2;k++)m.splash.push({x:m.mx-18*cs+rnd(-2,2),y:r.y+3-18*sn,vx:-cs*rnd(50,110),vy:rnd(-100,-40),t:rnd(.25,.45)});
-    const alvoL=inp.held?.8:freia?-1:aponta&&mag>.6?mag:0;r.lean=(r.lean||0)+(alvoL-(r.lean||0))*Math.min(1,dt*10); // abaixa acelerando ou freando
+    const alvoL=inp.held?.8:freia?-1:acel>.6?acel:0;r.lean=(r.lean||0)+(alvoL-(r.lean||0))*Math.min(1,dt*10); // abaixa acelerando ou freando
     if(inp.held)r.carga=Math.min(1,(r.carga||0)+dt); // segurando ESPAÇO: ganha velocidade e prepara o salto
   }
   // a quebra anda: indo pra direita mais rápido que ela = ela vai embora; devagar ou indo pra esquerda = ela te alcança
@@ -2193,7 +2199,7 @@ function updSurf(dt){
     else if(solta)r.carga=0; // soltou fora da hora: perde a carga
     else if(subindo&&r.y<=SF.LABIO){
       if(naEspuma){surfCai('Subiu na espuma e a onda quebrou em cima!');return;}
-      if(aponta&&inp.iy>.3){ // batida: bate no lábio e volta pra baixo jogando um leque de água
+      if(inp.joyOn?(aponta&&inp.iy>.3):inp.kx*(r.face||1)>0){ // batida: bate no lábio e volta pra baixo jogando um leque de água
         r.dir=Math.atan2(-Math.sin(r.dir),Math.cos(r.dir));r.y=SF.LABIO+3;
         const perto=m.mx-surfFrente(m.cx,SF.CREST),pts=Math.round(150*clamp(1+(140-perto)/70,1,3)/10)*10;surfPts(pts,'BATIDA');
         for(let i=0;i<22;i++)m.splash.push({x:m.mx-r.face*rnd(6,20),y:r.y,vx:-r.face*rnd(20,120),vy:rnd(-170,-60),t:rnd(.5,.9)});}
