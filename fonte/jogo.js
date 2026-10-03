@@ -776,6 +776,7 @@ function musWant(){
   if(state==='mglost')return null; // perdeu o desafio: silêncio e o jingle de fim
   if(state==='paused')return mus.song;
   if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // conquistou o bloco dele: axé até o barco
+  if(state==='play'&&nightA()>.15)return 'noite'; // escureceu: só a música da noite (sem fuga, cogumelo ou sono por cima)
   if(beg&&state==='play')return mus.song&&!['fuga','cogumelo'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // conversa: trilha tranquila
   const chase=!!grab||(mom&&mom.chasing&&dist(mom,P)<220)||taxis.some(c=>c.chase);
   if(chase)mus.chaseT=3;
