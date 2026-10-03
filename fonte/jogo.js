@@ -3406,7 +3406,7 @@ function updFesta(dt){
     else mgLost('Espantou a menina. Ela foi no banheiro e nunca mais voltou.');
   }
 }
-function drawGatinha(g,x,y,mood,set){ // retrato pixel 30x38 em escala 2
+function drawGatinha(g,x,y,mood,set,corpo){ // retrato pixel 30x38 em escala 2 (com corpo: 30x53)
   const P2=(u,v,w,h,c)=>R(g,x+u*2,y+v*2,w*2,h*2,c);
   const hair=set?set.hair:'#b58cff',root=set?set.root:'#6a4a9a',sk='#e8b894',skD='#d19c78';
   P2(3,2,24,28,hair);P2(4,2,22,3,root);
@@ -3439,10 +3439,22 @@ function renderFesta(){
   // Markin (esquerda) e a gatinha (direita)
   const st=faceState();st.mood=m.phase==='end'?(m.result==='win'?'hype':'sad'):(m.phase==='react'?'hype':null);
   buildFace(st,{});g.imageSmoothingEnabled=false;
+  if(!corpo)return;
+  // corpo: cabelo caindo nas costas, cropped preto de alcinha, barriga de fora, saia preta com cinto da cor do cabelo
+  const top='#141018',topL='#2a2030';
+  P2(3,28,4,11,hair);P2(23,28,4,11,hair);
+  P2(5,36,20,2,sk);P2(4,37,1,2,sk);P2(25,37,1,2,sk);P2(11,36,8,1,skD);
+  P2(9,36,1,2,top);P2(20,36,1,2,top);P2(14,37,2,1,'#e3b341');
+  P2(8,38,14,7,top);P2(9,38,12,1,topL);P2(11,40,1,4,topL);P2(18,40,1,4,topL);
+  P2(4,38,4,9,sk);P2(22,38,4,9,sk);P2(4,38,1,9,skD);P2(25,38,1,9,skD);
+  P2(4,45,4,1,'#4fffd2');P2(22,45,4,1,'#ff4fd8'); // pulseirinhas de festa
+  P2(4,47,4,2,skD);P2(22,47,4,2,skD);
+  P2(9,45,12,2,sk);P2(9,45,12,1,skD);P2(15,46,1,1,skD);
+  P2(8,47,14,1,hair);P2(8,48,14,2,top);P2(7,50,16,3,top);P2(7,52,16,1,topL);P2(12,49,1,3,topL);P2(17,49,1,3,topL);
   const bob=Math.sin(m.beat*6)*1.5;
   drawMkTorso(g,34,104+bob,56,40);R(g,24,106+bob,12,16,'#5a3a26');R(g,88,106+bob,12,16,'#5a3a26');R(g,25,122+bob,10,18,'#d29a6c');R(g,89,122+bob,10,18,'#d29a6c');R(g,25,139+bob,10,5,'#b8804f');R(g,89,139+bob,10,5,'#b8804f');
   g.drawImage(fbuf,32,30+bob,60,75);
-  drawGatinha(g,214,38-bob,m.gatMood,m.set);
+  drawGatinha(g,214,38-bob,m.gatMood,m.set,true);
   // corações
   for(let i=0;i<5;i++){const on=i<m.hearts,hx=W/2-34+i*16,hy=24;
     const c=on?'#ff5a8a':'#3a2a4a';R(g,hx,hy,3,3,c);R(g,hx+5,hy,3,3,c);R(g,hx-1,hy+2,10,3,c);R(g,hx+1,hy+5,6,2,c);R(g,hx+3,hy+7,2,1,c);}
