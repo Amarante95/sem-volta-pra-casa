@@ -2955,6 +2955,8 @@ function updBar(dt){
     else if(Math.abs(m.th)<.35){m.drink=.7;}
     else{m.glass=0;m.refillT=2;m.spills++;m.msg='Derramou! Endireita a cabeça antes de beber.';m.msgT=1.8;sfx.hit();}
   }
+  // demorou pra beber com o copo cheio: dá a dica do botão
+  if(inp.act||m.drink>0||m.glass<=0)m.idle=0;else{m.idle=(m.idle||0)+dt;if(m.idle>5){m.idle=0;m.msg='Dica: deixa a cabeça no verde e aperta '+KL+' pra beber!';m.msgT=2.6;}}
   if(m.beers>=2&&m.msgT<=0){m.mermT=(m.mermT??2)-dt*(m.beers-1);if(m.mermT<=0){m.mermT=rnd(3,5);m.msg='Markin: '+pick(MERMAO);m.msgT=1.6;}}
   if(m.glass<=0&&m.drink<=0){m.refillT-=dt;if(m.refillT<=0){m.glass=1;m.msg=pick(['Desce mais uma!','Olha a gelada!','Essa é por conta da casa... mentira.']);m.msgT=1.2;beep(1200,.06,'square',.04);beep(1500,.06,'square',.04,0,.07);}}
 }
