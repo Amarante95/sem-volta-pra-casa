@@ -887,6 +887,8 @@ const ICON_SURF='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-li
 const ICON_WEB='<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1"><path d="M6 0V12M0 6H12M1.8 1.8L10.2 10.2M10.2 1.8L1.8 10.2"/><circle cx="6" cy="6" r="2"/><circle cx="6" cy="6" r="4.2"/></svg>';
 for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false}); // sem zoom de pinça no iPhone
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+{let ultToque=0;document.addEventListener('touchend',e=>{const ag=Date.now();if(ag-ultToque<350)e.preventDefault();ultToque=ag;},{passive:false});} // sem zoom de duplo toque (iPhone)
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 $('btnW').innerHTML=ICON_WEB;$('btnC').innerHTML=ICON_RUN;
 $('btnC').addEventListener('pointerdown',e=>{e.preventDefault();runHeld=true;initAudio();});
 for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnC').addEventListener(ev,()=>{runHeld=false;});
@@ -2137,7 +2139,11 @@ function updSurf(dt){
     const a=r.air;a.vz-=SF.G*dt;a.z+=a.vz*dt;
     // no ar: no PC, ← e → giram a prancha; no celular, ela vai virando pra onde o analógico aponta (sem girar de uma vez)
     if(!inp.joyOn&&inp.kx){const passo=inp.kx*r.face*7*dt;r.ang+=passo;a.tot+=passo;}
-    else if(inp.joyOn&&aponta){const th=Math.atan2(inp.iy,inp.ix),alvo=r.face>0?th:Math.PI-th;let dd=alvo-r.ang;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-7*dt,7*dt);r.ang+=passo;a.tot+=passo;}
+    else if(a.giro){const passo=Math.sign(a.giro)*Math.min(Math.abs(a.giro),11*dt);a.giro-=passo;r.ang+=passo;a.tot+=passo;} // girando (não para no meio)
+    else if(inp.joyOn&&aponta){const th=Math.atan2(inp.iy,inp.ix),alvo=r.face>0?th:Math.PI-th;let dd=alvo-r.ang;dd=Math.atan2(Math.sin(dd),Math.cos(dd));
+      // celular: a prancha acompanha o analógico; se ele mudar de repente pra uma direção bem diferente, faz um giro completo no ar
+      if(Math.abs(dd)>Math.PI*.75)a.giro=(dd>=0?1:-1)*(Math.PI*2+Math.abs(dd));
+      else{const passo=clamp(dd,-12*dt,12*dt);r.ang+=passo;a.tot+=passo;}}
     if(a.z<=0&&surfFrente(m.cx,SF.LABIO+10)>m.mx-12){r.air=null;surfCai('Caiu na espuma! A onda te engoliu.');return;} // pousou da quebra pra esquerda = vaca
     if(a.z<=0){const g=surfGraus(r.ang),bico=g>=8&&g<=115,voltas=Math.floor((Math.abs(a.tot)*180/Math.PI+40)/360);r.air=null;a.z=0;
       if(bico){r.ang=.6;r.dir=r.face>0?.6:Math.PI-.6;r.giro=0;r.y=SF.LABIO+10;r.v=Math.max(r.v,85);surfPts(voltas>0?250+voltas*350:250,voltas?`AÉREO ${voltas*360}°`:'AÉREO');
@@ -2157,7 +2163,7 @@ function updSurf(dt){
     r.bomba=Math.max(0,(r.bomba||0)-(vert?3:9)*dt);
     const alvoV=(aponta?52+mag*38:22)+(inp.held?40:0)+Math.abs(sn)*40+r.bomba;
     r.v+=(alvoV-r.v)*(alvoV<r.v?(aponta?1.4:2.6):1.1)*dt;r.v=clamp(r.v,22,SF.VMAX);
-    r.vy=sn*clamp(r.v,60,120)*2;r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2); // sobe e desce na parede com o dobro da rapidez
+    r.vy=sn*clamp(r.v,60,120)*1.5;r.y=clamp(r.y+r.vy*dt,SF.LABIO,SF.FUNDO+2); // sobe e desce na parede mais rápido (1,5x)
     if(r.y>SF.FUNDO){surfCai('Desceu demais e afundou na base da onda!');return;}
     // perdendo velocidade: a rabeta afunda e espirra um jato de água pra trás
     const freia=r.v-alvoV>25;
