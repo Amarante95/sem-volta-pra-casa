@@ -1480,7 +1480,7 @@ function winGame(){
 function endWin(){
   state='over';sfx.win();$('touch').hidden=true;
   const hh=String(Math.floor(((360+totalMin)%1440)/60)).padStart(2,'0');
-  showScreen(`<div class="card"><div class="kicker">dia ${day} · ${hh}h · o navio mudou de rota</div><h2 class="win">BOTO COR DE ROSA!</h2><p>O BLOCO DO MARKIN embarcou inteiro: ${buddies.filter(b=>!b.crowd).map(b=>b.nome).join(', ')||'a galera'} e mais um monte de folião. O Jamal ficou orgulhoso. A sopa de chuchu segue no fogão. E o navio? Foi direto pro bloco do Boto Cor de Rosa.</p><p class="stats">${Math.floor(totalMin/60)}h acordado · energia final ${Math.round(P.energy)}</p><h2 style="font-size:1.6em;margin:.2em 0">CONTINUA NA PARTE 2</h2><div class="btns"><button data-act="retry" type="button">JOGAR DE NOVO</button><button data-act="again" class="ghost" type="button">Ver a intro</button><button data-act="menu" class="ghost" type="button">Menu principal</button></div></div>`);
+  showScreen(`<div class="card"><div class="kicker">dia ${day} · ${hh}h · o navio mudou de rota</div><h2 class="win">BOTO COR DE ROSA!</h2><p>O Bloco do Markin embarcou inteiro e o navio foi direto pro bloco do Boto Cor de Rosa.</p><p class="stats">${Math.floor(totalMin/60)}h acordado · energia final ${Math.round(P.energy)}</p><h2 style="font-size:1.6em;margin:.2em 0">CONTINUA NA PARTE 2</h2><div class="btns"><button data-act="retry" type="button">JOGAR DE NOVO</button><button data-act="again" class="ghost" type="button">Ver a intro</button><button data-act="menu" class="ghost" type="button">Menu principal</button></div></div>`);
 }
 
 function update(dt){
