@@ -3169,8 +3169,9 @@ function renderSinuca(){
   const lg=g.createRadialGradient(160,100,10,160,100,170);lg.addColorStop(0,'rgba(255,230,160,.18)');lg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=lg;g.fillRect(0,0,W,H);
   R(g,24,32,272,138,'#6d4322');R(g,26,34,268,134,'#8a5a2e');R(g,30,38,260,126,'#1f6a3a');R(g,SN.x0,SN.y0,SN.x1-SN.x0,SN.y1-SN.y0,'#2f8a4a');
   for(let i=1;i<4;i++){R(g,36+i*62,35,2,2,'#f4f1e8');R(g,36+i*62,166,2,2,'#f4f1e8');}
-  for(const [px,py] of POCKETS){g.save();if(px===160){g.beginPath();g.rect(30,py<100?38:158,260,6);g.clip();} // buracos do meio: só na faixa da tabela
-    g.fillStyle='#0a0a0a';g.beginPath();g.arc(px,py,9,0,Math.PI*2);g.fill();g.restore();}
+  for(const [px,py] of POCKETS){g.fillStyle='#0a0a0a';g.beginPath();
+    if(px===160){const em=py<100;g.arc(px,em?SN.y0:SN.y1,7,em?Math.PI:0,em?Math.PI*2:Math.PI);g.closePath();} // caçapa do meio: meio círculo com a reta na borda do pano
+    else g.arc(px,py,9,0,Math.PI*2);g.fill();}
   const cue=m.balls.find(b=>b.cue);
   // raio de direcionamento (antes das bolas, por baixo delas)
   if(m.phase!=='roll'&&m.phase!=='pick'&&!m.result&&!cue.in){
