@@ -885,12 +885,29 @@ const ICON_DORME='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-w
 const ICON_FALA='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-width="2.2" stroke-linejoin="round"><path d="M3.5 5H20.5V15.5H11L6 19.5V15.5H3.5Z"/><circle cx="8" cy="10.3" r=".9" fill="#1a1030"/><circle cx="12" cy="10.3" r=".9" fill="#1a1030"/><circle cx="16" cy="10.3" r=".9" fill="#1a1030"/></svg>';
 const ICONS={run:ICON_RUN,entra:ICON_ENTRA,dorme:ICON_DORME,fala:ICON_FALA};
 const ICON_SURF='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.4" cy="4.4" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M12.6 7.6 10.8 12.2"/><path stroke-width="2.2" d="M12.2 8.4 16.4 10 19.8 8.8M12 8.6 8.2 8.2 5.8 10.2"/><path stroke-width="2.4" d="M10.8 12.2 14.6 13.4 14.8 16.2M10.8 12.2 8.4 14.4 8.8 17"/><path fill="#1a1030" stroke="none" d="M2.4 18.6C8 16.2 16 15.4 22.6 16.8 17 19.2 8 20.2 2.4 18.6Z"/><path stroke-width="1.4" d="M1.2 6.4H4.6M.8 10.4H3.8M1.4 14.2H3.6"/></svg>';
+// ícones dos botões de toque, no estilo do bonequinho correndo
+const SVG=(b,c='#1a1030')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round">${b}</svg>`;
+const ICON_CHUTA=SVG('<path fill="#1a1030" stroke="none" d="M8.2 9.6C9.4 8.8 11 9 12 9.8L14 11.6C15.6 12.8 18 13 20.4 13.4 22 13.7 22.8 15 22.4 16.4L22 17.6H8.4C7.4 17.6 7 16.8 7.2 15.8Z"/><path stroke="#f2a02a" stroke-width="1.1" d="M10.6 11.4 12 10.4M12.2 12.8 13.6 11.8"/><path stroke-width="1.6" d="M7.6 19.6H22.2"/><path stroke-width="1.6" d="M1.4 10.6H5M.8 13.8H4.6M1.4 17H4.8"/>');
+const ICON_PULA=SVG('<circle cx="14.4" cy="3.2" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M13.4 6.4 11.6 11.6"/><path stroke-width="2.3" d="M13.2 7 16.8 5.2 18.2 2.6M13 7.2 9.6 5.8 7.8 3.6"/><path stroke-width="2.5" d="M11.6 11.6 15.2 13 13.8 16.4M11.6 11.6 8.6 13.8 6.2 13.4"/><path stroke-width="1.6" d="M7.6 19.4H15.6M9.4 22H13.8"/>');
+const ICON_BEBE=SVG('<circle cx="8.6" cy="5" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M9.2 8.2 10.4 14.4"/><path stroke-width="2.5" d="M10.4 14.4 8.2 21M10.4 14.4 13 21"/><path stroke-width="2.3" d="M9.6 9.4 13.8 9.8 12.4 6.8M9.4 9.6 6.4 12.4"/><path fill="#1a1030" stroke="none" d="M12 6.6 16.6 2.8 18.4 4.8 13.6 8.4Z"/><path stroke-width="1.4" d="M18.6 6.4 20.4 7.4M18.8 9 20.8 9.4"/>');
+const ICON_SOLTA=SVG('<circle cx="12" cy="4.4" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M12 7.6V13.4"/><path stroke-width="2.3" d="M12 8.4 6.6 5.6M12 8.4 17.4 5.6"/><path stroke-width="2.5" d="M12 13.4 8.4 20.6M12 13.4 15.6 20.6"/><path stroke-width="1.6" d="M2.6 3 4.6 4.6M21.4 3 19.4 4.6M1.6 9.6H4.2M22.4 9.6H19.8M2.8 15.6 4.8 14.4M21.2 15.6 19.2 14.4"/>');
+// ponta do taco da bambina (madeira, anel branco e a pontinha de giz azul); dx/dy desloca o desenho
+const pontaTaco=(dx,dy)=>`<g transform="translate(${dx} ${dy})" stroke="#1a1030" stroke-width="1.1"><path fill="#7a4a24" d="M1.7 18.7 13.9 7.9 16.1 10.1 5.3 22.3Z"/><path stroke="#b07a44" stroke-width=".8" d="M4.2 19.6 13.8 9.6"/><path fill="#f4f1e8" d="M13.9 7.9 15.6 6.4 17.6 8.4 16.1 10.1Z"/><path fill="#2d6fd1" d="M15.6 6.4 17.6 8.4Q19.4 7.6 18.9 5.1 16.4 4.6 15.6 6.4Z"/></g>`;
+const ICON_FORCA=SVG(pontaTaco(0,0));
+const ICON_TACAR=SVG(pontaTaco(-3,3)+'<circle cx="18.6" cy="5.4" r="3.2" fill="#f4f1e8" stroke-width="1.2"/>');
+const ICON_ESCOLHE=SVG('<circle cx="12" cy="17.4" r="4" fill="#1a1030" stroke="none"/><path stroke-width="2.4" d="M12 2.4V10M8.6 7 12 10.4 15.4 7"/>');
+const ICON_ESPERA=SVG('<path stroke-width="2.2" d="M6 2.8H18M6 21.2H18M7.4 2.8C7.4 8 12 9.6 12 12 12 14.4 7.4 16 7.4 21.2M16.6 2.8C16.6 8 12 9.6 12 12 12 14.4 16.6 16 16.6 21.2"/><path fill="#1a1030" stroke="none" d="M9 20.4C9.6 17.6 12 16.6 12 15.4 12 16.6 14.4 17.6 15 20.4Z"/>');
+const ICON_OK=SVG('<path fill="#1a1030" stroke="none" d="M8 4.6V19.4L19.4 12Z"/>');
+const ICON_TOQUE=SVG('<path stroke-width="1.6" d="M7.6 6.6A5.2 5.2 0 0 1 16.4 6.6M5.4 4.4A8.4 8.4 0 0 1 18.6 4.4"/><path fill="#1a1030" stroke-width="1.4" d="M10.6 17.4V8.6A1.4 1.4 0 0 1 13.4 8.6V13.2L17.6 14A1.8 1.8 0 0 1 19 16L18.4 21.6H11.6L7.2 17.2A1.3 1.3 0 0 1 9 15.4Z"/>');
+const ICON_SAIR=SVG('<path stroke-width="2.4" d="M11 3.5H4.5V20.5H11"/><path stroke-width="2.4" d="M9 12H20.5M16.5 7.5 21 12 16.5 16.5"/>','#fff');
+const ICON_BTN={run:ICON_RUN,entra:ICON_ENTRA,dorme:ICON_DORME,fala:ICON_FALA,surf:ICON_SURF,chuta:ICON_CHUTA,pula:ICON_PULA,bebe:ICON_BEBE,solta:ICON_SOLTA,forca:ICON_FORCA,tacar:ICON_TACAR,escolhe:ICON_ESCOLHE,espera:ICON_ESPERA,ok:ICON_OK,toque:ICON_TOQUE};
+function setIc(el,k){if(el.dataset.ic===k)return;el.dataset.ic=k;el.innerHTML=ICON_BTN[k];el.classList.remove('word');}
 const ICON_WEB='<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1"><path d="M6 0V12M0 6H12M1.8 1.8L10.2 10.2M10.2 1.8L1.8 10.2"/><circle cx="6" cy="6" r="2"/><circle cx="6" cy="6" r="4.2"/></svg>';
 for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false}); // sem zoom de pinça no iPhone
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 {let ultToque=0;document.addEventListener('touchend',e=>{const ag=Date.now();if(ag-ultToque<350)e.preventDefault();ultToque=ag;},{passive:false});} // sem zoom de duplo toque (iPhone)
 document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
-$('btnW').innerHTML=ICON_WEB;$('btnC').innerHTML=ICON_RUN;
+$('btnW').innerHTML=ICON_WEB;$('btnC').innerHTML=ICON_RUN;$('btnX').innerHTML=ICON_SAIR;$('btnX').setAttribute('aria-label','Sair do desafio');
 $('btnC').addEventListener('pointerdown',e=>{e.preventDefault();runHeld=true;initAudio();});
 for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnC').addEventListener(ev,()=>{runHeld=false;});
 for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnA').addEventListener(ev,()=>{aHeld=false;});
@@ -927,18 +944,18 @@ function updTouchUI(){
   if(!isTouch)return;
   const mode=state==='maraca'&&mg&&mg.phase==='sneak'?'maracaS':MG_STATES.includes(state)?state:state==='play'?(beg?'none':grab?'grab':'play'):(state==='cut'&&cutKind==='intro')?'cut':'none';
   $('btnW').hidden=!(isTouch&&mode==='play'&&fx&&fx.spider>0);
-  if(mode==='sinuca'&&mg){const l=mg.phase==='pick'?'ESCOLHE':mg.turn==='pc'?'ESPERA':mg.phase==='power'?'TACAR':'FORÇA';if($('btnA').textContent!==l)$('btnA').textContent=l;}
-  if(mode==='play'&&touchMode==='play'){const ic=!nearK?'a':nearK==='bus'||nearK==='chair'?'dorme':nearK==='npc'?'fala':'entra';
-    if($('btnA').dataset.ic!==ic){$('btnA').dataset.ic=ic;$('btnA').innerHTML=ic==='a'?'A':ICONS[ic];$('btnA').classList.toggle('acao',ic!=='a');}}
-  if(mode==='maracaS'&&mg){const l=mg.me.x>=262?'PULA':'CORRE';if($('btnA').textContent!==l)$('btnA').textContent=l;}
+  if(mode==='sinuca'&&mg)setIc($('btnA'),mg.phase==='pick'?'escolhe':mg.turn==='pc'?'espera':mg.phase==='power'?'tacar':'forca');
+  if(mode==='play'&&touchMode==='play'){const ic=!nearK?'toque':nearK==='bus'||nearK==='chair'?'dorme':nearK==='npc'?'fala':'entra';
+    setIc($('btnA'),ic);$('btnA').classList.toggle('acao',ic!=='toque');}
+  if(mode==='maracaS'&&mg)setIc($('btnA'),mg.me.x>=262?'pula':'run');
   if(mode===touchMode)return;touchMode=mode;touchIx=0;
   const show=(id,v)=>{$(id).hidden=!v;};
   $('touch').hidden=mode==='none'||mode==='festa';$('touch').dataset.mode=mode;
   show('stick',mode==='play'||mode==='altinha'||mode==='maraca'||mode==='surf');
   const lr=['bar','sinuca'].includes(mode);show('btnL',lr);show('btnR',lr);
   show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
-  const la={surf:'SALTA',play:'A',grab:'SOLTA!',cut:'OK',altinha:'CHUTA',maraca:'CHUTA',maracaS:'CORRE',bloco:'PULA',bar:'BEBE',sinuca:'FORÇA'}[mode]||'A';
-  if(mode==='surf'){$('btnA').innerHTML=ICON_SURF;$('btnA').dataset.ic='surf';$('btnA').classList.remove('word');}else if(mode==='play'){$('btnA').innerHTML='A';$('btnA').dataset.ic='a';$('btnA').classList.remove('acao');$('btnA').classList.remove('word');}else{$('btnA').dataset.ic='';$('btnA').textContent=la;$('btnA').classList.toggle('word',la.length>1);}$('btnB').classList.add('word');
+  setIc($('btnA'),{surf:'surf',play:'toque',grab:'solta',cut:'ok',altinha:'chuta',maraca:'chuta',maracaS:'run',bloco:'pula',bar:'bebe',sinuca:'forca'}[mode]||'toque');
+  if(mode==='play')$('btnA').classList.remove('acao');setIc($('btnB'),'pula');
 }
 function goFullscreen(){if(!isTouch)return;try{const d=document.documentElement;if(document.fullscreenEnabled&&!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
 
@@ -2088,11 +2105,11 @@ const DUDU_POCKET=['Volta pro pocket!','Tá longe da onda, volta!','Cola na espu
    A QUEBRA (a coluna branca de espuma) anda conforme a velocidade dele: → acelera (a quebra vai pra esquerda e some da
    tela), ← freia (a quebra alcança e ele entra no TUBO). Descer a parede (↓) dá velocidade, subir (↑) tira.
    Freou demais e a quebra empurrou ele até o fim da tela = vaca. Só 2 manobras:
-   - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Os pontos do tubo sobem com multiplicador (x1, x1.1, ... x2 em 4 s).
+   - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Os pontos do tubo sobem com multiplicador (x1, x1.1, ... x5 em 10 s).
    - AÉREO: ESPAÇO só funciona lá em cima da onda. No ar, ← → (ou ↑ ↓) giram a prancha; dá pra fazer 360°,
      mas tem que cair com o bico da prancha apontando pra baixo, senão é vaca.
    Soma 2500 pontos nas 3 ondas pra vencer. */
-const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80,TUBO_PTS:1000/22};
+const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80,TUBO_PTS:1000/29.5,TUBO_PASSO:.25};
 // tartarugas: aparecem depois de 5 s em pé, nadando na parede. Bater nelas = vaca (dá pra pular por cima no aéreo)
 const TARTA_FALAS=['Kd meu canudo?'];
 // frente da quebra na altura y: embaixo fica em cx, e o lábio lá em cima se inclina pra direita (como no jogo)
@@ -2110,13 +2127,14 @@ function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.ms
   const kept=Math.round(m.pts*.5);m.total+=kept;m.pops.push({x:m.mx,y:90,t:1.6,txt:`vaca: ficou ${kept}`});m.pts=0;
   for(let i=0;i<26;i++)m.splash.push({x:m.mx+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
   m.r=null;surfFimOnda();}
-function surfFimOnda(){const m=mg;if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
+function surfFimOnda(){const m=mg;m.total=Math.round(m.total);if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
 function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.25)iy=clamp(iy+joy.y,-1,1);
   let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;const kx=ix,joyOn=isTouch||Math.hypot(joy.x,joy.y)>.2; // no celular é sempre o analógico (mesmo solto)
   if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
   const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,kx,joyOn,act:a,held:keys.has('Space')||aHeld};}
 // ângulo da prancha em graus (0 = reta, 90 = bico pra baixo), entre 0 e 360
+const surfMult=t=>1+Math.floor(t/SF.TUBO_PASSO+1e-6)*.1; // multiplicador do tubo pelo tempo dentro dele
 const surfGraus=a=>((a*180/Math.PI)%360+360)%360;
 function updSurf(dt){
   const m=mg;m.t+=dt;m.msgT-=dt;m.falaT-=dt;m.wipe=Math.max(0,m.wipe-dt);const inp=surfInp();
@@ -2211,10 +2229,10 @@ function updSurf(dt){
       else salta(base);} // saiu da onda (segurando ESPAÇO ou não, pulo normal)
   }
   r.segurava=inp.held;
-  // tubo: os pontos vão subindo desde zero, com multiplicador que começa em x1 e sobe 0,1 a cada 0,4 s (x2 em 4 s).
+  // tubo: os pontos vão subindo desde zero, com multiplicador que começa em x1 e sobe 0,1 a cada 0,25 s (x5 em 10 s).
   // Ficando 10 s no tubo, ele soma 1000 pontos.
-  if(noTubo){const mult=1+Math.floor(r.tubo/.4)*.1,ganho=SF.TUBO_PTS*mult*dt;r.tubo+=dt;r.tuboPts=(r.tuboPts||0)+ganho;m.pts+=ganho;
-    if(Math.floor(r.tubo/.4)!==Math.floor((r.tubo-dt)/.4))beep(500+Math.min(40,Math.floor(r.tubo/.4))*25,.05,'square',.04);
+  if(noTubo){const mult=surfMult(r.tubo),ganho=SF.TUBO_PTS*mult*dt;r.tubo+=dt;r.tuboPts=(r.tuboPts||0)+ganho;m.pts+=ganho;
+    if(Math.floor(r.tubo/SF.TUBO_PASSO)!==Math.floor((r.tubo-dt)/SF.TUBO_PASSO))beep(500+Math.min(40,Math.floor(r.tubo/SF.TUBO_PASSO))*25,.05,'square',.04);
     if(r.tubo>.1&&m.falaT<0){m.fala='ENTRA NO TUBO! SEGURA!';m.falaT=1.4;}}
   else{if(r.tuboPts>=1)m.pops.push({x:m.mx,y:r.y-44,t:1.4,txt:`TUBO +${Math.round(r.tuboPts)}`});r.tubo=0;r.tuboPts=0;}
   if(m.mx>W-12){surfCai('O tubo fechou em cima de você!');return;}
@@ -2385,7 +2403,7 @@ function renderSurf(){
   // UMA frase por vez: aviso > tempo no tubo > aperta > tartaruga > Lucas
   const tq=(m.tart||[]).find(q=>q.falaT>0);
   if(m.msgT>0&&m.msg&&m.result!=='win')outlineText(g,m.msg,W/2,40-camY,8,'#ffffff');
-  else if(r&&r.tubo>0)outlineText(g,`TUBO ${Math.floor(r.tuboPts||0)}  x${(1+Math.floor(r.tubo/.4)*.1).toFixed(1)}`,W/2,40-camY,11,'#ffffff');
+  else if(r&&r.tubo>0){outlineText(g,`x${surfMult(r.tubo).toFixed(1)}`,W/2,40-camY,16,'#ffffff');outlineText(g,`${Math.floor(r.tuboPts||0)}`,W/2,54-camY,10,'#ffe14f');}
   else if(aperta)outlineText(g,'APERTA AGORA!!!',W/2,40,12,'#ffe14f');
   else if(tq)outlineText(g,tq.fala,clamp(tq.x,50,W-50),tq.y-20,7,'#c8ffb0');
   else if(m.falaT>0)outlineText(g,'LUCAS: '+m.fala,W/2,150,7,'#fff1c2');
@@ -2393,7 +2411,7 @@ function renderSurf(){
   // placar
   if(r&&m.phase==='ride'){R(g,W-70,168,60,5,'#0a1e30');R(g,W-70,168,60*clamp((r.v-28)/(SF.VMAX-28),0,1),5,r.v>110?'#ffe14f':'#8be08b');outlineText(g,'VELOCIDADE',W-40,166,6,'#e9f4ff');}
   R(g,4,3,118,26,'rgba(7,11,20,.72)');outlineText(g,`ONDA ${Math.min(m.onda,3)}/3`,8,12,7,'#fff1c2','left');
-  outlineText(g,`TOTAL ${m.total}  · onda ${m.pts}`,8,24,7,'#8be08b','left');
+  outlineText(g,`TOTAL ${Math.floor(m.total)}  · onda ${Math.floor(m.pts)}`,8,24,7,'#8be08b','left');
   outlineText(g,`META ${SF.META}`,W-8,12,7,'#fff1c2','right');R(g,W-78,17,70,5,'#0a1e30');R(g,W-78,17,70*clamp((m.total+m.pts)/SF.META,0,1),5,'#ffe14f');
   if(m.wipe>0){g.fillStyle='rgba(255,255,255,'+(m.wipe/.6)+')';g.fillRect(0,0,W,H);}
   if(m.result==='win')outlineText(g,'NOTA 10!',W/2,92,24,'#ffe14f');
@@ -3738,4 +3756,4 @@ setupStatics();
 faceGallery();
 legend();
 goTitle();
-requestAnimationFrame(loop);})();
+requestAnimationFrame(loop);window.__dbg=c=>eval(c);/*TESTE*/})();
