@@ -701,7 +701,7 @@ const MUS_SONGS={
   festa:{bpm:112,ch:['Am','F','C','G','Am','F','C','G'],drum:'festa',bass:'colcheia',lead:'sawtooth',lv:.028,
     mel:[69,72,76,72, 77,72,69,72, 79,76,72,76, 79,74,71,74, 81,-1,79,76, 77,-1,76,72, 76,-1,72,67, 74,-1,-1,0]}
 };
-const MG_MUSICAS={altinha:'altinha.mp3',sinuca:'bambina.mp3',bar:'bar.mp3',bloco:'bloco-secreto.mp3',guitarra:'chefao.mp3',surf:'surf.mp3'};
+const MG_MUSICAS={altinha:'altinha.mp3',sinuca:'bambina.mp3',bar:'bar.mp3',bloco:'bloco-secreto.mp3',guitarra:'chefao.mp3',surf:'surf.mp3',labirinto:'becos.mp3'};
 function musInit(){
   if(mus||!AC)return;
   const nb=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
@@ -764,8 +764,8 @@ function crowdTick(){
 // qual trilha combina com o momento
 function musWant(){
   if(state==='tempo'||state==='capitulo'||state==='virando')return null; // Música do Tempo, troca de capítulo e transformação: só os efeitos
-  if(mus.mg&&mus.mg[state])return 'mg_'+state; // desafio com música própria
   if(state==='labirinto'&&mg&&(mg.phase==='ensina'||mg.phase==='repete'||mg.result))return null; // silêncio pra aprender a Música do Tempo
+  if(mus.mg&&mus.mg[state])return 'mg_'+state; // desafio com música própria
   if(state==='title'||state==='cut'&&cutKind==='intro')return mus.inicioBuf?'inicio':'menu';
   if(state==='over')return finalStage>=3?(mus.finalBuf?'final':'axe'):null; // venceu: axé; perdeu: silêncio
   if(state==='guitarra')return null; // a guitarra do Jamal tem o próprio ritmo
