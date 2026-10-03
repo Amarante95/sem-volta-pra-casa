@@ -3894,6 +3894,7 @@ function render(){
       if(gx<0||gx>W||gy<0||gy>H){const ax=clamp(gx,22,W-22),ay=clamp(gy,52,H-14),blink=Math.sin(time*6)>0;
         R(ctx,ax-19,ay-9,38,16,blink?goal.col:goal.dark);outlineText(ctx,goal.txt,ax,ay+3,8,blink?'#1a1030':'#ffffff',undefined,null);}
       else if(finalStage===2){const bob=Math.sin(time*5)*2;drawShipIcon(ctx,gx,gy-10+bob);outlineText(ctx,'EMBARCA AQUI',gx,gy-20+bob,6,'#4fd8ff');}}
+    if(P.energy<=30&&P.mode==='free'&&!grab)drawAjudaEnergia(cx,cy);
   }
   if(flash>0){ctx.fillStyle=`rgba(255,255,255,${clamp(flash,0,.6)})`;ctx.fillRect(0,0,W,H);}
   if(grab&&state==='play'){const p=clamp(1-grab.left/grab.need,0,1),bw=150,bx=(W-bw)/2,by=118;
@@ -3906,6 +3907,22 @@ function render(){
   // de madrugada (3h às 6h) a tela vai fechando em volta do Markin até virar o dia
   if((state==='play')&&!grab){const h=hourF();if(h>=3&&h<6){const p=(h-3)/3;iris(400-330*Math.pow(p,1.3),P.x-cx,P.y-14-cy);}}
   if(state==='capitulo'&&cap)renderCapitulo(cx,cy);
+}
+// energia em 30 ou menos: pontos de ônibus, cadeiras e itens brilham, e uma seta aponta pro cochilo e pro item mais perto
+function drawAjudaEnergia(cx,cy){
+  const pul=.5+.5*Math.sin(time*6),rest=[...busStops,...chairs].filter(canRest),its=(items||[]).filter(i=>i.type!=='palheta');
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(const o of [...rest,...its]){const x=o.x-cx,y=o.y-cy-(o.h||18)/2,r=(o.h>20?20:13)+pul*4;if(x<-r||x>W+r||y<-r||y>H+r)continue;
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(255,235,130,${.4+.3*pul})`);g.addColorStop(1,'rgba(255,235,130,0)');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
+  ctx.restore();
+  const perto=a=>{let b=null,bd=1e9;for(const o of a){const d=dist(o,P);if(d<bd){bd=d;b=o;}}return b;};
+  const tri=(x,y,a,col)=>{ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-5,-6);ctx.lineTo(-2,0);ctx.lineTo(-5,6);ctx.closePath();
+    ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#0a0612';ctx.lineWidth=1;ctx.stroke();ctx.restore();};
+  const seta=(o,txt,col)=>{if(!o)return;const tx=o.x-cx,ty=o.y-cy-(o.h||18)-6;
+    if(tx>8&&tx<W-8&&ty>48&&ty<H-8){if(dist(o,P)>20)tri(tx,ty-4+Math.sin(time*8)*2,Math.PI/2,col);return;} // na tela: setinha pulando em cima
+    const a=Math.atan2(ty-(P.y-14-cy),tx-(P.x-cx)),ax=clamp(tx,14,W-14),ay=clamp(ty,58,H-14);
+    tri(ax,ay,a,col);outlineText(ctx,txt,clamp(ax-Math.cos(a)*16,16,W-16),clamp(ay-Math.sin(a)*12+2,52,H-4),6,col);};
+  seta(perto(rest),'COCHILO','#8fd0ff');seta(perto(its),'ITEM','#ffe14f');
 }
 const dk=document.createElement('canvas');dk.width=W;dk.height=H;const dc=dk.getContext('2d');
 function lightHole(wx,wy,r,cx,cy){const x=wx-cx,y=wy-cy;if(x<-r||x>W+r||y<-r||y>H+r)return;const g=dc.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.6,'rgba(0,0,0,.7)');g.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=g;dc.fillRect(x-r,y-r,r*2,r*2);}
