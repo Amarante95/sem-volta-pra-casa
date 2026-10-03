@@ -135,7 +135,8 @@ body.mobile .game button.fopt:focus,body.mobile .game button.fopt:focus-visible{
 #btnA{position:absolute;right:3%;bottom:7%;width:11%;aspect-ratio:1;border-radius:50%;pointer-events:auto;font-size:1.4em!important;padding:0!important;opacity:.75}
 #btnA.acao{background:#8be08b!important;box-shadow:0 .2em 0 #2f6a2e!important;opacity:.95;animation:acaoPulsa .7s ease-in-out infinite alternate}
 @keyframes acaoPulsa{to{transform:scale(1.08)}}
-#btnA svg,#btnW svg{width:62%;height:62%;display:block;margin:auto}
+#btnX svg{width:1.3em;height:1.3em;display:block}
+#btnA svg,#btnB svg,#btnW svg{width:62%;height:62%;display:block;margin:auto}
 #btnC{position:absolute;right:16.5%;bottom:6%;width:8%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.8;background:#ffb347!important;box-shadow:0 .2em 0 #8a5a1a!important}
 #btnC svg{width:62%;height:62%;display:block;margin:auto}
 #btnW{position:absolute;right:4.5%;bottom:31%;width:8%;aspect-ratio:1;border-radius:50%;pointer-events:auto;padding:0!important;opacity:.85;background:#d0202a!important;box-shadow:0 .2em 0 #6a0a10!important}

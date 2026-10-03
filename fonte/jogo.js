@@ -3756,4 +3756,4 @@ setupStatics();
 faceGallery();
 legend();
 goTitle();
-requestAnimationFrame(loop);window.__dbg=c=>eval(c);/*TESTE*/})();
+requestAnimationFrame(loop);})();
