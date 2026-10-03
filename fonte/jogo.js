@@ -883,7 +883,10 @@ const ICON_ENTRA='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-w
 const ICON_DORME='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8H11L4 17H11"/><path stroke-width="2" d="M14 4H19.5L14 10.5H19.5"/></svg>';
 const ICON_FALA='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-width="2.2" stroke-linejoin="round"><path d="M3.5 5H20.5V15.5H11L6 19.5V15.5H3.5Z"/><circle cx="8" cy="10.3" r=".9" fill="#1a1030"/><circle cx="12" cy="10.3" r=".9" fill="#1a1030"/><circle cx="16" cy="10.3" r=".9" fill="#1a1030"/></svg>';
 const ICONS={run:ICON_RUN,entra:ICON_ENTRA,dorme:ICON_DORME,fala:ICON_FALA};
+const ICON_SURF='<svg viewBox="0 0 24 24" fill="none" stroke="#1a1030" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.4" cy="4.4" r="2.3" fill="#1a1030" stroke="none"/><path stroke-width="3" d="M12.6 7.6 10.8 12.2"/><path stroke-width="2.2" d="M12.2 8.4 16.4 10 19.8 8.8M12 8.6 8.2 8.2 5.8 10.2"/><path stroke-width="2.4" d="M10.8 12.2 14.6 13.4 14.8 16.2M10.8 12.2 8.4 14.4 8.8 17"/><path fill="#1a1030" stroke="none" d="M2.4 18.6C8 16.2 16 15.4 22.6 16.8 17 19.2 8 20.2 2.4 18.6Z"/><path stroke-width="1.4" d="M1.2 6.4H4.6M.8 10.4H3.8M1.4 14.2H3.6"/></svg>';
 const ICON_WEB='<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1"><path d="M6 0V12M0 6H12M1.8 1.8L10.2 10.2M10.2 1.8L1.8 10.2"/><circle cx="6" cy="6" r="2"/><circle cx="6" cy="6" r="4.2"/></svg>';
+for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false}); // sem zoom de pinça no iPhone
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 $('btnW').innerHTML=ICON_WEB;$('btnC').innerHTML=ICON_RUN;
 $('btnC').addEventListener('pointerdown',e=>{e.preventDefault();runHeld=true;initAudio();});
 for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnC').addEventListener(ev,()=>{runHeld=false;});
@@ -932,7 +935,7 @@ function updTouchUI(){
   const lr=['bar','sinuca'].includes(mode);show('btnL',lr);show('btnR',lr);
   show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
   const la={surf:'SALTA',play:'A',grab:'SOLTA!',cut:'OK',altinha:'CHUTA',maraca:'CHUTA',maracaS:'CORRE',bloco:'PULA',bar:'BEBE',sinuca:'FORÇA'}[mode]||'A';
-  if(mode==='play'){$('btnA').innerHTML='A';$('btnA').dataset.ic='a';$('btnA').classList.remove('acao');$('btnA').classList.remove('word');}else{$('btnA').dataset.ic='';$('btnA').textContent=la;$('btnA').classList.toggle('word',la.length>1);}$('btnB').classList.add('word');
+  if(mode==='surf'){$('btnA').innerHTML=ICON_SURF;$('btnA').dataset.ic='surf';$('btnA').classList.remove('word');}else if(mode==='play'){$('btnA').innerHTML='A';$('btnA').dataset.ic='a';$('btnA').classList.remove('acao');$('btnA').classList.remove('word');}else{$('btnA').dataset.ic='';$('btnA').textContent=la;$('btnA').classList.toggle('word',la.length>1);}$('btnB').classList.add('word');
 }
 function goFullscreen(){if(!isTouch)return;try{const d=document.documentElement;if(document.fullscreenEnabled&&!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
 
@@ -2103,8 +2106,8 @@ function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.ms
 function surfFimOnda(){const m=mg;if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
 function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.25)iy=clamp(iy+joy.y,-1,1);
-  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
-  const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,act:a,held:keys.has('Space')||aHeld};}
+  let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;const kx=ix,joyOn=Math.hypot(joy.x,joy.y)>.2;if(Math.abs(joy.x)>.15)ix=clamp(ix+Math.sign(joy.x)*(Math.abs(joy.x)-.15)/.85,-1,1); // analógico: quanto mais empurra, mais acelera/freia
+  const a=actionQ;actionQ=false;jumpQ=false;laneQ=0;return{iy,ix,kx,joyOn,act:a,held:keys.has('Space')||aHeld};}
 // ângulo da prancha em graus (0 = reta, 90 = bico pra baixo), entre 0 e 360
 const surfGraus=a=>((a*180/Math.PI)%360+360)%360;
 function updSurf(dt){
@@ -2132,8 +2135,11 @@ function updSurf(dt){
   const mag=Math.min(1,Math.hypot(inp.ix,inp.iy)),aponta=mag>.2;
   if(r.air){ // no ar: as setas giram a prancha; tem que pousar com o bico pra baixo
     const a=r.air;a.vz-=SF.G*dt;a.z+=a.vz*dt;
-    const giro=clamp(inp.ix*r.face+inp.iy,-1,1);r.ang+=giro*7.4*dt;a.tot+=Math.abs(giro*7.4*dt);
-    if(a.z<=0){const g=surfGraus(r.ang),bico=g>=8&&g<=115,voltas=Math.floor((a.tot*180/Math.PI+40)/360);r.air=null;a.z=0;
+    // no ar: no PC, ← e → giram a prancha; no celular, ela vai virando pra onde o analógico aponta (sem girar de uma vez)
+    if(!inp.joyOn&&inp.kx){const passo=inp.kx*r.face*7*dt;r.ang+=passo;a.tot+=passo;}
+    else if(inp.joyOn&&aponta){const th=Math.atan2(inp.iy,inp.ix),alvo=r.face>0?th:Math.PI-th;let dd=alvo-r.ang;dd=Math.atan2(Math.sin(dd),Math.cos(dd));const passo=clamp(dd,-7*dt,7*dt);r.ang+=passo;a.tot+=passo;}
+    if(a.z<=0&&surfFrente(m.cx,SF.LABIO+10)>m.mx-12){r.air=null;surfCai('Caiu na espuma! A onda te engoliu.');return;} // pousou da quebra pra esquerda = vaca
+    if(a.z<=0){const g=surfGraus(r.ang),bico=g>=8&&g<=115,voltas=Math.floor((Math.abs(a.tot)*180/Math.PI+40)/360);r.air=null;a.z=0;
       if(bico){r.ang=.6;r.dir=r.face>0?.6:Math.PI-.6;r.giro=0;r.y=SF.LABIO+10;r.v=Math.max(r.v,85);surfPts(voltas>0?250+voltas*350:250,voltas?`AÉREO ${voltas*360}°`:'AÉREO');
         for(let i=0;i<12;i++)m.splash.push({x:m.mx+rnd(-8,8),y:r.y+2,vx:rnd(-60,60),vy:rnd(-90,-30),t:rnd(.4,.7)});}
       else{surfCai(g<8||g>300?'Caiu reto demais! Tem que cair com o bico pra baixo.':'Pousou torto! A prancha foi pra um lado, tu pro outro.');return;}}

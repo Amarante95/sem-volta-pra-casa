@@ -6,7 +6,7 @@
   --sea:#3d8fd0; --danger:#ff6b5d; --ok:#8be08b; --pink:#ff8fc2;
 }
 [hidden]{display:none!important}
-html,body{background:var(--ink);height:auto}
+html,body{background:var(--ink);height:auto;touch-action:manipulation} /* sem zoom de duplo toque no celular */
 body{color:var(--paper);font-family:'VT323',ui-monospace,Menlo,Consolas,monospace;font-size:20px;line-height:1.25;padding-inline:16px;padding-block:18px 48px}
 .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
