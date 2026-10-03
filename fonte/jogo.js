@@ -773,7 +773,8 @@ function musWant(){
   if(state==='bloco')return mus.inicioBuf?'blocoRec':'bloco';
   if(state==='bar'||state==='sinuca')return 'boteco';
   if(state==='festa')return mus.festaBuf?'festaRec':'funk';
-  if(state==='paused'||state==='mglost')return mus.song;
+  if(state==='mglost')return null; // perdeu o desafio: silêncio e o jingle de fim
+  if(state==='paused')return mus.song;
   if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // conquistou o bloco dele: axé até o barco
   if(beg&&state==='play')return mus.song&&!['fuga','cogumelo'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // conversa: trilha tranquila
   const chase=!!grab||(mom&&mom.chasing&&dist(mom,P)<220)||taxis.some(c=>c.chase);
@@ -1152,7 +1153,7 @@ function resetGame(){bandeira=0;
   navioDX=0;boto=null;
   mg=null;grab=null;spawnNpcs();lastSleep=-999;for(const o of [...busStops,...chairs])o.lastRest=-99999;altinhaDay=0;barDay=0;festaDay=0;tasksDone={};hintT=15;$('festa').hidden=true;taxis=[];taxiT=20;tregua=0;relocateBloco();
 }
-function targets(){return{beer:12,shroom:2,zip:3,shades:2,shroomAranha:1,shroomGold:1,shroomRoxo:1};} // igual todos os dias
+function targets(){return{beer:12,shroom:2,zip:3,shades:2,shroomGold:1,shroomRoxo:1};} // igual todos os dias
 function spawnItem(type,initial=false){
   // escolhe, entre vários lugares do mapa inteiro, o mais longe dos itens que já existem
   const pool=spawnSets[type],minP=initial?70:90;let p=null,bs=-1;
@@ -1341,12 +1342,12 @@ function endIntro(){
   $('skip').hidden=true;state='ready';P.mode='free';
   showScreen(`<div class="card"><div class="kicker">regras</div><h2>SEM VOLTA<br>PRA CASA</h2>
   <p>Fique <b>15 dias</b> sem voltar pra casa e cumpra as <b>7 tarefas</b> espalhadas pela cidade. Cada uma traz um amigo pro seu bloco. Se a energia zerar, o Markin apaga.</p>
-  <div class="rules"><div><em>Pozinho, cogumelos, cerveja</em> repõem energia</div><div><em>Ponto de ônibus / cadeira</em> pra cochilar (${KL})</div><div><em>Óculos</em> te disfarçam da mãe</div><div><em>Cogumelo-Aranha</em> vira Homem-Aranha</div><div><em>Sono</em> encheu, o Markin apaga: cochile antes</div></div>
+  <div class="rules"><div><em>Pozinho, cogumelos, cerveja</em> repõem energia</div><div><em>Ponto de ônibus / cadeira</em> pra cochilar (${KL})</div><div><em>Óculos</em> te disfarçam da mãe</div><div><em>Sono</em> encheu, o Markin apaga: cochile antes</div></div>
   <div class="btns"><button data-act="play" type="button">JOGAR</button></div></div>`);
 }
 function startPlay(){
   state='play';P.mode='free';$('hud').hidden=false;$('skip').hidden=true;if(isTouch)$('touch').hidden=false;
-  hideScreen();banner('DIA 1','');sfx.day();
+  hideScreen();banner('DIA 1',L.days[1]);sfx.day();
   bubble(P,'VAMBORAAA!',2);
 }
 function pause(){state='paused';keys.clear();
@@ -1388,7 +1389,7 @@ const L={
   idle:['Eu durmo quando morrer.','Tô ótimo. Tô ÓTIMO.','Que dia é hoje? Não importa.','Pisquei ou dormi?','Meu olho tá tremendo sozinho.','Casa? Nunca ouvi falar.','15 dias no mar, 15 na terra.'],
   low:['A cama tá me chamando...','Só um cochilinho em casa... NÃO!','Tô vendo a sopa de chuchu...','Minhas pernas tão indo sozinhas...'],
   tia:['Ó o Markin ali!!','Vou contar pra sua mãe!','NEIDE! Liga pra mãe dele!','Tá magrinho, hein?'],
-  days:{2:'Ainda de pé.',3:'O olho começou a tremer.',4:'O café já não faz efeito.',5:'As tias do bairro foram avisadas.',6:'A sopa de chuchu foi congelada.',7:'Uma semana. O corpo pede arrego.',8:'Metade do caminho.',9:'O táxi da mãe segue rodando o bairro.',10:'O cogumelo virou seu melhor amigo.',11:'A cerveja tá acabando no bairro.',12:'A mãe comprou um tênis de corrida.',13:'Já fez todas as tarefas?',14:'Falta pouco. Falta muito.',15:'ÚLTIMO DIA.'}
+  days:{1:'TERRA FIRME',2:'SOPA DE CHUCHU',3:'O OLHO TREMENDO',4:'O CAFÉ NÃO FAZ MAIS EFEITO',5:'AS TIAS FORAM AVISADAS',6:'PURPURINA',7:'UMA SEMANA',8:'METADE DO CAMINHO',9:'O TÁXI DA MÃE',10:'MELHOR AMIGO COGUMELO',11:'A ÚLTIMA GELADA',12:'A MÃE DE TÊNIS',13:'CONTAGEM REGRESSIVA',14:'VÉSPERA',15:'SEM VOLTA PRA CASA'}
 };
 // teto de energia: a barra sempre vale 100, mas com o passar dos dias ele só recupera até um máximo menor (no fim, metade)
 function maxE(){return 100-50*clamp((totalMin||0)/(15*1440),0,1);}
@@ -1401,7 +1402,7 @@ function isDay(){const h=hourF();return h>=7&&h<18;}
 const CLIMB=new Set([BLD,TREE,FENCE,ARCH,MORRO,FAVELA]);
 // Pão de Açúcar: a grama em volta dá pra andar; só as duas pedras (Urca e Pão) seguram
 const naPedraPao=(px,py)=>((px-71*T-26)/22)**2+((py-21*T+34)/30)**2<1||((px-71*T-100)/30)**2+((py-21*T+70)/64)**2<1;
-const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t)&&!(fx&&fx.spider>0&&CLIMB.has(t));};
+const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t);};
 function incog(){return fx.disguise>0||fx.spider>0;} // disfarçado: de óculos ou de Homem-Aranha
 function hitsWall(x,y){return solidAt(x-4,y-5)||solidAt(x+4,y-5)||solidAt(x-4,y)||solidAt(x+4,y);}
 function moveP(dx,dy){if(dx&&!hitsWall(P.x+dx,P.y))P.x+=dx;if(dy&&!hitsWall(P.x,P.y+dy))P.y+=dy;P.x=clamp(P.x,6,MW*T-6);P.y=clamp(P.y,8,MH*T-2);}
@@ -1469,7 +1470,7 @@ function update(dt){
 function play(dt){
   // numa conversa o mundo para: tempo, vida, sono, efeitos e inimigos congelam; só a galera do bem segue andando
   if(beg){nearK=null;setPrompt(null);updBeg(dt,takeAction());updNpcs(dt);updHUD();return;}
-  const clockRate=72;
+  const clockRate=24; // 1 dia de jogo = 1 minuto (15 dias = 15 min)
   totalMin+=dt*clockRate;
   day=Math.min(15,Math.floor(totalMin/1440)+1);
   if(totalMin>=15*1440){gameOver(TASKS.every(t=>tasksDone[t.k])?'navio':'tarefas');return;}
@@ -1480,7 +1481,7 @@ function play(dt){
   if(wasTurbo&&fx.turbo<=0){fx.crash=14;toast('Bateu a bad... tudo pesado.','bad');}
   if(wasSpider&&fx.spider<=0)endSpider();
   webCd=Math.max(0,webCd-dt);tregua=Math.max(0,tregua-dt);
-  let decay=DF().e;if(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
+  let decay=DF().e/3; // dia 3x mais longo: a energia gasta o mesmo tanto por diaif(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
   decay*=1-.04*buddies.filter(b=>!b.crowd).length; // a galera anima: energia cai mais devagar
   if(!chairS)P.energy-=decay*dt;if(P.energy>maxE())P.energy=maxE();
   if(!chairS&&!napS)P.sono=Math.min(100,P.sono+dt*clockRate*SONO_MIN*(fx.sleepy>0?2:1)); // o sono só passa cochilando
@@ -1521,7 +1522,6 @@ function play(dt){
     if(!near&&dist(FESTA,P)<22)near={k:'festa',o:FESTA};
     if(!near&&dist(MARACA,P)<24)near={k:'maraca',o:MARACA};
     if(!near&&dist(SURF,P)<24)near={k:'surf',o:SURF};
-    if(!near&&!sabeMusica&&dist(FAVELA_ENT,P)<22)near={k:'lab',o:FAVELA_ENT};
     if(boss&&finalStage===1&&dist(boss,P)<34)near={k:'boss',o:boss};
     if(!near)for(const b of barDoors)if(dist(b,P)<15){near={k:b.kind==='sinuca'?'sinuca':'bar',o:b};break;}
     if(!near){let v=null,vd=22;for(const n of npcs){const d=dist(n,P);if(!n.beggar&&n.stun<=0&&n.flee<=0&&totalMin-(n.falouEm??-1e9)>=CONV_GAP&&d<vd){v=n;vd=d;}}if(v)near={k:'npc',o:v};}
@@ -1627,16 +1627,17 @@ function shootWeb(){
 let lastSleep=-999,lastRest={chair:-99999,bus:-99999};
 const REST_GAP=720; // 12h de jogo pra cochilar de novo no mesmo ponto ou cadeira
 const REST_GAIN={chair:10,bus:20};
-const SONO_MIN=100/(96*60); // a barra de sono enche em 96h de jogo acordado
-const SONO_NAP={bus:100,chair:60}; // ponto de ônibus zera o sono, cadeira tira boa parte
+const SONO_MIN=100/(48*60); // 3h de sono a cada 2 dias: a barra enche em 48h acordado
+const SONO_NAP={bus:100,chair:50}; // ponto de ônibus (3h) zera o sono, cadeira (1h30) tira metade
+const NAP_MIN={bus:180,chair:90};
 function canRest(o){return totalMin-(o.lastRest??-99999)>=REST_GAP;} // no mesmo lugar só 12h depois; outro lugar pode na hora
 // cochilo: 2,4 s de tela com o relógio correndo 3h, energia subindo aos poucos; se alguém interromper, não ganha nada
 function startNap(stop){napS={kind:'bus',o:stop,t:0,dur:2.4,got:0};P.mode='nap';P.x=stop.x;P.y=stop.y+2;P.dir='down';setPrompt(null);sfx.zzz();}
 function startChair(c){chairS={kind:'chair',c,o:c,oy:P.y,t:0,dur:2.4,got:0};P.mode='chair';P.x=c.x;P.y=c.y-1;P.dir='down';setPrompt(null);sfx.zzz();}
 function updCochilo(s,dt){
-  const k=Math.min(dt,s.dur-s.t);s.t+=k;totalMin+=180*k/s.dur;const want=REST_GAIN[s.kind]*s.t/s.dur;gain(want-s.got,'');particles.pop();s.got=want;P.sono=Math.max(0,P.sono-SONO_NAP[s.kind]*k/s.dur);
+  const k=Math.min(dt,s.dur-s.t);s.t+=k;totalMin+=NAP_MIN[s.kind]*k/s.dur;const want=REST_GAIN[s.kind]*s.t/s.dur;gain(want-s.got,'');particles.pop();s.got=want;P.sono=Math.max(0,P.sono-SONO_NAP[s.kind]*k/s.dur);
   if(Math.random()<dt*3)particles.push({x:P.x+5,y:P.y-22,vx:6,vy:-12,g:0,life:1.2,text:'z',col:'#e9f4ff'});
-  if(s.t>=s.dur){s.o.lastRest=totalMin;lastSleep=totalMin;particles.push({x:P.x,y:P.y-40,vx:0,vy:-14,g:0,life:1.6,text:`+3h  +${REST_GAIN[s.kind]}`,col:'#bfe0ff'});
+  if(s.t>=s.dur){s.o.lastRest=totalMin;lastSleep=totalMin;particles.push({x:P.x,y:P.y-40,vx:0,vy:-14,g:0,life:1.6,text:`+${s.kind==='chair'?'1h30':'3h'}  +${REST_GAIN[s.kind]}`,col:'#bfe0ff'});
     if(s.kind==='chair'){P.y=s.c.y+8;chairS=null;}else napS=null;P.mode='free';}
 }
 function updNap(dt){updCochilo(napS,dt);}
@@ -1657,7 +1658,7 @@ function updMom(dt){
   const sees=!disg&&d<88;
   if(!disg&&!m.chasing&&(sees||m.alertT>0)){m.chasing=true;if(sees){bubble(m,pick(L.momSpot),1.6,'mom');sfx.alert();}}
   if(m.chasing&&!sees&&m.alertT<=0&&d>150)m.chasing=false;
-  if(m.chasing){const sp=(48+(m.alertT>0?14:0))*DF().ini;followField(m,playerField,P,sp,dt);if(d<18)moveAxis(m,P.x-m.x,P.y-m.y,sp*dt);}
+  if(m.chasing){const sp=(48+(m.alertT>0?14:0))*DF().ini*.75;followField(m,playerField,P,sp,dt);if(d<18)moveAxis(m,P.x-m.x,P.y-m.y,sp*dt);}
   else{
     if(!m.target||dist(m,m.target)<6){const t=pick(spawnSets.beer.filter(tt=>Math.abs(tt.x-38)<22&&tt.y<44));m.target={x:t.x*T+8,y:t.y*T+10};m.field=bfs(t.x,t.y);}
     followField(m,m.field,m.target,30,dt);
@@ -1714,7 +1715,7 @@ function updGrab(dt,act){
   }
   // arrastado pro rumo da porta
   g.drainT=(g.drainT||0)+dt;if(g.drainT>=2){g.drainT-=2;lose(5);} // arrastado cansa: -5 a cada 2 s
-  const sp=g.kind==='mae'?15:54; // a chave puxa mais rápido que a mãe
+  const sp=g.kind==='mae'?4+40*(1-Math.exp(-dist(P,HOME)/250)):54; // a mãe puxa rápido longe de casa e bem devagar perto da porta
   followField(P,homeField,HOME,sp,dt);P.anim+=dt;
 }
 
@@ -1842,11 +1843,11 @@ function mgExit(msg,cls,dE,minutes){
   saidaSegura();
   totalMin+=minutes;P.sono=Math.min(95,P.sono+minutes*SONO_MIN);toast(msg,cls,3.4);actionQ=false;jumpQ=false;laneQ=0;
 }
-function mgQuit(){if(!mg)return;const k=state;mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Cria.'}[k],'bad',0,0);}
+function mgQuit(){if(!mg)return;const k=state;mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
 const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
 function mgLost(msg){
-  mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';
+  mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';sfx.lose();
   showScreen(`<div class="card"><div class="kicker">não foi dessa vez</div><h2 class="lose">PERDEU</h2><p>${msg}</p><p class="stats">Tempo e energia continuam iguais a quando você entrou.</p><div class="btns"><button data-act="mgRetry" type="button">TENTAR DE NOVO</button><button data-act="mgSair" class="ghost" type="button">Sair</button></div></div>`);
 }
 // ao voltar pro mundo aberto ninguém fica em cima do Markin
@@ -1871,6 +1872,9 @@ const NPC_DEFS=[
   {k:'fla',quem:'o flamenguista',titulo:'FLAMENGUISTA',conv:'fla',area:'maraca',ring:[1,1],st:2,sp:14,look:{skin:'#e0b08a',hair:'#6b4423',shirt:'#c8102e',shorts:'#1a1a1a',stripes:'#1a1a1a',cap:'#1a1a1a'},lines:['Estamos em outro patamar!','Uma vez Flamengo, sempre Flamengo!','Eu teria um desgosto profundo se faltasse o Flamengo no mundo.']},
   {k:'flu',quem:'o tricolor',titulo:'TRICOLOR',conv:'flu',area:'maraca',ring:[1,1],st:1,rev:true,sp:15,look:{skin:'#d29a6c',hair:'#1e140e',shirt:'#8a1538',shorts:'#f4f1e8',stripes:'#1f6a3a'},lines:['Ganhar Fla x Flu é normal.','Vence o Fluminense!','Saudações tricolores!']},
   {k:'flu',quem:'o tricolor',titulo:'TRICOLOR',conv:'flu',area:'maraca',ring:[1,1],st:3,rev:true,sp:13,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#8a1538',shorts:'#1f6a3a',stripes:'#f4f1e8',long:true},lines:['Saudações tricolores!','Ganhar Fla x Flu é normal.','Vence o Fluminense!']},
+  {k:'criaSA',quem:'o Cria',titulo:'CRIA DO SANTO AMARO',area:'escada',sp:0,look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#2f9a55',shorts:'#1d1d22',cap:'#ffe14f'},lines:[]},
+  {k:'tartaruga',quem:'a tartaruga',titulo:'TARTARUGA',conv:'tartaruga',area:'beira',sp:3,look:{},lines:[]},
+  {k:'aranha',quem:'a aranha',titulo:'ARANHA',conv:'aranha',area:'verde',sp:7,look:{},lines:[]},
   {k:'mendigo',nome:'mendigo',quem:'o mendigo',titulo:'MENDIGO DA LAPA',area:'lapa',rota:[52,4,66,7],sp:14,beggar:true,look:{skin:'#a0704a',hair:'#8a8a8a',shirt:'#7a6a4a',shorts:'#4a4030',beard:'#9a9a9a',shoe:'#3a2a1a'},lines:['Um real, Markinho!'],
    provoca:['Ô MARKINHO! Me vê um trocado!','Markinho, meu patrão! Vem cá rapidinho!','Aceito Pix, Markinho!','Markinho, só um realzinho! Um só!','Psiu, Markinho! Tenho uma proposta de negócio!']}
 ];
@@ -1879,6 +1883,9 @@ const diasNaRua=()=>day<=1?'o dia inteiro':day+' dias';
 function npcArea(a){const W2=walkTiles;
   if(a==='praia')return W2.filter(t=>tileAt(t.x,t.y)===SAND&&t.y<=48);
   if(a==='robson')return W2.filter(t=>tileAt(t.x,t.y)===SAND&&t.y<=48&&t.x>=50&&t.x<=62);
+  if(a==='escada')return [{x:Math.floor(FAVELA_ENT.x/T),y:Math.floor(FAVELA_ENT.y/T)}];
+  if(a==='beira')return W2.filter(t=>tileAt(t.x,t.y)===SAND&&t.y===49&&t.x>=34&&t.x<=48);
+  if(a==='verde')return W2.filter(t=>{const k=tileAt(t.x,t.y);return (k===G||k===FLOW)&&t.x>=62;});
   if(a==='maraca')return W2.filter(t=>t.x>=9&&t.x<=28&&t.y>=9&&t.y<=21);
   if(a==='lapa')return W2.filter(t=>t.x>=50&&t.y<=9);
   return W2.filter(t=>t.y<40);}
@@ -1934,25 +1941,32 @@ const CONVERSAS={
   mina1:[
     {f:'Oi, Markin! Tá sumido, hein?',a:[['Tava embarcado, gata. 15 dias no mar.','Hmm, marinheiro... gostei.'],['Sumido nada, tô é fugindo da minha mãe.','Hahaha, tu não presta!']]},
     {f:'Bora pro mar?',a:[['Bora! Se eu dormir na água tu me salva.','Salvo nada, te deixo boiando!'],['Mar eu já vi 15 dias seguidos, obrigado.','Chato!']]},
-    {f:'Tu não dorme não, garoto?',a:[['Dormir é coisa de quem tem casa.','Que papo triste, Markin...'],['Durmo quando morrer.','Desse jeito vai ser hoje!']]},
+    {casa:1,f:'Tu não dorme não, garoto?',a:[['Dormir é coisa de quem tem casa.','Que papo triste, Markin...'],['Durmo quando morrer.','Desse jeito vai ser hoje!']]},
     {f:'Você vem sempre aqui, gatinho?',a:[['Só quando a minha mãe não tá olhando.','Então tu vem sempre, né?'],['Venho. E tu, vem sempre aqui?','Essa cantada é de 1998, Markin.']]}],
   mina2:[
-    {f:'Markin! Tu tá com uma cara...',a:[['Cara de quem tá dias acordado?','Cara de quem tá devendo pra mãe!'],['Cara de galã, né?','De galã de novela das seis, só se for.']]},
+    {casa:1,f:'Markin! Tu tá com uma cara...',a:[['Cara de quem tá dias acordado?','Cara de quem tá devendo pra mãe!'],['Cara de galã, né?','De galã de novela das seis, só se for.']]},
     {f:'Vai no bloco hoje?',a:[['Vou! Se eu achar o Bloco Secreto.','Dizem que ele aparece onde menos se espera...'],['Bloco? Eu SOU o bloco.','Ai, que convencido.']]},
-    {f:'Passa protetor, hein!',a:[['Passa em mim?','Passa tu mesmo, abusado!'],['Protetor é pra fraco.','Vai virar camarão, Markin.']]}],
+    {f:'Passa protetor, hein!',a:[['Passa em mim?','Vou te cancelar, garoto!'],['Protetor é pra fraco.','Vai virar camarão, Markin.']]}],
   bala:[
     {f:'CRL, MONSTRO SAGRADO! Leva uma bala aí!',a:[['Me vê uma jujuba aí, monstro.','Tá na mão! Monstro sagrado!',bala],['Tô liso, moleque.','Liso com esse dente aí? Para, tio!']]},
     {f:'Olha ele! Quebrador de cama box!',a:[['Cama? Faz dias que eu não vejo uma.','Papo reto, tu tá com cara de zumbi, tio!'],['Me vê um Halls que eu tô precisando.','Toma, monstro! Hálito de campeão!',bala]]},
     {f:'Esse dente aí tá avaliado em 2 apartamentos na Barra da Tijuca!',a:[['Parcelei em 48 vezes, moleque.','Tá pagando até hoje, né, tio?'],['Me vê uma bala baiana pra comemorar.','Bala baiana pro Brady Pitt!',bala]]},
     {f:'Tio, tu é o Cauã Raymound? Papo reto!',a:[['Sou. Mas não conta pra ninguém.','Eu sabia! Leva uma bala de presente!',bala],['Sou o Markin, moleque.','Markin? Nunca ouvi falar. Mas leva uma bala aí.']]}],
   ze:[
-    {f:()=>`Ô Markin! ${diasNaRua()} te vendo na rua! Tu mora no meio-fio agora?`,a:[['A rua é a minha casa agora, Seu Zé.','Então paga o aluguel da calçada!'],['E o senhor, que tá em todo lugar?','Eu sou o bairro, Markin. O bairro sou eu.']]},
-    {f:()=>`${diasNaRua()} na rua, Markin... os pombos já te chamam de vizinho.`,a:[['Os pombos são gente boa.','Gente boa é tua mãe, que tá te procurando!'],['Pombo é parceiro, Seu Zé.','Parceiro de quem dorme no banco, né?']]},
-    {f:()=>`Markin, ${diasNaRua()} na rua. Tua cama já tá fazendo boletim de ocorrência.`,a:[['Ela vai superar.','Superar? Ela tá de luto, Markin!'],['Diz pra ela que eu tô bem.','Tu tá com uma cara de quem não tá nada bem.']]}],
+    {f:'Ô Markin! Desembarcou, é? Como tava o mar?',a:[['Mar tava brabo, Seu Zé.','Mar brabo faz marinheiro forte!'],['Nem me fala, quero é terra firme.','Então aproveita a terra, garoto!']]},
+    {casa:1,f:()=>`Ô Markin! ${diasNaRua()} te vendo na rua! Tu mora no meio-fio agora?`,a:[['A rua é a minha casa agora, Seu Zé.','Então paga o aluguel da calçada!'],['E o senhor, que tá em todo lugar?','Eu sou o bairro, Markin. O bairro sou eu.']]},
+    {casa:1,f:()=>`${diasNaRua()} na rua, Markin... os pombos já te chamam de vizinho.`,a:[['Os pombos são gente boa.','Gente boa é tua mãe, que tá te procurando!'],['Pombo é parceiro, Seu Zé.','Parceiro de quem dorme no banco, né?']]},
+    {casa:1,f:()=>`Markin, ${diasNaRua()} na rua. Tua cama já tá fazendo boletim de ocorrência.`,a:[['Ela vai superar.','Superar? Ela tá de luto, Markin!'],['Diz pra ela que eu tô bem.','Tu tá com uma cara de quem não tá nada bem.']]}],
   fla:[
     {f:'Ô Markin! Hoje tem Mengo!',a:[['Coee Brother! Uma vez Flamengo...','...sempre Flamengo! Coee!'],['Sou Vasco, irmão.','VASCO?! Sai de perto de mim!']]},
     {f:'Estamos em outro patamar!',a:[['Coee Brother! Outro patamar mesmo!','Isso aí, Markin! Mengão!'],['Patamar do rebaixamento?','Respeita o maior do Brasil, rapaz!']]},
     {f:'Eu teria um desgosto profundo se faltasse o Flamengo no mundo.',a:[['Coee Brother! Eu também!','Coee! Mengão até morrer!'],['E se faltasse cama no mundo?','Aí tu nem ia sentir falta, né, Markin?']]}],
+  tartaruga:[
+    {f:'Ei Markin, kd meu canudo?',a:[['Canudo de plástico? Nunca mais, tartaruga.','Isso aí, Markin! Salva as tartarugas!'],['Usei no meu mate, foi mal.','MARKIN!!! Vou contar pro Lucas!']]}],
+  aranha:[
+    {f:'Psssiu... humano... tá pisando na minha teia.',a:[['Foi mal, dona aranha. Já tô saindo.','Educado... gostei. Pode passar.'],['Sai daqui, bicho nojento!','Nojento é tu! *NHAC*',()=>picadaAranha()]]},
+    {f:'Tu tem cara de quem não dorme há dias...',a:[['É, tô na luta. E tu?','Aranha nunca dorme. Boa sorte, Markin.'],['Cuida da tua vida, oito-pernas.','Oito pernas e um dente afiado! *NHAC*',()=>picadaAranha()]]},
+    {f:'Já viu um Homem-Aranha na Lapa? Eu já fiz um.',a:[['Sério? Que maneiro!','Seriíssimo. Mas só pico quem merece.'],['Para de mentir, bicho feio.','Mentira? Então sente! *NHAC*',()=>picadaAranha()]]}],
   flu:[
     {f:'Saudações tricolores!',a:[['Saudações! Vence o Fluminense!','Isso aí, tricolor de coração!'],['Sou Flamengo, mermão.','Ganhar Fla x Flu é normal, mermão.']]},
     {f:'Ganhar Fla x Flu é normal.',a:[['Normal mesmo. Saudações!','Gostei de você, Markin!'],['Normal é o Mengão ser campeão.','Vai sonhando, urubu!']]}]
@@ -1965,12 +1979,24 @@ function convRobson(r){ // só 2 mates a cada 12h de jogo
 function convDe(n){
   if(n.beggar)return{f:pick(BEG_PEDE),a:[[pick(BEG_DAR),pick(BEG_OBRIGADO),'dar'],['Eu sou alguma piranha, por acaso?',pick(BEG_FACADA),'nega']]};
   if(n.vende)return convRobson(n);
-  const c=pick(CONVERSAS[n.conv]);return{f:typeof c.f==='function'?c.f():c.f,a:c.a};}
+  if(n.k==='criaSA')return convCria();
+  const lista=CONVERSAS[n.conv].filter(c=>!c.casa||day>=3); // papo de dormir ou voltar pra casa só a partir do dia 3
+  const c=pick(lista.length?lista:CONVERSAS[n.conv]);return{f:typeof c.f==='function'?c.f():c.f,a:c.a};}
+// o Cria fica na escadaria do Santo Amaro: sem sax não deixa entrar; com sax manda resgatar o Tavin nos becos
+function convCria(){
+  if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Tu nem tem um instrumento, parceiro.']]};
+  if(sabeMusica)return{f:'Coe, Markin! O Tavin tá bem graças a tu. Tamo junto!',a:[['Tamo junto, Cria!','Qualquer coisa, a favela é tua.'],['Toca aquela do Tavin aí?','Toca tu, que agora tu sabe!']]};
+  return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá.... Esse menó tá a 3 dias perdido nos becos, deve ter dado teto de Black...',
+    a:[['Deixa comigo, vou achar o Tavin!',null,()=>startLabirinto()],['Agora não, depois eu volto.','Não demora não, o Tavin tá sofrendo lá dentro.']]};}
+// a aranha da parte verde: se o Markin for grosso, ela pica e ele vira Homem-Aranha
+function picadaAranha(){lose(5);fx.spider=16;fx.trip=0;sfx.rip();shake=.4;
+  for(let i=0;i<16;i++)particles.push({x:P.x+rnd(-6,6),y:P.y-rnd(4,20),vx:rnd(-50,50),vy:rnd(-70,-20),g:120,life:rnd(.6,1.1),col:pick(['#d0202a','#1f4fb5','#f4f1e8']),s:2});
+  toast(`A aranha te picou! Virou HOMEM-ARANHA: ninguém te reconhece e ${KL} solta teia na mãe.`,'good',3.6);}
 // a conversa toda acontece na caixa: a pessoa fala, o Markin escolhe, o Markin diz e a pessoa responde (espaço passa)
 function caixa(nome,texto,opcoes){$('bgnome').textContent=nome;$('bgtext').textContent=texto;$('beg').classList.toggle('falando',!opcoes);}
 function marcaSel(){$('bgSim').classList.toggle('sel',beg.sel===0);$('bgNao').classList.toggle('sel',beg.sel===1);}
 const CONV_GAP=720; // 12h de jogo pra conversar de novo com a mesma pessoa
-function abreConversa(n){n.falouEm=totalMin;const c=convDe(n);beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';setPrompt(null);if(n.beggar)sfx.alert();
+function abreConversa(n){if(n.k!=='criaSA')n.falouEm=totalMin;const c=convDe(n);beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';setPrompt(null);if(n.beggar)sfx.alert();
   abreEspaco('beg');caixa(n.titulo,c.f,true);$('bgOp1').textContent=c.a[0][0];$('bgOp2').textContent=c.a[1][0];$('beg').hidden=false;}
 function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='beg')P.mode='free';}
 function updBeg(dt,act){beg.t+=dt;P.moving=false;if(act&&beg.t>.35){if(beg.fase==='pergunta')escolheResposta(beg.sel);else avancaConversa();}}
@@ -1983,6 +2009,7 @@ function avancaConversa(){const {n,esc}=beg,[,resp,ef]=esc;
     else if(ef)ef();
     return;}
   closeBeg();
+  if(typeof ef==='function'){ef();return;}
   if(ef==='dar'){n.cd=70;n.flee=4;n.feliz=true;}
   else if(ef==='nega'){n.cd=35;n.flee=3.5;n.feliz=false;}}
 function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e calcinha)
@@ -1995,7 +2022,10 @@ function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e cal
   R(c,x-4,y-21,8,7,sk);R(c,x-4,y-22,8,2,b.hair);R(c,x-3,y-23,6,1,b.hair);R(c,x-5,y-21,2,9,b.hair);R(c,x+3,y-21,2,9,b.hair);
   if(dir==='up')R(c,x-4,y-21,8,7,b.hair);
   else{R(c,x-2,y-18,1,1,'#1a1a1a');R(c,x+1,y-18,1,1,'#1a1a1a');R(c,x-1,y-16,2,1,'#b8404a');if(b.shades){R(c,x-3,y-18,6,1,'#111');R(c,x-3,y-18,2,2,'#111');R(c,x+1,y-18,2,2,'#111');}}}
-function drawNpc(c,n,x,y){const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
+function drawAranha(c,x,y,t){x=Math.round(x);y=Math.round(y);R(c,x-6,y-1,12,2,'rgba(0,0,0,.25)');const p=Math.floor(t*6)%2;
+  for(let i=0;i<4;i++){const ly=y-7+i*2,a=(i+p)%2,b=(i+p+1)%2;R(c,x-9,ly+a,5,1,'#1a1a1a');R(c,x+4,ly+b,5,1,'#1a1a1a');R(c,x-10,ly+1+a,1,2,'#1a1a1a');R(c,x+9,ly+1+b,1,2,'#1a1a1a');}
+  R(c,x-4,y-9,8,7,'#1a1a1a');R(c,x-3,y-12,6,4,'#2a2a2a');R(c,x-2,y-8,4,4,'#d0202a');R(c,x-2,y-11,1,1,'#ff4f4f');R(c,x+1,y-11,1,1,'#ff4f4f');}
+function drawNpc(c,n,x,y){if(n.k==='aranha'){drawAranha(c,x,y,time);return;}if(n.k==='tartaruga'){drawTartaruga(c,x,y+6,time,n.dir==='left'?-1:1);return;}const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
   if(n.kid){ // menino da bala: menor, com a caixinha de balas na frente
     c.save();c.translate(Math.round(x),Math.round(y));c.scale(.78,.78);drawBuddy(c,0,0,n.look,{dir:n.dir,frame:fr,t:time});c.restore();
     const bx=Math.round(x),by=Math.round(y);R(c,bx-5,by-10,10,4,'#c89a5a');R(c,bx-5,by-10,10,1,'#8a5a2e');R(c,bx-4,by-9,2,1,'#ff4fa0');R(c,bx-1,by-9,2,1,'#4fffd2');R(c,bx+2,by-9,2,1,'#ffe14f');return;}drawBuddy(c,x,y,n.look,{dir:n.dir,frame:fr,t:time});
@@ -3109,8 +3139,8 @@ function updTaxis(dt){
     if(d<16&&P.mode!=='cut'&&state==='play'&&tregua<=0&&!grab){
       interruptRest();lose(6);sfx.horn();c.dead=true;taxiT=25;
       // o táxi larga ele na porta e a mãe já segura pelo braço
-      P.x=HOME.x;P.y=HOME.y+58;P.dir='up';flash=.5;mom.stun=0;mom.x=P.x+9;mom.y=P.y;if(!grab)startGrab('mae',mom);
-      toast('O táxi te largou na porta e a mãe te pegou pelo braço! Toque rápido pra se soltar!','bad',3.6);
+      teleportTowardHome(.5);P.dir='up';flash=.5;mom.stun=0;mom.x=P.x+9;mom.y=P.y;if(!grab)startGrab('mae',mom);
+      toast('O táxi te largou no meio do caminho e a mãe te pegou pelo braço! Toque rápido pra se soltar!','bad',3.6);
     }
   }
   taxis=taxis.filter(c=>!c.dead);
@@ -3217,7 +3247,7 @@ const FESTA_END={
 };
 function startFesta(){
   mgEnter('festa');
-  const set={...FESTA_SETS[Math.floor(Math.random()*FESTA_SETS.length)],hair:FESTA_SETS[0].hair,root:FESTA_SETS[0].root}; // conversa sorteada, gatinha sempre a de cabelo roxo
+  const set={...(day<3?FESTA_SETS[1+Math.floor(Math.random()*2)]:FESTA_SETS[Math.floor(Math.random()*FESTA_SETS.length)]),hair:FESTA_SETS[0].hair,root:FESTA_SETS[0].root}; // conversa sorteada, gatinha sempre a de cabelo roxo
   mg={t:0,set,round:0,hearts:0,phase:'ask',timer:0,sel:0,opts:[],said:'',fala:set.rounds[0].q,gatMood:'neutral',result:null,title:'',beat:0};
   festaAsk();$('festa').hidden=false;
 }
@@ -3749,7 +3779,7 @@ function* saxGen(){
   yield* talk('Mestre do Bloco','Tu conhece a Guerra dos Músicos? Quando a música acaba, quem puxa a próxima leva o bloco.');
   yield* talk('Markin','Eu sempre contei essa história! Ninguém acreditava em mim.');
   yield* talk('Mestre do Bloco','Pois é verdade. E tem mais: esse sax guarda a Música do Tempo. Quem toca, volta dois dias.');
-  yield* talk('Mestre do Bloco','Mas só o Cria do Santo Amaro sabe tocar. Ele se esconde nos becos da favela.');
+  yield* talk('Mestre do Bloco','Mas só a galera do Santo Amaro sabe tocar. Fala com o Cria lá na escadaria da favela.');
   yield* talk('Markin','Santo Amaro... Bora.');
 }
 function podeVoltar(reason){return ['energy','sono','door'].includes(reason)&&temSax()&&sabeMusica&&palhetas>0;}
@@ -3800,7 +3830,7 @@ function renderTempo(){const g=ctx,s=tempoS;headCv.hidden=true;
 /* ================= LABIRINTO DO SANTO AMARO: achar o Cria nos becos ================= */
 const LB={B:9,COLS:15,ROWS:9}; // blocos de 9px; o labirinto tem 15x9 becos
 const LB_CORES=['#c2452f','#e0a02a','#2d6fd1','#3fa35a','#d8c8a8','#9b76d6','#e8826a'];
-const CRIA_LOOK={skin:'#8a5a3a',hair:'#1e140e',shirt:'#2f9a55',shorts:'#1d1d22',cap:'#ffe14f'};
+const CRIA_LOOK={skin:'#b8733f',hair:'#1e140e',shirt:'#e8826a',shorts:'#2d6fd1'}; // o Tavin, perdido nos becos
 function startLabirinto(){
   mgEnter('labirinto');
   const C=LB.COLS,Rr=LB.ROWS,GW=C*2+1,GH=Rr*2+1,grid=[];for(let y=0;y<GH;y++){grid.push([]);for(let x=0;x<GW;x++)grid[y].push(true);}
@@ -3811,13 +3841,13 @@ function startLabirinto(){
   const dist0={},fila=[[1,(Rr-1)*2+1]];dist0[fila[0]]=0;let longe=fila[0];
   while(fila.length){const p=fila.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const q=[p[0]+dx,p[1]+dy];if(grid[q[1]]&&grid[q[1]][q[0]]===false&&dist0[q]===undefined){dist0[q]=dist0[p]+1;fila.push(q);if(dist0[q]>dist0[longe])longe=q;}}}
   mg={t:0,phase:'anda',grid,GW,GH,ox:Math.floor((W-GW*LB.B)/2),oy:Math.floor((H-GH*LB.B)/2)+2,me:{gx:1,gy:(Rr-1)*2+1,x:1,y:(Rr-1)*2+1,dir:'right'},cria:{gx:longe[0],gy:longe[1]},moveCd:0,
-    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Cria nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0};}
-const LB_FALAS=[['Cria','Qual foi, Markin? Achou o caminho, hein. Respeito.'],['Cria','Esse sax aí é do Bloco Secreto. Então o Mestre te mandou.'],
-  ['Cria','A Música do Tempo é curtinha. Toca certinho e o relógio volta dois dias.'],['Cria','Mas a palheta não aguenta: cada vez que tu toca, uma quebra. Usa só quando for apagar.'],
-  ['Cria','Presta atenção que eu vou tocar. Depois é contigo.']];
+    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Tavin nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0};}
+const LB_FALAS=[['Tavin','Coeee, Markin?? PQP cara você me salvou! Me leva cntg que eu te ensino uma música maneira nessa parada aí. Não aguento mais bafar'],
+  ['Tavin','É a Música do Tempo. Toca certinho no sax e o relógio volta dois dias.'],['Tavin','Mas a palheta não aguenta: cada vez que tu toca, uma quebra. Usa só quando for apagar.'],
+  ['Tavin','Presta atenção que eu vou tocar. Depois é contigo.']];
 function updLabirinto(dt){
   const m=mg;m.t+=dt;m.msgT-=dt;for(let i=0;i<4;i++)m.press[i]=Math.max(0,m.press[i]-dt);const inp=mgInput();
-  if(m.result){m.done-=dt;if(m.done<=0){sabeMusica=true;mgExit('Aprendeu a Música do Tempo: 7 9 8 0 7 7. Quando for apagar, o sax te salva.','good',10,120);}return;}
+  if(m.result){m.done-=dt;if(m.done<=0){sabeMusica=true;mgExit('Resgatou o Tavin e aprendeu a Música do Tempo: 7 9 8 0 7 7. Quando for apagar, o sax te salva.','good',10,120);}return;}
   const me=m.me;me.x+=(me.gx-me.x)*Math.min(1,dt*16);me.y+=(me.gy-me.y)*Math.min(1,dt*16);
   if(m.phase==='anda'){m.moveCd-=dt;
     let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.5)iy=Math.sign(joy.y);
