@@ -865,6 +865,7 @@ window.addEventListener('keydown',e=>{initAudio();
   keys.add(k);
   if(k==='Space'||k==='KeyE'||k==='Enter')actionQ=true;
   if(k==='KeyR')declineQ=true;
+  if(k==='KeyF'&&!isTouch&&!e.repeat)telaCheia();
   if(k==='ArrowLeft'||k==='ArrowRight'||k==='KeyA'||k==='KeyD')lastAxis='x';else if(k==='ArrowUp'||k==='ArrowDown'||k==='KeyW'||k==='KeyS')lastAxis='y';
   if(beg&&state==='play'&&beg.fase==='pergunta'&&['ArrowUp','ArrowDown','KeyW','KeyS'].includes(k)){beg.sel=1-beg.sel;marcaSel();}
   if(k==='KeyQ'&&state==='play'&&fx&&fx.spider>0)shootWeb();
@@ -974,6 +975,13 @@ function updTouchUI(){
   setIc($('btnA'),{labirinto:'fala',surf:'surf',play:'toque',grab:'solta',cut:'ok',altinha:'chuta',maraca:'chuta',maracaS:'run',bloco:'pula',bar:'bebe',sinuca:'forca'}[mode]||'toque');
   if(mode==='play')$('btnA').classList.remove('acao');setIc($('btnB'),'pula');
 }
+// tela cheia no PC: o botão do canto e a tecla F ligam e desligam (ESC também sai)
+const ICON_CHEIA='<svg viewBox="0 0 24 24" fill="none" stroke="#f3ecd8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4H9M15 4H20V9M20 15V20H15M9 20H4V15"/></svg>';
+const ICON_SAI_CHEIA='<svg viewBox="0 0 24 24" fill="none" stroke="#f3ecd8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4V9H4M20 9H15V4M15 20V15H20M4 15H9V20"/></svg>';
+function telaCheia(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(_){}}
+function marcaTelaCheia(){const on=!!document.fullscreenElement;document.body.classList.toggle('tela-cheia',on&&!isTouch);$('btnFull').innerHTML=on?ICON_SAI_CHEIA:ICON_CHEIA;$('btnFull').title=on?'Sair da tela cheia (F)':'Tela cheia (F)';}
+$('btnFull').addEventListener('click',e=>{e.stopPropagation();e.currentTarget.blur();telaCheia();});
+document.addEventListener('fullscreenchange',marcaTelaCheia);marcaTelaCheia();
 function goFullscreen(){if(!isTouch)return;try{const d=document.documentElement;if(document.fullscreenEnabled&&!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
 
 /* ================= UI helpers ================= */
