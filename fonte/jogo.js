@@ -2057,7 +2057,7 @@ function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='be
   if(aranhaPend&&state==='play'){aranhaPend=false;comecaVirar();}}
 function updBeg(dt,act){beg.t+=dt;P.moving=false;if(act&&beg.t>.35){if(beg.fase==='pergunta')escolheResposta(beg.sel);else avancaConversa();}}
 function escolheResposta(i){if(!beg||beg.fase!=='pergunta'||beg.t<.35||state!=='play')return;
-  beg.esc=beg.c.a[i];beg.fase='markin';beg.t=0;caixa('MARKIN',beg.esc[0]);}
+  beg.esc=beg.c.a[i];beg.fase='markin';beg.t=0;avancaConversa();} // escolheu: já vem direto a resposta da pessoa
 function avancaConversa(){const {n,esc}=beg,[,resp,ef]=esc;
   if(beg.fase==='markin'&&resp){beg.fase='resposta';beg.t=0;caixa(n.titulo,resp);
     if(ef==='nega'){apanhou();interruptRest();lose(14);sfx.hit();shake=.5;flash=.4;particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1.2,text:'FACADA!',col:'#ff4f4f'});}
