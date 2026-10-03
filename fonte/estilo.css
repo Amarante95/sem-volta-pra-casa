@@ -143,6 +143,7 @@ body.mobile .game button.fopt:focus,body.mobile .game button.fopt:focus-visible{
 .volrow input:focus-visible{outline:3px solid var(--paper);outline-offset:2px}
 .volrow output{min-width:3.2em;text-align:left;color:var(--sodium)}
 .card img.sono{display:block;width:9.5em;max-width:60%;aspect-ratio:8/5;object-fit:cover;margin:0 auto .3em;border:.2em solid var(--paper);box-shadow:.3em .3em 0 rgba(0,0,0,.5);transform:rotate(-3deg)}
+.card img.galera{display:block;width:7.5em;max-width:40%;aspect-ratio:1;object-fit:cover;margin:0 auto .3em;border:.2em solid var(--paper);box-shadow:.3em .3em 0 rgba(0,0,0,.5);transform:rotate(2deg);image-rendering:pixelated}
 .btns{display:flex;gap:.6em;justify-content:center;flex-wrap:wrap;margin-top:.6em}
 .rules{display:grid;grid-template-columns:1fr 1fr;gap:.2em 1.2em;text-align:left;font-size:.85em;margin:.4em auto;max-width:28em}
 .rules em{font-style:normal;color:var(--sodium)}
@@ -215,6 +216,7 @@ body.mobile .screen{overflow-y:auto;align-items:safe center;padding:3% 6%}
 body.mobile .card h2{font-size:2.3em}
 body.mobile .card p{font-size:.95em;margin:.1em auto .35em}
 body.mobile .card img.sono{width:6em}
+body.mobile .card img.galera{width:5em}
 body.mobile .rules{font-size:.75em;margin:.2em auto}
 body.mobile .btns{margin-top:.35em;gap:.4em}
 .fases{display:grid;grid-template-columns:repeat(auto-fit,minmax(9em,1fr));gap:.4em;max-width:30em;margin:.5em auto 0}
