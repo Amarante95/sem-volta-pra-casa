@@ -2000,7 +2000,7 @@ const CONVERSAS={
     {f:'Estamos em outro patamar!',a:[['Coee Brother! Outro patamar mesmo!','Isso aí, Markin! Mengão!'],['Patamar do rebaixamento?','Respeita o maior do Brasil, rapaz!']]},
     {f:'Eu teria um desgosto profundo se faltasse o Flamengo no mundo.',a:[['Coee Brother! Eu também!','Coee! Mengão até morrer!'],['E se faltasse cama no mundo?','Aí tu nem ia sentir falta, né, Markin?']]}],
   tartaruga:[
-    {f:'Ei Markin, kd meu canudo?',a:[['Canudo de plástico? Nunca mais, tartaruga.','Isso aí, Markin! Salva as tartarugas!'],['Usei no meu mate, foi mal.','MARKIN!!! Vou contar pro Lucas!']]}],
+    {f:'Ei Markin, kd meu canudo?',a:[['Vou arranjar um pra tu.','Salvou, Markola!'],['Usei no meu mate, foi mal.','MARKIN!!! Vou contar pro Lucas!']]}],
   aranha:[
     {f:'Psssiu... humano... tá pisando na minha teia.',a:[['Foi mal, dona aranha. Já tô saindo.','Educado... gostei. Pode passar.'],['Sai daqui, bicho nojento!','Nojento é tu! *NHAC*',()=>picadaAranha()]]},
     {f:'Tu tem cara de quem não dorme há dias...',a:[['É, tô na luta. E tu?','Aranha nunca dorme. Boa sorte, Markin.'],['Cuida da tua vida, oito-pernas.','Oito pernas e um dente afiado! *NHAC*',()=>picadaAranha()]]},
