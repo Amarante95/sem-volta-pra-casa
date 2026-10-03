@@ -31,6 +31,7 @@ header p{margin:0;color:var(--muted);font-size:20px;max-width:40ch}
 .bub.treme{font-family:'Pixelify Sans',monospace;font-weight:700;animation:bizz .08s linear infinite alternate}
 @keyframes bizz{from{margin-left:-2px;rotate:-4deg}to{margin-left:2px;rotate:4deg}}
 .hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:.5em .7em;pointer-events:none;gap:1em}
+body:not(.mobile) .hud{font-size:.7em} /* no PC o painel fica 30% menor: rosto, barras, relógio e desafios */
 .hud-l{transition:opacity .35s;display:flex;gap:.5em;align-items:center;background:rgba(7,11,20,.72);border:2px solid var(--line);padding:.3em .5em .3em .3em}
 #face{width:2.9em;height:3.6em;display:block}
 #head{position:absolute;left:0;top:0;width:7.2cqw;height:9cqw;pointer-events:none;transform:translate(-50%,-100%);transform-origin:50% 100%;filter:drop-shadow(1px 2px 0 rgba(0,0,0,.45))}
