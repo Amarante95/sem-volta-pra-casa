@@ -3088,10 +3088,24 @@ function snEndShot(m,cue){
   let definiu=false;
   if(!m.myTeam&&m.firstHit){m.myTeam=eu?m.firstHit:bbOutra(m.firstHit);definiu=true;}
   bbConta(m);
-  // branca na caçapa: quem tacou perde na hora
-  if(m.scratch){cue.in=true;m.done=2.8;m.msgT=2.8;
-    if(eu){m.result='lose';m.msg=m.potThis.length&&m.mine>=m.goal?'A BRANCA CAIU JUNTO COM A ÚLTIMA! Perdeu.':'A BRANCA CAIU! Perdeu a bambina.';m.fim='Tu encaçapou a branca... perdeu a bambina pro Tubarão.';sfx.lose();}
-    else{m.result='win';m.msg='O TUBARÃO MATOU A BRANCA! GANHOU A BAMBINA!';sfx.win();}
+  // branca na caçapa: se foi junto com a última bola de quem tacou, ele perde
+  if(m.scratch){const ownS=bbCor(m,quem);
+    if(ownS&&m.potThis.includes(ownS)&&(eu?m.mine:m.his)>=m.goal){cue.in=true;m.done=2.8;m.msgT=2.8;
+      if(eu){m.result='lose';m.msg='MATOU A BRANCA JUNTO COM A ÚLTIMA! Perdeu.';m.fim='Tu matou a branca junto com a tua última bola... perdeu a bambina pro Tubarão.';sfx.lose();}
+      else{m.result='win';m.msg='O TUBARÃO MATOU A BRANCA JUNTO COM A ÚLTIMA! GANHOU!';sfx.win();}
+      return;}
+    // senão a branca volta pro meio, a vez passa e o adversário tira uma bola dele
+    cue.in=false;cue.vx=cue.vy=0;cue.x=160;cue.y=101;
+    for(let k=0;k<12&&m.balls.some(b=>!b.in&&!b.cue&&Math.hypot(b.x-cue.x,b.y-cue.y)<SN.r*2+1);k++)cue.x+=SN.r*2+1;
+    m.turn=eu?'pc':'me';m.msgT=3;
+    if(eu){const dele=ownS?m.balls.filter(b=>!b.in&&!b.cue&&b.team===bbCor(m,'pc')):[],b=pick(dele);
+      if(b){b.in=true;beep(300,.12,'triangle',.07,120);}bbConta(m);
+      m.msg='MATOU A BRANCA! Ela volta pro meio'+(b?' e o Tubarão tirou uma bola dele.':'. Vez do Tubarão.');
+      if(m.his>=m.goal){m.result='lose';m.done=2.6;m.msg='Matou a branca e o Tubarão completou as quatro...';m.fim='Tu matou a branca e o Tubarão tirou a última bola dele... perdeu a bambina.';sfx.lose();}
+      return;}
+    const minhas=ownS?bbMinhasNaMesa(m):[];
+    if(minhas.length){m.phase='pick';m.pickI=0;m.pickHeld=1;m.msg='O TUBARÃO MATOU A BRANCA! Escolhe uma bola tua pra cair.';m.msgT=3.2;}
+    else m.msg='O Tubarão matou a branca! Ela volta pro meio. Tua vez.';
     return;}
   const own=bbCor(m,quem);
   // falta com a última bola: encaçapou a última batendo primeiro na do adversário = perde
