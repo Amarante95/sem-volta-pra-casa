@@ -747,7 +747,7 @@ function crowdInit(){
   const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=700;bp.Q.value=.6;
   const g=AC.createGain();g.gain.value=0;src.connect(bp);bp.connect(g);g.connect(MASTER);src.start();
   mus.crowd={g,bp,lvl:0,goal:false,rec:null};
-  maracaAudioLoad();recDecode(FINAL_AUDIO,b=>{mus.finalBuf=b;});recDecode(INICIO_AUDIO,b=>{mus.inicioBuf=b;});recDecode(FESTA_AUDIO,b=>{mus.festaBuf=b;});
+  maracaAudioLoad();fetch('musicas/final.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.finalBuf=buf;}).catch(()=>recDecode(FINAL_AUDIO,b=>{mus.finalBuf=b;mus.finalCurta=true;})); // Eva inteira (o trecho do loop é escolhido na hora de tocar)recDecode(INICIO_AUDIO,b=>{mus.inicioBuf=b;});recDecode(FESTA_AUDIO,b=>{mus.festaBuf=b;});
   // músicas dos desafios (mp3 na pasta musicas/, enviadas pelo João)
   mus.mg={};for(const [k,arq] of Object.entries(MG_MUSICAS))fetch('musicas/'+arq).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.mg[k]=buf;}).catch(()=>{});
 }
@@ -776,7 +776,8 @@ function musWant(){
   if(state==='festa')return mus.festaBuf?'festaRec':'funk';
   if(state==='mglost')return null; // perdeu o desafio: silêncio e o jingle de fim
   if(state==='paused')return mus.song;
-  if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // conquistou o bloco dele: axé até o barco
+  if(state==='cut'&&cutKind==='sax')return nightA()>.4?'noite':'rua'; // cena do sax do Bloco Secreto: ainda não é a hora do Eva
+  if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // venceu o Jamal: Eva até o barco
   if(state==='play'&&nightA()>.15)return 'noite'; // escureceu: só a música da noite (sem fuga, cogumelo ou sono por cima)
   if(beg&&state==='play')return mus.song&&!['fuga','cogumelo'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // conversa: trilha tranquila
   const chase=!!grab||(mom&&mom.chasing&&dist(mom,P)<220)||taxis.some(c=>c.chase);
@@ -798,7 +799,9 @@ function musTick(){
     if(want==='inicio'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5);
     if(want==='festaRec'&&mus.festaBuf)mus.rec=recLoop(mus.festaBuf,mus.out,.75,2.5);
     if(want==='blocoRec'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5,20);
-    if(want==='final'&&mus.finalBuf){const src=AC.createBufferSource(),g=AC.createGain();src.buffer=mus.finalBuf;src.loop=true;g.gain.value=.6;src.connect(g);g.connect(mus.out);src.start(now+.12);mus.rec=src;}}
+    if(want==='final'&&mus.finalBuf){const src=AC.createBufferSource(),g=AC.createGain();src.buffer=mus.finalBuf;src.loop=true;g.gain.value=.6;src.connect(g);g.connect(mus.out);
+      if(!mus.finalCurta&&mus.finalBuf.duration>80){src.loopStart=55;src.loopEnd=87;src.start(now+.12,55);}else src.start(now+.12); // Eva do 0:55 ao 1:27 em loop
+      mus.rec=src;}}
   mus.duck=Math.max(0,mus.duck-.08);if(state==='play'){mus.shroomT=Math.max(0,(mus.shroomT||0)-.08);mus.chaseT=Math.max(0,mus.chaseT-.08);}
   const conversa=!!beg&&state==='play';
   const vol=(!musicOn||muted||!want||mus.duck>0)?0:state==='paused'?.22:conversa?.3:.55;
