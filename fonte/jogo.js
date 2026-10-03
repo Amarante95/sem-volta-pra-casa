@@ -789,9 +789,10 @@ function musTick(){
   if(!AC||!mus)return;
   const want=musWant();
   if(want!==mus.song){ // troca imediata: a trilha velha é cortada antes da nova começar
-    const old=mus.out,now=AC.currentTime;old.gain.cancelScheduledValues(now);old.gain.setValueAtTime(old.gain.value,now);old.gain.linearRampToValueAtTime(0,now+.08);setTimeout(()=>old.disconnect(),700);
+    // nunca duas músicas juntas: a trilha velha zera e é desligada na hora
+    const old=mus.out,now=AC.currentTime;old.gain.cancelScheduledValues(now);old.gain.setValueAtTime(0,now);try{old.disconnect();}catch(e){}
     mus.out=AC.createGain();mus.out.gain.value=0;mus.out.connect(mus.lp);mus.vol=-1;mus.song=want;mus.step=0;mus.next=now+.12;
-    if(mus.rec){const r=mus.rec;mus.rec=null;setTimeout(()=>{try{r.stop();}catch(e){}},300);}
+    if(mus.rec){const r=mus.rec;mus.rec=null;try{r.stop();}catch(e){}}
     if(want&&want.startsWith('mg_'))mus.rec=recLoop(mus.mg[want.slice(3)],mus.out,.8,2.5);
     if(want==='inicio'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5);
     if(want==='festaRec'&&mus.festaBuf)mus.rec=recLoop(mus.festaBuf,mus.out,.75,2.5);
