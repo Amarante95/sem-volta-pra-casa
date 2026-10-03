@@ -2061,7 +2061,7 @@ function renderCapitulo(cx,cy){const t=cap.t,px=P.x-cx,py=P.y-14-cy;
   else if(t<CAP.TEXTO){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const a=Math.min(1,(t-CAP.FECHA)/.4,(CAP.TEXTO-t)/.3);ctx.globalAlpha=Math.max(0,a);
     outlineText(ctx,'DIA '+cap.dia,W/2,H/2-4,18,'#ffe14f');if(L.days[cap.dia])outlineText(ctx,L.days[cap.dia],W/2,H/2+16,8,'#f3ecd8');ctx.globalAlpha=1;$('hud').hidden=true;}
   else iris(400*Math.pow((t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO),1.6),px,py);
-  if(t<CAP.ABRE-.4)headCv.hidden=true;}
+  if(t>=CAP.FECHA&&t<CAP.TEXTO)headCv.hidden=true;} // a cabeça só some na tela preta
 function renderVirando(){const g=ctx,t=virar.t,cx=W/2,cy=H/2;headCv.hidden=true;
   g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/VR.ESC)})`;g.fillRect(0,0,W,H);
   const virou=t>=VR.VIRA,pw=Math.max(0,Math.min(1,(t-VR.ESC)/(VR.VIRA-VR.ESC)));
@@ -3809,7 +3809,7 @@ function render(){
   const pf=P.moving?Math.floor(P.anim*8)%4:0,respira=!P.moving&&!chairS&&!napS&&!grab&&Math.sin(time*2.6)>.2;
   list.push({y:P.y+(chairS?6:0),d:()=>{
     const py=P.y-cy-(P.jumpZ||0);
-    if(P.jumpZ)R(ctx,P.x-cx-4,P.y-cy-1,8,2,'rgba(0,0,0,.25)');
+    if(P.jumpZ&&(P.escalando||P.queda||Math.abs(P.jumpZ-12)>1))R(ctx,P.x-cx-4,P.y-cy-1,8,2,'rgba(0,0,0,.25)'); // sombra no chão só subindo, descendo ou pulando (parado no telhado não)
     drawMarkin(ctx,P.x-cx,py,{dir:P.escalando?'up':P.dir,frame:P.escalando?Math.floor(time*12)%4:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});}});
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
