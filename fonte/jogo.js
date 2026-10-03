@@ -3022,22 +3022,16 @@ function renderBar(){
 /* ---------- BAMBINA: 4 vermelhas x 4 amarelas contra o Tubarão, um de cada vez; cerveja a cada tacada do Markin ----------
    A primeira bola que a branca tocar define a cor de quem tacou. Branca na caçapa: quem tacou perde.
    Se a branca não tocar primeiro numa bola da tua cor, o adversário escolhe uma bola dele pra cair. */
-// a mesa é a imagem enviada pelo João; as bordas (onde a bola bate) e as caçapas foram medidas na própria imagem
-const MESA={sx:300,sy:223,sw:1072,sh:494,x:20,y:34,w:280}; // recorte da imagem e onde ela aparece na tela
-const mesaK=MESA.w/MESA.sw,mesaX=x=>MESA.x+(x-MESA.sx)*mesaK,mesaY=y=>MESA.y+(y-MESA.sy)*mesaK;
-const SN={x0:mesaX(380),y0:mesaY(302),x1:mesaX(1291),y1:mesaY(637),r:4}; // beira das tabelas (fim do verde claro)
-const POCKETS=[[355,280],[836,280],[1317,280],[355,659],[835,659],[1317,659]].map(([x,y])=>[mesaX(x),mesaY(y)]); // centro dos buracos pretos
-const SN_CX=(SN.x0+SN.x1)/2,SN_CY=(SN.y0+SN.y1)/2;
-const mesaImg=new Image();mesaImg.src='sprites/mesa-sinuca.png';
+const SN={x0:36,y0:44,x1:284,y1:158,r:4};
+const POCKETS=[[36,44],[160,41],[284,44],[36,158],[160,161],[284,158]];
 const BB_COL={r:'#d0202a',y:'#f2c230'};
 const BB_NOME={r:'VERMELHAS',y:'AMARELAS'};
 const bbOutra=t=>t==='r'?'y':'r';
 function startSinuca(){
   mgEnter('sinuca');
   // posição simétrica: vermelhas na metade esquerda, amarelas espelhadas na direita, branca no centro
-  const ax=x=>SN_CX+(x-160)*(SN.x1-SN.x0-8)/240,ay=y=>SN_CY+(y-101)*(SN.y1-SN.y0-8)/106; // posições da mesa antiga levadas pra nova
-  const balls=[{x:SN_CX,y:SN_CY,vx:0,vy:0,c:'#f4f1e8',cue:true}];
-  for(const [x,y] of [[113,53],[113,149],[45,96.5],[45,105.5]]){balls.push({x:ax(x),y:ay(y),vx:0,vy:0,c:BB_COL.r,team:'r'});balls.push({x:ax(320-x),y:ay(y),vx:0,vy:0,c:BB_COL.y,team:'y'});}
+  const balls=[{x:160,y:101,vx:0,vy:0,c:'#f4f1e8',cue:true}];
+  for(const [x,y] of [[113,53],[113,149],[45,96.5],[45,105.5]]){balls.push({x,y,vx:0,vy:0,c:BB_COL.r,team:'r'});balls.push({x:320-x,y,vx:0,vy:0,c:BB_COL.y,team:'y'});}
   mg={t:0,balls,ang:0,phase:'aim',pw:0,pwDir:1,turn:'me',myTeam:null,firstHit:null,mine:0,his:0,goal:4,shots:0,beers:0,pickI:0,pickHeld:0,msg:'BAMBINA contra o Tubarão! A primeira bola que tu acertar vira a tua cor.',msgT:3.8,result:null,done:0,scratch:false,potThis:[],drinkT:0,ai:null,fim:''};
 }
 // cor de cada jogador (null enquanto ninguém acertou nenhuma bola)
@@ -3049,13 +3043,10 @@ function snWob(m){if(m.turn!=='me')return 0;const d=(m.beers*.12+(fx.drunk>0?.15
 function snPhysics(m,h){
   const B=m.balls.filter(b=>!b.in),r=SN.r;
   for(const b of B){b.x+=b.vx*h;b.y+=b.vy*h;const sp=Math.hypot(b.vx,b.vy);if(sp>0){const ns=Math.max(0,sp-(30+sp*.8)*h);b.vx*=ns/sp;b.vy*=ns/sp;}
-    for(let pi=0;pi<6;pi++){const [px,py]=POCKETS[pi];if(Math.hypot(b.x-px,b.y-py)<(pi%3===1?8:10)){b.in=true;b.vx=b.vy=0;if(b.cue)m.scratch=true;else m.potThis.push(b.team);beep(300,.12,'triangle',.07,120);break;}}
+    for(const [px,py] of POCKETS)if(Math.hypot(b.x-px,b.y-py)<11){b.in=true;b.vx=b.vy=0;if(b.cue)m.scratch=true;else m.potThis.push(b.team);beep(300,.12,'triangle',.07,120);break;}
     if(b.in)continue;
-    // boca da caçapa: perto do buraco a tabela abre e a bola segue até cair no preto
-    const boca=POCKETS.some(([px,py],pi)=>Math.hypot(b.x-px,b.y-py)<(pi%3===1?14:26)); // na boca, o limite vira a linha dos buracos (o fundo da caçapa)
-    const lx0=boca?POCKETS[0][0]:SN.x0+r,lx1=boca?POCKETS[2][0]:SN.x1-r,ly0=boca?POCKETS[0][1]:SN.y0+r,ly1=boca?POCKETS[3][1]:SN.y1-r;
-    if(b.x<lx0){b.x=lx0;b.vx=Math.abs(b.vx)*.8;}if(b.x>lx1){b.x=lx1;b.vx=-Math.abs(b.vx)*.8;}
-    if(b.y<ly0){b.y=ly0;b.vy=Math.abs(b.vy)*.8;}if(b.y>ly1){b.y=ly1;b.vy=-Math.abs(b.vy)*.8;}}
+    if(b.x<SN.x0+r){b.x=SN.x0+r;b.vx=Math.abs(b.vx)*.8;}if(b.x>SN.x1-r){b.x=SN.x1-r;b.vx=-Math.abs(b.vx)*.8;}
+    if(b.y<SN.y0+r){b.y=SN.y0+r;b.vy=Math.abs(b.vy)*.8;}if(b.y>SN.y1-r){b.y=SN.y1-r;b.vy=-Math.abs(b.vy)*.8;}}
   for(let i=0;i<B.length;i++)for(let j=i+1;j<B.length;j++){const a=B[i],b=B[j];if(a.in||b.in)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
     if(d<r*2&&d>0){if(!m.firstHit&&(a.cue||b.cue))m.firstHit=(a.cue?b:a).team; // primeira bola que a branca tocou
       const nx=dx/d,ny=dy/d,ov=(r*2-d)/2;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
@@ -3104,7 +3095,7 @@ function snEndShot(m,cue){
       else{m.result='win';m.msg='O TUBARÃO MATOU A BRANCA JUNTO COM A ÚLTIMA! GANHOU!';sfx.win();}
       return;}
     // senão a branca volta pro meio, a vez passa e o adversário tira uma bola dele
-    cue.in=false;cue.vx=cue.vy=0;cue.x=SN_CX;cue.y=SN_CY;
+    cue.in=false;cue.vx=cue.vy=0;cue.x=160;cue.y=101;
     for(let k=0;k<12&&m.balls.some(b=>!b.in&&!b.cue&&Math.hypot(b.x-cue.x,b.y-cue.y)<SN.r*2+1);k++)cue.x+=SN.r*2+1;
     m.turn=eu?'pc':'me';m.msgT=3;
     if(eu){const dele=ownS?m.balls.filter(b=>!b.in&&!b.cue&&b.team===bbCor(m,'pc')):[],b=pick(dele);
@@ -3190,8 +3181,11 @@ function renderSinuca(){
   R(g,0,0,W,H,'#3a2418');for(let x=0;x<W;x+=20)R(g,x,0,1,H,'#2e1c12');
   R(g,236,6,70,16,'#1f6a3a');pxText(g,'BAMBINA',257,11,'#ffe14f');
   const lg=g.createRadialGradient(160,100,10,160,100,170);lg.addColorStop(0,'rgba(255,230,160,.18)');lg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=lg;g.fillRect(0,0,W,H);
-  if(mesaImg.complete&&mesaImg.naturalWidth){g.imageSmoothingEnabled=true;g.drawImage(mesaImg,MESA.sx,MESA.sy,MESA.sw,MESA.sh,MESA.x,MESA.y,MESA.w,MESA.sh*mesaK);g.imageSmoothingEnabled=false;}
-  else{R(g,MESA.x,MESA.y,MESA.w,MESA.sh*mesaK,'#6d4322');R(g,SN.x0,SN.y0,SN.x1-SN.x0,SN.y1-SN.y0,'#127a1c');for(const [px,py] of POCKETS){g.fillStyle='#000';g.beginPath();g.arc(px,py,7,0,Math.PI*2);g.fill();}}
+  R(g,24,32,272,138,'#6d4322');R(g,26,34,268,134,'#8a5a2e');R(g,30,38,260,126,'#1f6a3a');R(g,SN.x0,SN.y0,SN.x1-SN.x0,SN.y1-SN.y0,'#2f8a4a');
+  for(let i=1;i<4;i++){R(g,36+i*62,35,2,2,'#f4f1e8');R(g,36+i*62,166,2,2,'#f4f1e8');}
+  for(const [px,py] of POCKETS){g.fillStyle='#0a0a0a';g.beginPath();
+    if(px===160){const em=py<100;g.arc(px,em?SN.y0:SN.y1,7,em?Math.PI:0,em?Math.PI*2:Math.PI);g.closePath();} // caçapa do meio: meio círculo com a reta na borda do pano
+    else g.arc(px,py,9,0,Math.PI*2);g.fill();}
   const cue=m.balls.find(b=>b.cue);
   // raio de direcionamento (antes das bolas, por baixo delas)
   if(m.phase!=='roll'&&m.phase!=='pick'&&!m.result&&!cue.in){
