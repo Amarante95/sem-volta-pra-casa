@@ -3184,7 +3184,7 @@ function renderSinuca(){
   R(g,24,32,272,138,'#6d4322');R(g,26,34,268,134,'#8a5a2e');R(g,30,38,260,126,'#1f6a3a');R(g,SN.x0,SN.y0,SN.x1-SN.x0,SN.y1-SN.y0,'#2f8a4a');
   for(let i=1;i<4;i++){R(g,36+i*62,35,2,2,'#f4f1e8');R(g,36+i*62,166,2,2,'#f4f1e8');}
   for(const [px,py] of POCKETS){g.fillStyle='#0a0a0a';g.beginPath();
-    if(px===160){const em=py<100;g.arc(px,em?SN.y0:SN.y1,7,em?Math.PI:0,em?Math.PI*2:Math.PI);g.closePath();} // caçapa do meio: meio círculo com a reta na borda do pano
+    if(px===160){const em=py<100;g.arc(px,em?SN.y0:SN.y1,9,em?Math.PI:0,em?Math.PI*2:Math.PI);g.closePath();} // caçapa do meio: meio círculo com a reta na borda do pano
     else g.arc(px,py,9,0,Math.PI*2);g.fill();}
   const cue=m.balls.find(b=>b.cue);
   // raio de direcionamento (antes das bolas, por baixo delas)
