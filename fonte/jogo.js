@@ -945,7 +945,7 @@ function updTouchUI(){
   $('btnW').hidden=!(isTouch&&mode==='play'&&fx&&fx.spider>0);
   if(mode==='sinuca'&&mg)setIc($('btnA'),mg.phase==='pick'?'escolhe':mg.turn==='pc'?'espera':mg.phase==='power'?'tacar':'forca');
   if(mode==='play'&&touchMode==='play'){const ic=!nearK?'toque':nearK==='bus'||nearK==='chair'?'dorme':nearK==='npc'?'fala':'entra';
-    setIc($('btnA'),ic);$('btnA').classList.toggle('acao',ic!=='toque');}
+    setIc($('btnA'),ic);$('btnA').classList.toggle('acao',ic!=='toque');$('btnA').hidden=ic==='toque';} // sem nada perto, o botão de ação some
   if(mode==='maracaS'&&mg)setIc($('btnA'),mg.me.x>=262?'pula':'run');
   if(mode===touchMode)return;touchMode=mode;touchIx=0;
   const show=(id,v)=>{$(id).hidden=!v;};
