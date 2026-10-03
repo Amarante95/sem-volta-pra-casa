@@ -2071,7 +2071,7 @@ function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e cal
 function drawAranha(c,x,y,t){x=Math.round(x);y=Math.round(y);R(c,x-6,y-1,12,2,'rgba(0,0,0,.25)');const p=Math.floor(t*6)%2;
   for(let i=0;i<4;i++){const ly=y-7+i*2,a=(i+p)%2,b=(i+p+1)%2;R(c,x-9,ly+a,5,1,'#1a1a1a');R(c,x+4,ly+b,5,1,'#1a1a1a');R(c,x-10,ly+1+a,1,2,'#1a1a1a');R(c,x+9,ly+1+b,1,2,'#1a1a1a');}
   R(c,x-4,y-9,8,7,'#1a1a1a');R(c,x-3,y-12,6,4,'#2a2a2a');R(c,x-2,y-8,4,4,'#d0202a');R(c,x-2,y-11,1,1,'#ff4f4f');R(c,x+1,y-11,1,1,'#ff4f4f');}
-function drawNpc(c,n,x,y){if(n.k==='aranha'){drawAranha(c,x,y,time);return;}if(n.k==='tartaruga'){drawTartaruga(c,x,y+6,time,n.dir==='left'?-1:1);return;}const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
+function drawNpc(c,n,x,y){if(n.k==='aranha'){drawAranha(c,x,y,time);return;}if(n.k==='tartaruga'){c.save();c.translate(Math.round(x),Math.round(y+6));c.scale(.55,.55);drawTartaruga(c,0,0,time,n.dir==='left'?-1:1);c.restore();return;} /* menor que a do surf */const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
   if(n.kid){ // menino da bala: menor, com a caixinha de balas na frente
     c.save();c.translate(Math.round(x),Math.round(y));c.scale(.78,.78);drawBuddy(c,0,0,n.look,{dir:n.dir,frame:fr,t:time});c.restore();
     const bx=Math.round(x),by=Math.round(y);R(c,bx-5,by-10,10,4,'#c89a5a');R(c,bx-5,by-10,10,1,'#8a5a2e');R(c,bx-4,by-9,2,1,'#ff4fa0');R(c,bx-1,by-9,2,1,'#4fffd2');R(c,bx+2,by-9,2,1,'#ffe14f');return;}drawBuddy(c,x,y,n.look,{dir:n.dir,frame:fr,t:time});
