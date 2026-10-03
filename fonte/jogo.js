@@ -647,6 +647,7 @@ function beep(f,d,type='square',v=.05,slide=0,delay=0){
   o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
   g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(MASTER);o.start(t);o.stop(t+d+.02);
 }
+let ultimaDerrota=-1e9; // pra não tocar o som de derrota 2x seguidas
 const sfx={
   pick(){beep(660,.07);beep(990,.1,'square',.05,0,.07);},
   gulp(){beep(300,.08,'triangle',.08,180);beep(260,.08,'triangle',.08,160,.1);},
@@ -659,7 +660,7 @@ const sfx={
   ring(){beep(880,.12,'square',.035);beep(660,.12,'square',.035,0,.15);},
   zzz(){beep(220,.2,'sine',.04,180);},
   alert(){beep(1200,.08,'square',.05);beep(1200,.08,'square',.05,0,.12);},
-  lose(){if(mus)mus.duck=1.3;[392,330,262,196].forEach((f,i)=>beep(f,.25,'square',.05,0,i*.22));},
+  lose(){ultimaDerrota=performance.now();if(mus)mus.duck=1.3;[392,330,262,196].forEach((f,i)=>beep(f,.25,'square',.05,0,i*.22));},
   win(){if(mus)mus.duck=1.2;[523,659,784,1046,784,1046].forEach((f,i)=>beep(f,.16,'square',.05,0,i*.13));},
   day(){beep(523,.1);beep(784,.15,'square',.05,0,.1);}
 };
@@ -762,7 +763,7 @@ function crowdTick(){
 }
 // qual trilha combina com o momento
 function musWant(){
-  if(state==='tempo')return null; // a Música do Tempo toca sozinha
+  if(state==='tempo'||state==='capitulo'||state==='virando')return null; // Música do Tempo, troca de capítulo e transformação: só os efeitos
   if(mus.mg&&mus.mg[state])return 'mg_'+state; // desafio com música própria
   if(state==='labirinto'&&mg&&(mg.phase==='ensina'||mg.phase==='repete'||mg.result))return null; // silêncio pra aprender a Música do Tempo
   if(state==='title'||state==='cut'&&cutKind==='intro')return mus.inicioBuf?'inicio':'menu';
@@ -953,7 +954,8 @@ gameEl.addEventListener('pointerdown',e=>{if(!isTouch||e.target.closest('button,
 // Guitarra: tocar (ou clicar) na coluna da nota
 gameEl.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,ln=[0,1,2,3].find(i=>Math.abs(x-gtLaneX(i))<16);
   if(state==='tempo'&&tempoS){initAudio();if(tempoS.phase==='pergunta'){if(x<W/2)actionQ=true;else tempoDesiste();}else if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
-  if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;return;}});
+  if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;return;}
+  if(state==='virando'){actionQ=true;return;}});
 gameEl.addEventListener('pointerdown',e=>{if(state!=='guitarra'||e.target.closest('button'))return;initAudio();if(mg&&mg.phase!=='play'){actionQ=true;return;}const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W;
   let best=0,bd=1e9;for(let i=0;i<4;i++){const d=Math.abs(x-gtLaneX(i));if(d<bd){bd=d;best=i;}}if(bd<60)gtPress(best);e.preventDefault();});
 gameEl.addEventListener('pointerup',e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;swipe=null;
@@ -1475,6 +1477,7 @@ function update(dt){
   else if(state==='labirinto')updLabirinto(dt);
   else if(state==='tempo')updTempo(dt);
   else if(state==='virando')updVirando(dt);
+  else if(state==='capitulo')updCapitulo(dt);
   if(!MG_STATES.includes(state)&&state!=='title')updBuddies(dt);
   updTouchUI();
   cam.x=clamp(P.x-W/2,0,MW*T-W);cam.y=clamp(P.y-10-H/2,0,MH*T-H);
@@ -1489,7 +1492,7 @@ function play(dt){
   day=Math.min(15,Math.floor(totalMin/1440)+1);
   if(totalMin>=15*1440){gameOver(TASKS.every(t=>tasksDone[t.k])?'navio':'tarefas');return;}
   if(bloco&&dist(bloco,P)<150){bloco.lineT-=dt;if(bloco.lineT<=0){bloco.lineT=rnd(4,7);bubble(bloco,pick(['Ô abre alas!','ALALAÔ-Ô-Ô!','Vem pro bloco, Markin!','Mamãe eu quero!','Cadê o tamborim?!']),2.2,'tia',44);}}
-  if(day!==lastDay){lastDay=day;diaSnap[day]={energy:P.energy,sono:P.sono};banner('DIA '+day,L.days[day]||'');sfx.day();while(keysE.length<nKeys()){const p=randTileFrom(walkTiles,240);keysE.push({x:p.x,y:p.y,h:18});}}
+  if(day!==lastDay){lastDay=day;diaSnap[day]={energy:P.energy,sono:P.sono};abreCapitulo(day);while(keysE.length<nKeys()){const p=randTileFrom(walkTiles,240);keysE.push({x:p.x,y:p.y,h:18});}}
   const wasTurbo=fx.turbo>0,wasSpider=fx.spider>0;
   for(const k of ['turbo','crash','trip','disguise','drunk','burn','spider','sleepy'])fx[k]=Math.max(0,fx[k]-dt);
   if(wasTurbo&&fx.turbo<=0){fx.crash=14;toast('Bateu a bad... tudo pesado.','bad');}
@@ -1866,11 +1869,13 @@ function mgExit(msg,cls,dE,minutes){
   saidaSegura();
   totalMin+=minutes;P.sono=Math.min(95,P.sono+minutes*SONO_MIN);toast(msg,cls,3.4);actionQ=false;jumpQ=false;laneQ=0;
 }
-function mgQuit(){if(!mg)return;const k=state;mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
+function mgQuit(){if(!mg)return;const k=state;
+  if(k==='surf'&&mg.ganhou&&!mg.result){mg.total=Math.round(mg.total+mg.pts);mg.result='win';mg.done=0;return;} /* já tinha tirado 10: sai ganhando */
+  mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
 const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
 function mgLost(msg){
-  mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';sfx.lose();
+  mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';if(performance.now()-ultimaDerrota>5000)sfx.lose(); // só toca se o desafio ainda não tocou
   showScreen(`<div class="card"><div class="kicker">não foi dessa vez</div><h2 class="lose">PERDEU</h2><p>${msg}</p><p class="stats">Tempo e energia continuam iguais a quando você entrou.</p><div class="btns"><button data-act="mgRetry" type="button">TENTAR DE NOVO</button><button data-act="mgSair" class="ghost" type="button">Sair</button></div></div>`);
 }
 // ao voltar pro mundo aberto ninguém fica em cima do Markin
@@ -2007,7 +2012,7 @@ function convDe(n){
   const c=pick(lista.length?lista:CONVERSAS[n.conv]);return{f:typeof c.f==='function'?c.f():c.f,a:c.a};}
 // o Cria fica na escadaria do Santo Amaro: sem sax não deixa entrar; com sax manda resgatar o Tavin nos becos
 function convCria(){
-  if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Tu nem tem um instrumento, parceiro.']]};
+  if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Cadê teu fuzil?']]};
   if(sabeMusica)return{f:'Coe, Markin! O Tavin tá bem graças a tu. Tamo junto!',a:[['Tamo junto, Cria!','Qualquer coisa, a favela é tua.'],['Toca aquela do Tavin aí?','Toca tu, que agora tu sabe!']]};
   return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá... esse mlk tá a dias aí...',
     a:[['Deixa comigo, vou achar o Tavin!',null,()=>startLabirinto()],['Agora não, depois eu volto.','Não demora não, o Tavin tá sofrendo lá dentro.']]};}
@@ -2017,36 +2022,61 @@ let aranhaPend=false,virar=null;
 function picadaAranha(){lose(5);sfx.hit();shake=.4;aranhaPend=true;}
 function comecaVirar(){virar={t:0};state='virando';interruptRest();setPrompt(null);clearBubbles();P.moving=false;
   $('hud').hidden=true;$('toast').hidden=true;$('banner').hidden=true;$('phone').hidden=true;call=null;}
-function updVirando(dt){const v=virar,t0=v.t;v.t+=dt;
-  if(t0<.4&&v.t>=.4)sfx.trip();
-  if(v.t>.4&&v.t<1.6&&Math.random()<dt*10)beep(180+v.t*500,.07,'sawtooth',.02);
-  if(t0<1.6&&v.t>=1.6){flash=.8;shake=.6;sfx.rip();beep(523,.15,'square',.05);beep(784,.25,'square',.05,0,.12);}
-  if(v.t>=3.2){virar=null;state='play';P.mode='free';$('hud').hidden=false;fx.spider=16;fx.trip=0;
+const VR={ESC:.6,VIRA:2.8,SAI:3.8}; // escurece, vira Homem-Aranha, e a partir daí espaço sai
+// som de "pegou a estrela": arpejo rápido e brilhante
+function somEstrela(d0,v=.035){[523,659,784,1046,784,659,880,1046,1318,1046,880,1175].forEach((f,i)=>beep(f,.09,'square',v,0,d0+i*.085));}
+function updVirando(dt){const v=virar,t0=v.t;v.t+=dt;const act=takeAction();
+  if(t0<VR.ESC&&v.t>=VR.ESC){sfx.trip();somEstrela(0);}
+  if(v.t>VR.ESC&&v.t<VR.VIRA&&Math.floor(t0/1.05)!==Math.floor(v.t/1.05))somEstrela(0,.03+v.t*.004);
+  if(t0<VR.VIRA&&v.t>=VR.VIRA){flash=.8;shake=.6;sfx.rip();[784,988,1175,1568,1175,1568,2093].forEach((f,i)=>beep(f,.16,'square',.05,0,i*.11));v.loop=VR.VIRA+1.2;}
+  if(v.t>=VR.VIRA&&v.t>=v.loop){v.loop+=1.6;somEstrela(0,.02);}
+  if(v.t>=VR.SAI&&act){virar=null;state='play';P.mode='free';$('hud').hidden=false;fx.spider=16;fx.trip=0;
     toast(`HOMEM-ARANHA! Escala prédios, bares e o Circo, ninguém te reconhece e ${KL} solta teia na mãe.`,'good',3.6);}}
+let cap=null;
+function abreCapitulo(d){cap={t:0,dia:d};state='capitulo';interruptRest();setPrompt(null);clearBubbles();P.moving=false;$('toast').hidden=true;$('banner').hidden=true;somCapitulo(d);}
+// som do capítulo: coração batendo e um zumbido grave; quanto mais dias, mais batidas, mais rápido e mais notas tensas
+function somCapitulo(d){const n=2+Math.floor(d/3),gap=Math.max(.3,.62-d*.022),f0=55+d*2;
+  for(let i=0;i<n;i++){beep(f0,.18,'sine',.18,30,.35+i*gap);beep(f0-6,.14,'sine',.13,25,.35+i*gap+.15);}
+  beep(70+d*4,2.4,'sawtooth',.018+d*.0018,62+d*4,.1);
+  if(d>=6)beep(104+d*6,1.8,'square',.012,98+d*6,.6);if(d>=11)beep(147+d*8,1.4,'square',.012,0,1.1);}
+const CAP={FECHA:.5,TEXTO:3,ABRE:4};
+function updCapitulo(dt){cap.t+=dt;if(cap.t>=CAP.ABRE){cap=null;state='play';P.mode='free';$('hud').hidden=false;}}
+// a "íris" que fecha em volta do Markin (r = raio do buraco em px da tela)
+function iris(r,px,py){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='#000';dc.fillRect(0,0,W,H);
+  if(r>0){dc.globalCompositeOperation='destination-out';const gr=dc.createRadialGradient(px,py,Math.max(0,r*.75),px,py,r);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');
+    dc.fillStyle=gr;dc.beginPath();dc.arc(px,py,r,0,Math.PI*2);dc.fill();dc.globalCompositeOperation='source-over';}
+  ctx.drawImage(dk,0,0);}
+function renderCapitulo(cx,cy){const t=cap.t,px=P.x-cx,py=P.y-14-cy;
+  if(t<CAP.FECHA)iris(70*(1-t/CAP.FECHA),px,py);
+  else if(t<CAP.TEXTO){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const a=Math.min(1,(t-CAP.FECHA)/.4,(CAP.TEXTO-t)/.3);ctx.globalAlpha=Math.max(0,a);
+    outlineText(ctx,'DIA '+cap.dia,W/2,H/2-4,18,'#ffe14f');if(L.days[cap.dia])outlineText(ctx,L.days[cap.dia],W/2,H/2+16,8,'#f3ecd8');ctx.globalAlpha=1;$('hud').hidden=true;}
+  else iris(400*Math.pow((t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO),1.6),px,py);
+  if(t<CAP.ABRE-.4)headCv.hidden=true;}
 function renderVirando(){const g=ctx,t=virar.t,cx=W/2,cy=H/2;headCv.hidden=true;
-  g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/.4)})`;g.fillRect(0,0,W,H);
-  const virou=t>=1.6;
-  // raios vermelhos e azuis girando
-  if(t>.3){const al=Math.min(1,(t-.3)/.4),rot=t*(virou?.8:2.4);
-    for(let i=0;i<16;i++){const a=rot+i/16*Math.PI*2;g.fillStyle=i%2?`rgba(208,32,42,${.32*al})`:`rgba(31,79,181,${.32*al})`;
-      g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*260,cy+Math.sin(a)*260);g.lineTo(cx+Math.cos(a+.2)*260,cy+Math.sin(a+.2)*260);g.closePath();g.fill();}}
+  g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/VR.ESC)})`;g.fillRect(0,0,W,H);
+  const virou=t>=VR.VIRA,pw=Math.max(0,Math.min(1,(t-VR.ESC)/(VR.VIRA-VR.ESC)));
+  // raios vermelhos e azuis girando (mais rápido conforme o poder cresce)
+  if(t>VR.ESC*.7){const al=Math.min(1,(t-VR.ESC*.7)/.6),rot=t*(virou?.7:1+pw*2.4);
+    for(let i=0;i<16;i++){const ang=rot+i/16*Math.PI*2;g.fillStyle=i%2?`rgba(208,32,42,${.32*al})`:`rgba(31,79,181,${.32*al})`;
+      g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(ang)*260,cy+Math.sin(ang)*260);g.lineTo(cx+Math.cos(ang+.2)*260,cy+Math.sin(ang+.2)*260);g.closePath();g.fill();}}
   // a teia crescendo do centro
-  if(t>.6){const p=Math.min(1,(t-.6)/1),N=12,R0=150*p;g.strokeStyle='rgba(240,240,255,.45)';g.lineWidth=1;
-    for(let i=0;i<N;i++){const a=i/N*Math.PI*2;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*R0,cy+Math.sin(a)*R0);g.stroke();}
-    for(let r=18;r<R0;r+=17){g.beginPath();for(let i=0;i<=N;i++){const a=i/N*Math.PI*2,rr=r-(i%2)*2,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.stroke();}}
+  if(t>VR.ESC+.2){const p=Math.min(1,(t-VR.ESC-.2)/1.6),N=12,R0=150*p;g.strokeStyle='rgba(240,240,255,.45)';g.lineWidth=1;
+    for(let i=0;i<N;i++){const ang=i/N*Math.PI*2;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(ang)*R0,cy+Math.sin(ang)*R0);g.stroke();}
+    for(let r=18;r<R0;r+=17){g.beginPath();for(let i=0;i<=N;i++){const ang=i/N*Math.PI*2,rr=r-(i%2)*2,x=cx+Math.cos(ang)*rr,y=cy+Math.sin(ang)*rr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.stroke();}}
   // o Markin no centro: treme ganhando poder e depois aparece de Homem-Aranha
-  const tremor=t>.4&&!virou?(Math.random()-.5)*4*((t-.4)/1.2):0,esc=virou?1+Math.max(0,.3-(t-1.6)*.6):1;
+  const tremor=t>VR.ESC&&!virou?(Math.random()-.5)*4*pw:0,esc=virou?1+Math.max(0,.3-(t-VR.VIRA)*.5):1;
   const bw=56*esc,bh=40*esc,bx=cx-bw/2+tremor,by=cy+10;
-  if(t>.4&&!virou){const k=(t-.4)/1.2;g.strokeStyle=`rgba(255,70,70,${.4+.4*Math.sin(t*30)})`;g.lineWidth=2+k*3;g.beginPath();g.ellipse(cx+tremor,cy,42+k*12+Math.sin(t*22)*3,60+k*10,0,0,Math.PI*2);g.stroke();}
+  if(t>VR.ESC&&!virou){g.strokeStyle=`rgba(255,70,70,${.4+.4*Math.sin(t*30)})`;g.lineWidth=2+pw*3;g.beginPath();g.ellipse(cx+tremor,cy,42+pw*12+Math.sin(t*22)*3,60+pw*10,0,0,Math.PI*2);g.stroke();}
   if(virou){R(g,bx,by,bw,bh,'#d0202a');R(g,bx,by,bw*.18,bh,'#1f4fb5');R(g,bx+bw*.82,by,bw*.18,bh,'#1f4fb5');
     g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;for(let i=1;i<4;i++){g.beginPath();g.moveTo(bx+bw*.18,by+bh*i/4);g.lineTo(bx+bw*.82,by+bh*i/4);g.stroke();}
     const ax=cx,ay=by+bh*.4;R(g,ax-2,ay-4,4,8,'#1a1a1a');for(const d of [-1,1]){R(g,ax+d*2,ay-3,d*6,1,'#1a1a1a');R(g,ax+d*2,ay,d*7,1,'#1a1a1a');R(g,ax+d*2,ay+3,d*6,1,'#1a1a1a');}} // a aranha no peito
   else drawMkTorso(g,bx,by,bw,bh);
   const st=faceState();st.spider=virou;st.mood=virou?'hype':null;buildFace(st,{});g.imageSmoothingEnabled=false;
   const fw=50*esc,fh=62*esc;g.drawImage(fbuf,cx-fw/2+tremor,by-fh+8,fw,fh);
-  if(virou){const p=Math.min(1,(t-1.6)/.3);outlineText(g,'HOMEM-ARANHA!',cx,22,Math.round(8+10*p),'#ff3b3b');
-    if(t>2.1)outlineText(g,'COM GRANDES PODERES VEM GRANDES ROLÊS!',cx,H-8,7,'#f3ecd8');}
-  else if(t>.4)outlineText(g,'A PICADA TÁ FAZENDO EFEITO...',cx,22,8,'#c9a0ff');}
+  if(virou){const p=Math.min(1,(t-VR.VIRA)/.4);outlineText(g,'HOMEM-ARANHA!',cx,22,Math.round(8+10*p),'#ff3b3b');
+    if(t>VR.VIRA+.5)outlineText(g,'COM GRANDES PODERES VEM GRANDES ROLÊS!',cx,H-14,7,'#f3ecd8');
+    if(t>=VR.SAI&&Math.floor(t*2)%2)outlineText(g,isTouch?'toque ▸':'ESPAÇO ▸',W-10,H-4,6,'#ffe14f','right');}
+  else if(t>VR.ESC)outlineText(g,'A PICADA TÁ FAZENDO EFEITO...',cx,22,8,'#c9a0ff');}
 // a conversa toda acontece na caixa: a pessoa fala, o Markin escolhe, o Markin diz e a pessoa responde (espaço passa)
 function caixa(nome,texto,opcoes){$('bgnome').textContent=nome;$('bgtext').textContent=texto;$('beg').classList.toggle('falando',!opcoes);}
 function marcaSel(){$('bgSim').classList.toggle('sel',beg.sel===0);$('bgNao').classList.toggle('sel',beg.sel===1);}
@@ -2081,7 +2111,9 @@ function drawBikini(c,x,y,b,o){ // menina de biquíni (pele à mostra, top e cal
 function drawAranha(c,x,y,t){x=Math.round(x);y=Math.round(y);R(c,x-6,y-1,12,2,'rgba(0,0,0,.25)');const p=Math.floor(t*6)%2;
   for(let i=0;i<4;i++){const ly=y-7+i*2,a=(i+p)%2,b=(i+p+1)%2;R(c,x-9,ly+a,5,1,'#1a1a1a');R(c,x+4,ly+b,5,1,'#1a1a1a');R(c,x-10,ly+1+a,1,2,'#1a1a1a');R(c,x+9,ly+1+b,1,2,'#1a1a1a');}
   R(c,x-4,y-9,8,7,'#1a1a1a');R(c,x-3,y-12,6,4,'#2a2a2a');R(c,x-2,y-8,4,4,'#d0202a');R(c,x-2,y-11,1,1,'#ff4f4f');R(c,x+1,y-11,1,1,'#ff4f4f');}
-function drawNpc(c,n,x,y){if(n.k==='aranha'){drawAranha(c,x,y,time);return;}if(n.k==='tartaruga'){c.save();c.translate(Math.round(x),Math.round(y+6));c.scale(.55,.55);drawTartaruga(c,0,0,time,n.dir==='left'?-1:1);c.restore();return;} /* menor que a do surf */const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
+function drawFuzil(c,x,y){x=Math.round(x);y=Math.round(y); // o fuzil atravessado na frente do Cria
+  R(c,x-9,y-13,15,2,'#2a2a2e');R(c,x-11,y-13,2,1,'#2a2a2e');R(c,x+5,y-14,5,4,'#5a3a22');R(c,x-2,y-11,2,4,'#1a1a1e');R(c,x-6,y-15,3,2,'#3a3a40');}
+function drawNpc(c,n,x,y){if(n.k==='criaSA'){drawBuddy(c,x,y,n.look,{dir:n.dir,frame:0,t:time});drawFuzil(c,x,y);return;}if(n.k==='aranha'){drawAranha(c,x,y,time);return;}if(n.k==='tartaruga'){c.save();c.translate(Math.round(x),Math.round(y+6));c.scale(.55,.55);drawTartaruga(c,0,0,time,n.dir==='left'?-1:1);c.restore();return;} /* menor que a do surf */const fr=n.moving?Math.floor(n.anim*8)%4:0;if(n.look.bikini){drawBikini(c,x,y,n.look,{dir:n.dir,frame:fr});return;}
   if(n.kid){ // menino da bala: menor, com a caixinha de balas na frente
     c.save();c.translate(Math.round(x),Math.round(y));c.scale(.78,.78);drawBuddy(c,0,0,n.look,{dir:n.dir,frame:fr,t:time});c.restore();
     const bx=Math.round(x),by=Math.round(y);R(c,bx-5,by-10,10,4,'#c89a5a');R(c,bx-5,by-10,10,1,'#8a5a2e');R(c,bx-4,by-9,2,1,'#ff4fa0');R(c,bx-1,by-9,2,1,'#4fffd2');R(c,bx+2,by-9,2,1,'#ffe14f');return;}drawBuddy(c,x,y,n.look,{dir:n.dir,frame:fr,t:time});
@@ -2232,7 +2264,10 @@ function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.ms
   const kept=Math.round(m.pts*.5);m.total+=kept;m.pops.push({x:m.mx,y:90,t:1.6,txt:`vaca: ficou ${kept}`});m.pts=0;
   for(let i=0;i<26;i++)m.splash.push({x:m.mx+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
   m.r=null;surfFimOnda();}
-function surfFimOnda(){const m=mg;m.total=Math.round(m.total);if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
+function surfFimOnda(){const m=mg;m.total=Math.round(m.total);
+  if(m.total>=SF.META&&m.r&&!m.ganhou){m.ganhou=true;m.msg='NOTA 10! Continua surfando! (cai ou ESC pra sair)';m.msgT=3;sfx.win();return;} // bateu a meta em pé: segue na onda
+  if(m.total>=SF.META&&m.r)return;
+  if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
 function surfInp(){let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;if(Math.abs(joy.y)>.25)iy=clamp(iy+joy.y,-1,1);
   let ix=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;const kx=ix,joyOn=isTouch||Math.hypot(joy.x,joy.y)>.2; // no celular é sempre o analógico (mesmo solto)
@@ -3805,6 +3840,9 @@ function render(){
   renderHead(cx,cy);
   if(state==='tempo')renderTempo();
   if(state==='virando')renderVirando();
+  // de madrugada (3h às 6h) a tela vai fechando em volta do Markin até virar o dia
+  if((state==='play')&&!grab){const h=hourF();if(h>=3&&h<6){const p=(h-3)/3;iris(400-330*Math.pow(p,1.3),P.x-cx,P.y-14-cy);}}
+  if(state==='capitulo'&&cap)renderCapitulo(cx,cy);
 }
 const dk=document.createElement('canvas');dk.width=W;dk.height=H;const dc=dk.getContext('2d');
 function lightHole(wx,wy,r,cx,cy){const x=wx-cx,y=wy-cy;if(x<-r||x>W+r||y<-r||y>H+r)return;const g=dc.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.6,'rgba(0,0,0,.7)');g.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=g;dc.fillRect(x-r,y-r,r*2,r*2);}
