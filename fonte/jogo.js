@@ -700,6 +700,7 @@ const MUS_SONGS={
   festa:{bpm:112,ch:['Am','F','C','G','Am','F','C','G'],drum:'festa',bass:'colcheia',lead:'sawtooth',lv:.028,
     mel:[69,72,76,72, 77,72,69,72, 79,76,72,76, 79,74,71,74, 81,-1,79,76, 77,-1,76,72, 76,-1,72,67, 74,-1,-1,0]}
 };
+const MG_MUSICAS={altinha:'altinha.mp3',sinuca:'bambina.mp3',bar:'bar.mp3',bloco:'bloco-secreto.mp3',guitarra:'chefao.mp3',surf:'surf.mp3'};
 function musInit(){
   if(mus||!AC)return;
   const nb=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
@@ -746,6 +747,8 @@ function crowdInit(){
   const g=AC.createGain();g.gain.value=0;src.connect(bp);bp.connect(g);g.connect(MASTER);src.start();
   mus.crowd={g,bp,lvl:0,goal:false,rec:null};
   maracaAudioLoad();recDecode(FINAL_AUDIO,b=>{mus.finalBuf=b;});recDecode(INICIO_AUDIO,b=>{mus.inicioBuf=b;});recDecode(FESTA_AUDIO,b=>{mus.festaBuf=b;});
+  // músicas dos desafios (mp3 na pasta musicas/, enviadas pelo João)
+  mus.mg={};for(const [k,arq] of Object.entries(MG_MUSICAS))fetch('musicas/'+arq).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.mg[k]=buf;}).catch(()=>{});
 }
 function crowdTick(){
   const c=mus.crowd;if(!c)return;const m=state==='maraca'?mg:null;
@@ -760,6 +763,7 @@ function crowdTick(){
 // qual trilha combina com o momento
 function musWant(){
   if(state==='tempo')return null; // a Música do Tempo toca sozinha
+  if(mus.mg&&mus.mg[state])return 'mg_'+state; // desafio com música própria
   if(state==='title'||state==='cut'&&cutKind==='intro')return mus.inicioBuf?'inicio':'menu';
   if(state==='over')return finalStage>=3?(mus.finalBuf?'final':'axe'):null; // venceu: axé; perdeu: silêncio
   if(state==='guitarra')return null; // a guitarra do Jamal tem o próprio ritmo
@@ -785,6 +789,7 @@ function musTick(){
     const old=mus.out,now=AC.currentTime;old.gain.cancelScheduledValues(now);old.gain.setValueAtTime(old.gain.value,now);old.gain.linearRampToValueAtTime(0,now+.08);setTimeout(()=>old.disconnect(),700);
     mus.out=AC.createGain();mus.out.gain.value=0;mus.out.connect(mus.lp);mus.vol=-1;mus.song=want;mus.step=0;mus.next=now+.12;
     if(mus.rec){const r=mus.rec;mus.rec=null;setTimeout(()=>{try{r.stop();}catch(e){}},300);}
+    if(want&&want.startsWith('mg_'))mus.rec=recLoop(mus.mg[want.slice(3)],mus.out,.8,2.5);
     if(want==='inicio'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5);
     if(want==='festaRec'&&mus.festaBuf)mus.rec=recLoop(mus.festaBuf,mus.out,.75,2.5);
     if(want==='blocoRec'&&mus.inicioBuf)mus.rec=recLoop(mus.inicioBuf,mus.out,.8,2.5,20);
@@ -3365,7 +3370,7 @@ function updGuitarra(dt){
   m.meter-=.022*dt;gtCheckLose();if(m.result)return; // o Jamal vai puxando a banda de volta
   // batida de fundo
   const L=GT_LESSONS[m.lesson],beat=60/L.bpm,bn=Math.floor((m.t-m.beatT0)/beat);
-  if(bn>m.beatN){m.beatN=bn;beep(70,.12,'sine',.12,40);if(bn%2)beep(2600,.03,'square',.01);}
+  if(bn>m.beatN){m.beatN=bn;if(!(mus&&mus.mg&&mus.mg.guitarra)){beep(70,.12,'sine',.12,40);if(bn%2)beep(2600,.03,'square',.01);}} // com a música do chefão, sem batida extra
   for(const n of m.notes)if(!n.hit&&!n.miss&&m.t-n.t>.16){n.miss=true;gtMiss();if(m.result)return;}
   const lastN=m.notes[m.notes.length-1];
   if(!lastN||m.t>lastN.t+.8){
