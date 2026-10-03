@@ -1531,7 +1531,7 @@ function play(dt){
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
-    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax()){startLabirinto();return;}toast('Um moleque na escada: "O Cria só fala com quem tem sax."','',3);}if(near.k==='alt'){startAltinha();return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){startSinuca();return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
+    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "O Cria só fala com quem tem sax."','',3);return;}if(near.k==='alt'){startAltinha();return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){startSinuca();return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
