@@ -1741,7 +1741,7 @@ function updGrab(dt,act){
   }
   // arrastado pro rumo da porta
   g.drainT=(g.drainT||0)+dt;if(g.drainT>=2){g.drainT-=2;lose(5);} // arrastado cansa: -5 a cada 2 s
-  const sp=g.kind==='mae'?4+40*(1-Math.exp(-dist(P,HOME)/250)):54; // a mãe puxa rápido longe de casa e bem devagar perto da porta
+  const sp=g.kind==='mae'?8+80*(1-Math.exp(-dist(P,HOME)/250)):54; // a mãe puxa rápido longe de casa e bem devagar perto da porta
   followField(P,homeField,HOME,sp,dt);P.anim+=dt;
 }
 
