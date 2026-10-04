@@ -965,7 +965,7 @@ gameEl.addEventListener('pointerdown',e=>{if(!isTouch||e.target.closest('button,
   if(state==='sinuca'&&mg&&mg.phase==='pick'){const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const minhas=bbMinhasNaMesa(mg);let bi=-1,bd=14;minhas.forEach((b,i)=>{const dd=Math.hypot(b.x-x,b.y-y);if(dd<bd){bd=dd;bi=i;}});if(bi>=0){mg.pickI=bi;mg.pickTap=true;}}}); // na bambina tocar na mesa não faz nada: só os botões
 // Guitarra: tocar (ou clicar) na coluna da nota
 gameEl.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,ln=[0,1,2,3].find(i=>Math.abs(x-gtLaneX(i))<16);
-  if(state==='tempo'&&tempoS){initAudio();if(tempoS.phase==='pergunta'){const y=(e.clientY-r.top)/r.height*H;if(tempoS.t>.6&&y>=122&&y<=164){if(x>=40&&x<=150)actionQ=true;else if(x>=170&&x<=280)tempoDesiste();}}else if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
+  if(state==='tempo'&&tempoS){initAudio();if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
   if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;
     else if(mg.phase==='conversa'&&mg.cv){if(mg.cv.fase==='escolha'){const y=(e.clientY-r.top)/r.height*H,ls=wrapTxt('x',40);const top=118-26+16+11*wrapTxt(mg.cv.g.falas[mg.cv.g.falas.length-1].join(': '),40).length-8;const i=y<top+12?0:1;mg.cv.sel=i;labEscolhe(i);}else actionQ=true;}return;}
   if(state==='virando'){actionQ=true;return;}});
@@ -1173,7 +1173,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;fimOferecido=false;histP=[];histT=0;rebS=null;avisoEnergia=false;avisoCmd=false;cmdT=0;ultDesafio=null;tarefasAbertas=false;batidaT=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;fimOferecido=false;tempoCh=3;tempoPend=false;histP=[];histT=0;rebS=null;avisoEnergia=false;avisoCmd=false;cmdT=0;ultDesafio=null;tarefasAbertas=false;batidaT=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1522,7 +1522,7 @@ function play(dt){
   totalMin+=dt*clockRate;
   day=Math.min(15,Math.floor(totalMin/1440)+1);
   if(totalMin>=15*1440){gameOver(TASKS.every(t=>tasksDone[t.k])?'navio':'tarefas');return;}
-  if(!fimOferecido&&totalMin>=15*1440-720&&temSax()&&sabeMusica&&palhetas>0){fimOferecido=true;abreTempo('fim');return;} // faltam 12h: oferece a Música do Tempo
+  if(!fimOferecido&&totalMin>=15*1440-720&&temSax()&&sabeMusica&&palhetas>0){fimOferecido=true;ofereceTempo('inicio');return;} // faltam 12h: o sax puxa conversa
   if(bloco&&dist(bloco,P)<150){bloco.lineT-=dt;if(bloco.lineT<=0){bloco.lineT=rnd(4,7);bubble(bloco,pick(['Ô abre alas!','ALALAÔ-Ô-Ô!','Vem pro bloco, Markin!','Mamãe eu quero!','Cadê o tamborim?!']),2.2,'tia',44);}}
   if(day!==lastDay){lastDay=day;diaSnap[day]={energy:P.energy,sono:P.sono};abreCapitulo(day);while(keysE.length<nKeys()){const p=randTileFrom(walkTiles,240);keysE.push({x:p.x,y:p.y,h:18});}}
   const wasTurbo=fx.turbo>0,wasSpider=fx.spider>0;
@@ -2116,7 +2116,8 @@ const CONV_GAP=720; // 12h de jogo pra conversar de novo com a mesma pessoa
 function abreConversa(n){if(n.k!=='criaSA')n.falouEm=totalMin;const c=convDe(n);beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';setPrompt(null);if(n.beggar)sfx.alert();
   abreEspaco('beg');caixa(n.titulo,c.f,true);$('bgOp1').textContent=c.a[0][0];$('bgOp2').textContent=c.a[1][0];$('beg').hidden=false;}
 function closeBeg(){if(!beg)return;beg=null;$('beg').hidden=true;if(P.mode==='beg')P.mode='free';
-  if(aranhaPend&&state==='play'){aranhaPend=false;comecaVirar();}}
+  if(aranhaPend&&state==='play'){aranhaPend=false;comecaVirar();}
+  if(tempoPend&&state==='play'){tempoPend=false;abreTempo('fim');}}
 function updBeg(dt,act){beg.t+=dt;P.moving=false;if(act&&beg.t>.35){if(beg.fase==='pergunta')escolheResposta(beg.sel);else avancaConversa();}}
 function escolheResposta(i){if(!beg||beg.fase!=='pergunta'||beg.t<.35||state!=='play')return;
   beg.esc=beg.c.a[i];beg.fase='markin';beg.t=0;avancaConversa();} // escolheu: já vem direto a resposta da pessoa
@@ -4017,7 +4018,7 @@ const TECLA=['7','8','9','0'];
 const MUSICA_TEMPO=[0,2,1,3,0,0]; // 7 9 8 0 7 7
 const FAVELA_ENT={x:3*T+8,y:21*T+12,h:30}; // escadaria do Santo Amaro
 let sabeMusica=false,palhetas=3,usosTempo=0,diaSnap={},tempoS=null,palhetaT=60,fimOferecido=false; // fimOferecido: já perguntou se quer tocar nas 12h finais
-let histP=[],histT=0,rebS=null; // histP: onde o Markin andou (a cada 5 min de jogo), pra rebobinar quando voltar no tempo
+let histP=[],histT=0,rebS=null,tempoCh=3,tempoPend=null; // tempoCh: chances que sobram na palheta atual // histP: onde o Markin andou (a cada 5 min de jogo), pra rebobinar quando voltar no tempo
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
 function* saxGen(){
@@ -4034,14 +4035,28 @@ function* saxGen(){
 function abreTempo(reason){
   closeBeg();interruptRest();grab=null;call=null;$('phone').hidden=true;setPrompt(null);clearBubbles();
   $('hud').hidden=true;$('toast').hidden=true;$('banner').hidden=true;
-  state='tempo';tempoS={reason,phase:'pergunta',t:0,notes:[],miss:0,press:[0,0,0,0],fimT:0,chances:3,errou:false};sfx.alert();}
-function updTempo(dt){const s=tempoS;s.t+=dt;for(let i=0;i<4;i++)s.press[i]=Math.max(0,s.press[i]-dt);const act=takeAction();
-  if(s.phase==='pergunta'){if(act&&s.t>.6){const gap=.55*Math.pow(.85,usosTempo); // a cada uso a música fica mais rápida
-      s.phase='toca';s.t=0;s.miss=0;s.notes=MUSICA_TEMPO.map((l,i)=>({lane:l,t:1.4+i*gap,hit:false,miss:false}));}return;}
+  const gap=.55*Math.pow(.85,usosTempo); // a cada uso a música fica mais rápida
+  state='tempo';tempoS={reason,phase:'toca',t:0,miss:0,press:[0,0,0,0],fimT:0,notes:MUSICA_TEMPO.map((l,i)=>({lane:l,t:1.4+i*gap,hit:false,miss:false}))};}
+// o sax puxa conversa nas 12h finais (e depois de cada desafinada): duas respostas, como nas conversas da rua
+const SAX_FALA={
+  inicio:()=>'Psiu, Markin... aqui na bolsa. Faltam 12 horas pro navio zarpar. Tu sabe a Música do Tempo: quer voltar dois dias e viver mais um pouco?',
+  errou:()=>tempoCh>1?`Fuuuén... desafinou, moleque! Essa palheta ainda aguenta mais ${tempoCh} sopradas.`:'Fuuuén... desafinou de novo! Essa palheta só aguenta mais UMA soprada.',
+  quebrou:()=>`CREC! A palheta quebrou. Mas tem outra na bolsa (sobra${palhetas>1?'m':''} ${palhetas}). Mais 3 sopradas!`};
+const SAX_OPC={
+  inicio:[['Bora! Ainda tem muito rolê pra viver.','Isso, cria! Sopra comigo: 7 9 8 0 7 7. Sem desafinar!'],['Tô de boa. Vou até o fim assim mesmo.','Tu que sabe. Depois não vem chorar no navio, hein.']],
+  errou:[['Mais uma! Agora vai.','Respira fundo, sente a batida do Jamal... 7 9 8 0 7 7.'],['Deixa quieto, vou seguir sem voltar.','Beleza. O relógio segue correndo, então.']],
+  quebrou:[['Palheta nova, sopro novo. Bora!','Assim que se fala! 7 9 8 0 7 7, devagarinho.'],['Chega de quebrar palheta. Vou seguir.','Firmeza. Guarda o sax e aproveita as horas que sobram.']]};
+function ofereceTempo(tipo){
+  const n={titulo:'Saxofone',k:'sax'},o=SAX_OPC[tipo];
+  const c={f:SAX_FALA[tipo](),a:[[o[0][0],o[0][1],()=>{tempoPend=true;}],[o[1][0],o[1][1],null]]};
+  beg={n,t:0,c,fase:'pergunta',sel:0};marcaSel();P.mode='beg';P.moving=false;setPrompt(null);sfx.alert();
+  abreEspaco('beg');caixa(n.titulo,c.f,true);$('bgOp1').textContent=c.a[0][0];$('bgOp2').textContent=c.a[1][0];$('beg').hidden=false;}
+function updTempo(dt){const s=tempoS;s.t+=dt;for(let i=0;i<4;i++)s.press[i]=Math.max(0,s.press[i]-dt);takeAction();
   if(s.phase==='toca'){for(const n of s.notes)if(!n.hit&&!n.miss&&s.t-n.t>.18){n.miss=true;s.miss++;beep(110,.15,'sawtooth',.05,70);}
     const ult=s.notes[s.notes.length-1];if(s.t>ult.t+.5){s.phase='fim';s.fimT=1.8;s.ok=s.miss<=1;if(s.ok)sfx.win();else sfx.lose();}return;}
-  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else if(s.reason==='fim'){s.chances--;s.phase='pergunta';s.t=0;s.errou=true; // 3 chances por palheta
-    if(s.chances<=0){palhetas--;s.chances=3;s.errou='palheta';if(palhetas<=0){palhetas=0;tempoSegue('Desafinou e quebrou a última palheta... o tempo seguiu.');}}}else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
+  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else if(s.reason==='fim'){tempoCh--;let tipo='errou'; // 3 chances por palheta
+    if(tempoCh<=0){palhetas--;tempoCh=3;tipo='quebrou';}
+    if(palhetas<=0){palhetas=0;tempoSegue('CREC! Quebrou a última palheta... o tempo seguiu.');}else{tempoSegue(null);ofereceTempo(tipo);}}else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
 function tempoPress(ln){const s=tempoS;if(state!=='tempo'||!s||s.phase!=='toca')return;s.press[ln]=.15;
   let best=null,bd=.2;for(const n of s.notes){if(n.hit||n.miss||n.lane!==ln)continue;const d=Math.abs(n.t-s.t);if(d<bd){bd=d;best=n;}}
   if(best){best.hit=true;beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);beep(GT_SCALE[[2,4,5,7][ln]]*2,.15,'square',.012);}
@@ -4072,10 +4087,10 @@ function fechaAviso(){hideScreen();$('game').classList.remove('avisoE','avisoD')
 function coracao(dt){if(state!=='play'||P.energy>30||P.energy<=0){batidaT=0;return;}batidaT-=dt;if(batidaT>0)return;
   const p=1-P.energy/30,v=.12+.2*p;batidaT=1.15-.65*p;
   beep(72,.15,'sine',v,46);beep(150,.06,'triangle',v*.4,80);beep(64,.13,'sine',v*.8,42,.19);beep(130,.05,'triangle',v*.3,70,.19);}
-function tempoSegue(msg){state='play';P.mode='free';$('hud').hidden=false;toast(msg,'',3.4);}
+function tempoSegue(msg){state='play';P.mode='free';$('hud').hidden=false;if(msg)toast(msg,'',3.4);}
 // acertou a música: o relógio rebobina 48h e o Markin refaz de trás pra frente o caminho que andou, em câmera rápida
 function voltaNoTempo(){
-  palhetas--;usosTempo++;fimOferecido=false; // se chegar de novo nas 12h finais, pergunta de novo
+  palhetas--;usosTempo++;tempoCh=3;fimOferecido=false; // se chegar de novo nas 12h finais, pergunta de novo
   const de=totalMin,para=Math.max(0,totalMin-2880);
   const pts=[{m:de,x:P.x,y:P.y},...histP.filter(h=>h.m>=para&&h.m<de).reverse()];
   rebS={t:0,dur:4.6,de,para,pts,som:0,lx:P.x,ly:P.y};
@@ -4109,16 +4124,6 @@ function renderRebobina(){const g=ctx,s=rebS;if(!s)return;
 function renderTempo(){const g=ctx,s=tempoS;headCv.hidden=true;
   g.fillStyle='rgba(10,6,20,.84)';g.fillRect(0,0,W,H);
   outlineText(g,'MÚSICA DO TEMPO',W/2,26,14,'#ffe14f');
-  const pal='●'.repeat(palhetas)+'○'.repeat(Math.max(0,3-palhetas));
-  if(s.phase==='pergunta'){
-    outlineText(g,'O TEMPO DO MARKIN TÁ ACABANDO!',W/2,46,9,'#ff6b5d');
-    outlineText(g,s.errou==='palheta'?'A palheta quebrou! Palheta nova: mais 3 chances.':s.errou?`Desafinou! Mais ${s.chances} chance${s.chances>1?'s':''}.`:'Faltam 12 horas pro fim do dia 15.',W/2,60,8,s.errou?'#ffb347':'#f3ecd8');
-    outlineText(g,'Tocar o sax e voltar 2 dias?',W/2,76,9,'#f3ecd8');
-    outlineText(g,'palhetas '+pal+'   chances '+'●'.repeat(s.chances)+'○'.repeat(3-s.chances),W/2,90,8,'#ffe14f');
-    outlineText(g,'a música: '+MUSICA_TEMPO.map(l=>TECLA[l]).join(' '),W/2,104,8,'#4fffd2');
-    if(isTouch){R(g,40,128,110,30,'#2f9a55');outlineText(g,'TOCAR',95,147,10,'#ffffff');R(g,170,128,110,30,'#8a2a2a');outlineText(g,s.reason==='fim'?'NÃO TOCAR':'DESISTIR',225,147,10,'#ffffff');}
-    else outlineText(g,s.reason==='fim'?'ESPAÇO toca · ESC não toca':'ESPAÇO toca · ESC desiste',W/2,146,9,'#fff1c2');
-    return;}
   const hitY=146;
   for(const n of s.notes){if(n.hit)continue;const y=hitY-(n.t-s.t)*90;if(y<34||y>H+8)continue;const x=gtLaneX(n.lane);
     if(n.miss)g.globalAlpha=.3;g.fillStyle='#1a0e04';g.beginPath();g.arc(x,y,8,0,Math.PI*2);g.fill();g.fillStyle=GT_COL[n.lane];g.beginPath();g.arc(x,y,7,0,Math.PI*2);g.fill();g.globalAlpha=1;}
