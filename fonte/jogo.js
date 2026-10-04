@@ -1970,6 +1970,9 @@ function updNpcs(dt){
     const naLapa=P.x>=49*T&&P.y<=10*T;
     if(n.flee>0){n.flee-=dt;gx=n.x+(n.x-P.x);gy=n.y+(n.y-P.y);sp=n.feliz?30:64;}
     else if(n.beggar&&n.cd<=0&&tregua<=0&&!incog()&&dist(n,P)<100&&P.mode==='free'&&!grab&&naLapa){gx=P.x;gy=P.y;sp=34;} // vem atrás pedir dinheiro (não sai da Lapa)
+    else if(n.k==='criaSA'){const fe=FAVELA_ENT,barra=!temSax()&&P.mode==='free'&&dist(P,fe)<110; // sem sax ele barra: anda de lado e fica sempre na frente do Markin, no pé da escada
+      gx=barra?clamp(P.x,fe.x-28,fe.x+28):fe.x+(temSax()?22:0);gy=fe.y;sp=barra?75:30; // com sax ele dá um passo pro lado e libera
+      if(barra&&n.lineT<=0&&dist(n,P)<60){n.lineT=rnd(5,8);bubble(n,pick(['Aqui não, parceiro.','Só entra os cria.','Pode voltar, Markin.','Daqui tu não passa.','Tá perdido, playboy?']),2.4,'',28);}}
     else if(n.route){const tg=n.route[n.ri];if(Math.hypot(tg.x-n.x,tg.y-n.y)<1.5)n.ri=(n.ri+(n.rev?3:1))%4;gx=n.route[n.ri].x;gy=n.route[n.ri].y;naRota=true;}
     else{if(!n.tgt||dist(n,n.tgt)<3){if(n.wait>0){n.wait-=dt;n.moving=false;}else{n.tgt=npcGoal(n);n.wait=rnd(.5,3);}}
       if(n.tgt){gx=n.tgt.x;gy=n.tgt.y;}}
@@ -1979,6 +1982,7 @@ function updNpcs(dt){
         // preso na parede voltando pra rota: quando ninguém tá vendo, reaparece no canto da rota
         else if(naRota){n.stuckT=(n.stuckT||0)+dt;if(n.stuckT>1.2&&(Math.abs(n.x-P.x)>W*.6||Math.abs(n.y-P.y)>H*.6)){n.x=gx;n.y=gy;n.stuckT=0;}}}
       else n.moving=false;}
+    if(n.k==='criaSA'&&!n.moving)n.dir='down'; // parado, de cara pro Markin
     // mendigo: chegou perto, pede dinheiro
     if(n.beggar&&!beg&&n.cd<=0&&n.flee<=0&&tregua<=0&&!incog()&&dist(n,P)<14&&P.mode==='free'&&!grab&&!napS&&!chairS&&state==='play')abreConversa(n);
     // ele fica na Lapa chamando o Markinho
