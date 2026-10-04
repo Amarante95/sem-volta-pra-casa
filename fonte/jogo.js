@@ -965,7 +965,7 @@ gameEl.addEventListener('pointerdown',e=>{if(!isTouch||e.target.closest('button,
   if(state==='sinuca'&&mg&&mg.phase==='pick'){const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const minhas=bbMinhasNaMesa(mg);let bi=-1,bd=14;minhas.forEach((b,i)=>{const dd=Math.hypot(b.x-x,b.y-y);if(dd<bd){bd=dd;bi=i;}});if(bi>=0){mg.pickI=bi;mg.pickTap=true;}}}); // na bambina tocar na mesa não faz nada: só os botões
 // Guitarra: tocar (ou clicar) na coluna da nota
 gameEl.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,ln=[0,1,2,3].find(i=>Math.abs(x-gtLaneX(i))<16);
-  if(state==='tempo'&&tempoS){initAudio();if(tempoS.phase==='pergunta'){if(x<W/2)actionQ=true;else tempoDesiste();}else if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
+  if(state==='tempo'&&tempoS){initAudio();if(tempoS.phase==='pergunta'){const y=(e.clientY-r.top)/r.height*H;if(tempoS.t>.6&&y>=122&&y<=164){if(x>=40&&x<=150)actionQ=true;else if(x>=170&&x<=280)tempoDesiste();}}else if(ln!==undefined)tempoPress(ln);e.preventDefault();return;}
   if(state==='labirinto'&&mg){if(mg.phase==='repete'&&ln!==undefined)labPress(ln);else if(mg.phase==='fala')actionQ=true;
     else if(mg.phase==='conversa'&&mg.cv){if(mg.cv.fase==='escolha'){const y=(e.clientY-r.top)/r.height*H,ls=wrapTxt('x',40);const top=118-26+16+11*wrapTxt(mg.cv.g.falas[mg.cv.g.falas.length-1].join(': '),40).length-8;const i=y<top+12?0:1;mg.cv.sel=i;labEscolhe(i);}else actionQ=true;}return;}
   if(state==='virando'){actionQ=true;return;}});
@@ -4021,11 +4021,12 @@ function abreTempo(reason){
   $('hud').hidden=true;$('toast').hidden=true;$('banner').hidden=true;
   state='tempo';tempoS={reason,phase:'pergunta',t:0,notes:[],miss:0,press:[0,0,0,0],fimT:0,chances:3,errou:false};sfx.alert();}
 function updTempo(dt){const s=tempoS;s.t+=dt;for(let i=0;i<4;i++)s.press[i]=Math.max(0,s.press[i]-dt);const act=takeAction();
-  if(s.phase==='pergunta'){if(act&&s.t>.4){const gap=.55*Math.pow(.85,usosTempo); // a cada uso a música fica mais rápida
+  if(s.phase==='pergunta'){if(act&&s.t>.6){const gap=.55*Math.pow(.85,usosTempo); // a cada uso a música fica mais rápida
       s.phase='toca';s.t=0;s.miss=0;s.notes=MUSICA_TEMPO.map((l,i)=>({lane:l,t:1.4+i*gap,hit:false,miss:false}));}return;}
   if(s.phase==='toca'){for(const n of s.notes)if(!n.hit&&!n.miss&&s.t-n.t>.18){n.miss=true;s.miss++;beep(110,.15,'sawtooth',.05,70);}
     const ult=s.notes[s.notes.length-1];if(s.t>ult.t+.5){s.phase='fim';s.fimT=1.8;s.ok=s.miss<=1;if(s.ok)sfx.win();else sfx.lose();}return;}
-  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else if(s.reason==='fim'){s.chances--;if(s.chances>0){s.phase='pergunta';s.t=0;s.errou=true;}else tempoSegue('Desafinou 3 vezes... o tempo seguiu. Faltam 12 horas.');}else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
+  if(s.phase==='fim'){s.fimT-=dt;if(s.fimT<=0){if(s.ok)voltaNoTempo(s.reason);else if(s.reason==='fim'){s.chances--;s.phase='pergunta';s.t=0;s.errou=true; // 3 chances por palheta
+    if(s.chances<=0){palhetas--;s.chances=3;s.errou='palheta';if(palhetas<=0){palhetas=0;tempoSegue('Desafinou e quebrou a última palheta... o tempo seguiu.');}}}else{state='play';$('hud').hidden=false;gameOver(s.reason,true);}}}}
 function tempoPress(ln){const s=tempoS;if(state!=='tempo'||!s||s.phase!=='toca')return;s.press[ln]=.15;
   let best=null,bd=.2;for(const n of s.notes){if(n.hit||n.miss||n.lane!==ln)continue;const d=Math.abs(n.t-s.t);if(d<bd){bd=d;best=n;}}
   if(best){best.hit=true;beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);beep(GT_SCALE[[2,4,5,7][ln]]*2,.15,'square',.012);}
@@ -4079,7 +4080,7 @@ function updRebobina(dt){const s=rebS;s.t+=dt;
     P.energy=Math.min(maxE(),60);P.sono=0;P.moving=false;cv.style.filter='';rebS=null;
     state='play';P.mode='free';$('hud').hidden=false;saidaSegura();tregua=8;flash=.9;shake=.4;sfx.win();
     banner('VOLTOU 2 DIAS',`Dia ${day} · palhetas: ${palhetas}/3`,3);}}
-function renderRebobina(){const g=ctx,s=rebS;if(!s)return;headCv.hidden=true;
+function renderRebobina(){const g=ctx,s=rebS;if(!s)return;
   g.fillStyle='rgba(30,50,130,.22)';g.fillRect(0,0,W,H);
   for(let y=Math.floor(time*60)%3;y<H;y+=3){g.fillStyle='rgba(0,0,0,.16)';g.fillRect(0,y,W,1);} // linhas de TV
   const by=H-((time*150)%(H+30));g.fillStyle='rgba(255,255,255,.14)';g.fillRect(0,by,W,7);g.fillStyle='rgba(255,255,255,.06)';g.fillRect(0,by+9,W,3); // faixa de chiado da fita
@@ -4096,7 +4097,7 @@ function renderTempo(){const g=ctx,s=tempoS;headCv.hidden=true;
   const pal='●'.repeat(palhetas)+'○'.repeat(Math.max(0,3-palhetas));
   if(s.phase==='pergunta'){
     outlineText(g,'O TEMPO DO MARKIN TÁ ACABANDO!',W/2,46,9,'#ff6b5d');
-    outlineText(g,s.errou?`Desafinou! Mais ${s.chances} chance${s.chances>1?'s':''}.`:'Faltam 12 horas pro fim do dia 15.',W/2,60,8,s.errou?'#ffb347':'#f3ecd8');
+    outlineText(g,s.errou==='palheta'?'A palheta quebrou! Palheta nova: mais 3 chances.':s.errou?`Desafinou! Mais ${s.chances} chance${s.chances>1?'s':''}.`:'Faltam 12 horas pro fim do dia 15.',W/2,60,8,s.errou?'#ffb347':'#f3ecd8');
     outlineText(g,'Tocar o sax e voltar 2 dias?',W/2,76,9,'#f3ecd8');
     outlineText(g,'palhetas '+pal+'   chances '+'●'.repeat(s.chances)+'○'.repeat(3-s.chances),W/2,90,8,'#ffe14f');
     outlineText(g,'a música: '+MUSICA_TEMPO.map(l=>TECLA[l]).join(' '),W/2,104,8,'#4fffd2');
