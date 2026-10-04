@@ -779,7 +779,7 @@ function musWant(){
   if(state==='festa')return mus.festaBuf?'festaRec':'funk';
   if(state==='mglost')return null; // perdeu o desafio: silêncio e o jingle de fim
   if(state==='paused')return mus.song;
-  if(state==='cut'&&cutKind==='sax')return nightA()>.4?'noite':'rua'; // cena do sax do Bloco Secreto: ainda não é a hora do Eva
+  if(state==='cut'&&cutKind==='sax')return ['mg_bloco','blocoRec','bloco'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // cena do sax: a música do Bloco Secreto segue sem recomeçar (ainda não é a hora do Eva)
   if(state==='play'&&P.energy<=30)return null; // energia em 30 ou menos: a música para e fica só o coração
   if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // venceu o Jamal: Eva até o barco
   if(state==='play'&&nightA()>.15)return 'noite'; // escureceu: só a música da noite (sem fuga, cogumelo ou sono por cima)
@@ -2750,13 +2750,16 @@ function renderAltinha(){
 const BZ={HOR:64,BOT:172,CX:160,ZK:9,LW:64,HP:44,FAR:72};
 const BUSCOL=[['#f4f4ee','#e2e2da','#8cc63f'],['#f4f4ee','#e2e2da','#8cc63f'],['#f4f4ee','#e2e2da','#8cc63f'],['#f4f4ee','#e2e2da','#f2c230'],['#f4f4ee','#e2e2da','#2d6fd1']];
 const ROTAS=['474','472','455','484','433','410','107'];
+// túneis: a avenida atravessa o morro (largura X, teto H); posições múltiplas de 7 pra casar com os prédios
+const TUN={X:1.6,H:3,HT:4.6},TUNEIS=['TÚNEL REBOUÇAS','TÚNEL SANTA BÁRBARA','TÚNEL NOVO','TÚNEL VELHO','TÚNEL ZUZU ANGEL','TÚNEL MARCELLO ALENCAR'];
+function tunAt(m,w0,w1){return m.tuns.some(u=>w1>u.zw&&w0<u.zw+u.len);}
 function bsz(z){return 1/(1+Math.max(z,-2.4)/BZ.ZK);}
 function bp(xw,h,z){const s=bsz(z);return{x:BZ.CX+xw*BZ.LW*s,y:BZ.HOR+(BZ.BOT-BZ.HOR)*s-h*BZ.HP*s,s};}
 function startBloco(){
   mgEnter('bloco');
   const tipos=['diabinha','anjinha','bebe','fortinho','anjinho','princesa'],people=[];
   for(let i=0;i<17;i++)people.push({x:i*20-4+rnd(-4,4),tipo:tipos[i%tipos.length],skin:pick(['#d29a6c','#b8733f','#8a5a3a','#e0b08a']),hair:pick(['#1e140e','#3a2210','#6b4423','#e8c070']),ph:rnd(0,6)});
-  mg={t:0,dist:0,sp:13,p:0,gap:.8,lane:0,prevLane:0,lx:0,h:0,vh:0,gl:0,objs:[],nextWave:14,msg:'O Bloco Heterotop tá vindo! Pule nos ônibus e ache o Bloco Secreto!',msgT:3.4,done:0,result:null,stumble:0,got:0,people,conf:[],drunkT:1.5,pops:[]};
+  mg={t:0,dist:0,sp:13,p:0,gap:.8,lane:0,prevLane:0,lx:0,h:0,vh:0,gl:0,objs:[],nextWave:14,msg:'O Bloco Heterotop tá vindo! Pule nos ônibus e ache o Bloco Secreto!',msgT:3.4,done:0,result:null,stumble:0,got:0,people,conf:[],drunkT:1.5,pops:[],tuns:[],nextTun:70,dark:0};
   for(let i=0;i<40;i++)mg.conf.push({x:rnd(0,W),y:rnd(0,H),v:rnd(18,40),c:pick(['#ff4fd8','#4fffd2','#ffe14f','#ff8a3d','#ffffff'])});
 }
 const RUN_ITEMS=['beer','beer','beer','beer','shroom','shroom','zip','shades'];
@@ -2767,6 +2770,7 @@ function blocoWave(zw){
     if(i<nb){const len=rnd(8,11),z=zw+rnd(0,5),v=pick([-1,1])*rnd(3,6); // ônibus andando: vindo na tua direção (v<0) ou indo embora (v>0)
       mg.objs.push({k:'bus',lane:L,zw:z,len,h:1,v,col:pick(BUSCOL),rota:pick(ROTAS)});
       if(Math.random()<.35)runItem(L,z+rnd(2,len-1),1.3,v);}
+    else if(i===nb&&nb===1&&Math.random()<.35)mg.objs.push({k:'interd',lane:L,zw:zw+rnd(0,4),len:rnd(6,9),h:2.3,block:true}); // obra: alta demais pra pular, nem de cima do ônibus
     else if(i===nb&&Math.random()<.3){const k=pick(['grade','isopor']);mg.objs.push({k,lane:L,zw:zw+rnd(0,7),len:.7,h:k==='grade'?.5:.62});}
     else if(Math.random()<.38)runItem(L,zw+rnd(0,6),.35);
   });
@@ -2801,6 +2805,12 @@ function updBloco(dt){
   m.dist+=m.sp*dt;m.p=Math.min(1,m.t/45);
   for(const o of m.objs)if(o.v)o.zw+=o.v*dt;
   while(m.nextWave-m.dist<BZ.FAR){blocoWave(m.nextWave);const gp=rnd(22,30);if(Math.random()<.3)runItem(pick([-1,0,1]),m.nextWave+gp*.55,.35);m.nextWave+=gp;}
+  while(m.p<.6&&m.nextTun-m.dist<BZ.FAR+8){const len=7*Math.floor(rnd(3,6));m.tuns.push({zw:m.nextTun,len,nome:pick(TUNEIS)});m.nextTun+=len+7*Math.floor(rnd(10,16));}
+  m.tuns=m.tuns.filter(u=>u.zw+u.len-m.dist>-3);
+  const tn=m.tuns.find(u=>u.zw<=m.dist&&u.zw+u.len>m.dist);
+  if(tn&&!tn.entered){tn.entered=true;if(m.msgT<=0){m.msg=tn.nome+'!';m.msgT=1.3;}}
+  m.dark+=((tn?1:0)-m.dark)*Math.min(1,dt*4);
+  if(!m.avisoInt&&m.objs.some(o=>o.k==='interd'&&o.zw-m.dist<26)){m.avisoInt=true;m.msg='Faixa interditada! Não dá pra pular: troca de faixa!';m.msgT=2.4;}
   // faixas e pulo: só muda de faixa quando o jogador aperta (nada de mudar sozinho)
   const dl=inp.lane;
   m.laneT=(m.laneT||0)+dt;
@@ -2817,9 +2827,11 @@ function updBloco(dt){
   for(const o of m.objs){if(o.dead||o.hit)continue;const z0=o.zw-m.dist,z1=z0+o.len;
     if(Math.abs(m.lx-o.lane)>=.4||z0>.4||z1<-.2)continue;
     if(o.k==='item'){if(Math.abs(m.h-o.h)<.8){o.dead=true;runPickup(o.type);}continue;}
-    if(m.h<o.h-.14){o.hit=true;m.gap-=.25;m.clean=0;m.stumble=.9;sfx.hit();shake=.35;flash=.2;
-      m.msg=o.k==='bus'?'Bateu no ônibus! O Bloco Heterotop chegou perto!':'Tropeçou! O Bloco Heterotop chegou perto!';m.msgT=1.6;
-      if(o.k==='bus'&&z0<-.1&&m.laneT<.35){m.lane=m.prevLane;m.laneT=1;}}
+    if(o.block||m.h<o.h-.14){o.hit=true;m.gap-=.25;m.clean=0;m.stumble=.9;sfx.hit();shake=.35;flash=.2;
+      m.msg=o.k==='bus'?'Bateu no ônibus! O Bloco Heterotop chegou perto!':o.k==='interd'?'Faixa interditada! Tem que trocar de faixa!':'Tropeçou! O Bloco Heterotop chegou perto!';m.msgT=1.6;
+      if(o.k==='bus'&&z0<-.1&&m.laneT<.35){m.lane=m.prevLane;m.laneT=1;}
+      else if(o.k==='interd'){m.gap-=.1;shake=.5; // a obra não deixa passar: joga o Markin pra faixa do lado
+        const nl=z0<-.1&&m.laneT<.35?m.prevLane:(lv=>pick(lv.filter(l=>!m.objs.some(q=>q.k==='interd'&&q.lane===l&&q.zw-m.dist<6&&q.zw+q.len-m.dist>-1)))??pick(lv))([m.lane-1,m.lane+1].filter(l=>l>=-1&&l<=1));m.prevLane=m.lane;m.lane=nl;m.laneT=1;m.h=Math.min(m.h,1.4);}}
   }
   m.objs=m.objs.filter(o=>!o.dead&&o.zw+o.len-m.dist>-3);
   // multidão
@@ -2858,6 +2870,56 @@ function drawBarrier(g,o,z0){
   if(o.k==='grade'){g.fillStyle='#c9ccd4';g.fillRect(a.x,a.y,w,Math.max(1,hh*.12));g.fillRect(a.x,a.y+hh*.5,w,Math.max(1,hh*.1));for(let i=0;i<=8;i++)g.fillRect(a.x+i*w/8-.5,a.y,Math.max(1,w*.02),hh);}
   else{g.fillStyle='#f4f4f4';g.fillRect(a.x+w*.1,a.y+hh*.2,w*.8,hh*.8);g.fillStyle='#2d6fd1';g.fillRect(a.x+w*.08,a.y,w*.84,hh*.24);g.fillStyle='#c2452f';g.fillRect(a.x+w*.3,a.y+hh*.5,w*.4,hh*.18);}
   g.globalAlpha=1;
+}
+// faixa interditada: tapume de obra alto, listrado, com placa e giroflex
+function drawInterd(g,o,z0,z1){
+  const L=o.lane,xl=L-.44,xr=L+.44,h=o.h,zf=Math.max(z0,-2.4),t=performance.now()/1000;if(z1<=zf)return;
+  if(o.hit&&Math.floor(t*12.5)%2)g.globalAlpha=.5;
+  if(L!==0){const xs=L<0?xr:xl;quad(g,[bp(xs,0,zf),bp(xs,0,z1),bp(xs,h,z1),bp(xs,h,zf)],'#f1ede2');
+    for(let wz=Math.floor(z0);wz<z1;wz+=1){const a=Math.max(zf,wz),b=Math.min(z1,wz+.5);if(b>a)quad(g,[bp(xs,0,a),bp(xs,0,b),bp(xs,h,b),bp(xs,h,a)],'#ff7a1a');}
+    quad(g,[bp(xs,h-.12,zf),bp(xs,h-.12,z1),bp(xs,h,z1),bp(xs,h,zf)],'#5a5a60');
+    quad(g,[bp(xs,0,zf),bp(xs,0,z1),bp(xs,.08,z1),bp(xs,.08,zf)],'rgba(0,0,0,.35)');}
+  quad(g,[bp(xl,h,zf),bp(xr,h,zf),bp(xr,h,z1),bp(xl,h,z1)],'#5a5a60');
+  if(z0>-.2){const a=bp(xl,h,z0),b=bp(xr,0,z0),w=b.x-a.x,hh=b.y-a.y;
+    g.fillStyle='#f1ede2';g.fillRect(a.x,a.y,w,hh);
+    g.save();g.beginPath();g.rect(a.x,a.y,w,hh);g.clip();g.fillStyle='#ff7a1a';const st=w/4;
+    for(let k=-4;k<8;k++){g.beginPath();g.moveTo(a.x+k*st,a.y+hh);g.lineTo(a.x+k*st+st*.5,a.y+hh);g.lineTo(a.x+k*st+st*.5+hh*.6,a.y);g.lineTo(a.x+k*st+hh*.6,a.y);g.fill();}g.restore();
+    g.fillStyle='#5a5a60';g.fillRect(a.x,a.y,w,Math.max(1,hh*.05));
+    // placa
+    g.fillStyle='#c8201e';g.fillRect(a.x+w*.08,a.y+hh*.3,w*.84,hh*.22);g.fillStyle='#f4f4ee';g.fillRect(a.x+w*.1,a.y+hh*.31,w*.8,Math.max(1,hh*.012));
+    if(w>16){g.font=`700 ${Math.max(4,Math.round(w*.13))}px monospace`;g.textAlign='center';g.textBaseline='middle';g.fillText('INTERDITADO',a.x+w/2,a.y+hh*.41);g.textBaseline='alphabetic';}
+    // giroflex
+    const on=Math.floor(t*4)%2;for(const [fx2,lig] of [[.12,on],[.88,!on]]){g.fillStyle=lig?'#ffb020':'#7a4a10';g.beginPath();g.arc(a.x+w*fx2,a.y-Math.max(1.5,w*.04),Math.max(1.5,w*.05),0,Math.PI*2);g.fill();
+      if(lig){g.fillStyle='rgba(255,176,32,.25)';g.beginPath();g.arc(a.x+w*fx2,a.y-Math.max(1.5,w*.04),Math.max(4,w*.14),0,Math.PI*2);g.fill();}}
+    // cones na frente
+    if(z0>.2)for(const cx of [-.3,0,.3]){const c=bp(L+cx,0,z0-.25),cw=Math.max(2,7*c.s),ch=Math.max(3,14*c.s);g.fillStyle='#ff6a10';g.beginPath();g.moveTo(c.x-cw/2,c.y);g.lineTo(c.x+cw/2,c.y);g.lineTo(c.x,c.y-ch);g.fill();g.fillStyle='#f4f4ee';g.fillRect(c.x-cw*.28,c.y-ch*.55,cw*.56,Math.max(1,ch*.14));}}
+  g.globalAlpha=1;
+}
+// túnel por dentro: chão escurecido, paredes de azulejo, teto e luminárias
+function drawTunInside(g,m,u){
+  const X=TUN.X,TH=TUN.H,a=u.zw-m.dist,b=a+u.len;if(b<=-2.4||a>=BZ.FAR)return;
+  const zn=Math.max(a,-2.4),zb=Math.min(b,BZ.FAR);
+  quad(g,[bp(-X,0,zn),bp(X,0,zn),bp(X,0,zb),bp(-X,0,zb)],'rgba(12,8,4,.45)');
+  for(const sd of [-1,1]){const x=sd*X;
+    quad(g,[bp(x,0,zn),bp(x,0,zb),bp(x,TH,zb),bp(x,TH,zn)],'#57524a');
+    quad(g,[bp(x,0,zn),bp(x,0,zb),bp(x,.7,zb),bp(x,.7,zn)],'#3d3a35');
+    quad(g,[bp(x,.7,zn),bp(x,.7,zb),bp(x,.78,zb),bp(x,.78,zn)],'#d8b030');
+    for(let w=Math.ceil((m.dist+zn)/3)*3;w-m.dist<zb;w+=3){const z=w-m.dist,z2=Math.min(zb,z+1);quad(g,[bp(x,2.3,z),bp(x,2.3,z2),bp(x,2.45,z2),bp(x,2.45,z)],'#ffd27a');}}
+  quad(g,[bp(-X,TH,zn),bp(X,TH,zn),bp(X,TH,zb),bp(-X,TH,zb)],'#2c2926');
+  for(let w=Math.ceil((m.dist+zn)/3)*3+1.5;w-m.dist<zb;w+=3){const z=w-m.dist,z2=Math.min(zb,z+.8);quad(g,[bp(-.12,TH,z),bp(.12,TH,z),bp(.12,TH,z2),bp(-.12,TH,z2)],'#ffe9a8');}
+  if(a<=-2.4){const p=bp(-X,TH,-2.4),q=bp(X,0,-2.4);g.fillStyle='#2c2926';g.beginPath();g.rect(-10,-10,W+20,H+20);g.rect(p.x,p.y,q.x-p.x,q.y-p.y);g.fill('evenodd');} // já dentro: o resto da tela é túnel
+}
+// boca do túnel: morro verde com casinhas, moldura de concreto e placa com o nome
+function drawPortal(g,u,a){
+  const X=TUN.X,TH=TUN.H,HT=TUN.HT,X2=2.05,P=(x,h)=>bp(x,h,a),hl=P(-X,TH),hr=P(X,0),r=Math.max(2,(hr.x-hl.x)*.12);
+  const hole=(dx,dy)=>{const l=hl.x-dx,t=hl.y-dy,R2=hr.x+dx,B=hr.y;g.moveTo(l,B);g.lineTo(l,t+r);g.quadraticCurveTo(l,t,l+r,t);g.lineTo(R2-r,t);g.quadraticCurveTo(R2,t,R2,t+r);g.lineTo(R2,B);g.closePath();};
+  const p0=P(-X2,0),p1=P(-X2,HT*.8),pt=P(0,HT*1.45),p2=P(X2,HT*.8),p3=P(X2,0);
+  g.fillStyle='#3a7334';g.beginPath();g.moveTo(p0.x,p0.y);g.lineTo(p1.x,p1.y);g.quadraticCurveTo(pt.x,pt.y,p2.x,p2.y);g.lineTo(p3.x,p3.y);g.closePath();hole(0,0);g.fill('evenodd');
+  const s=hl.s;for(let i=0;i<9;i++){const q=P(-1.8+i*.45,HT*(.82+h2(i,u.zw,5)*.25));g.fillStyle=i%2?'#2f6230':'#4f9a45';g.beginPath();g.arc(q.x,q.y,Math.max(1.5,9*s),0,Math.PI*2);g.fill();}
+  for(let i=0;i<5;i++){const q=P(-1.3+i*.65,HT*.9+h2(u.zw,i,6)*.3);R(g,q.x,q.y,Math.max(2,10*s),Math.max(2,8*s),['#e8d8a8','#d86a4a','#f4f1e8','#9fc0e0','#e8a040'][i]);} // casinhas do morro
+  g.fillStyle='#b8b0a0';g.beginPath();hole(10*s,10*s);hole(0,0);g.fill('evenodd');
+  const sg=P(-1.15,TH+.95),sg2=P(1.15,TH+.35);g.fillStyle='#1f5a3a';g.fillRect(sg.x,sg.y,sg2.x-sg.x,sg2.y-sg.y);
+  if(sg2.x-sg.x>26){g.fillStyle='#f4f4ee';g.font=`700 ${Math.max(4,Math.round((sg2.y-sg.y)*.5))}px monospace`;g.textAlign='center';g.textBaseline='middle';g.fillText(u.nome,(sg.x+sg2.x)/2,(sg.y+sg2.y)/2+.5);g.textBaseline='alphabetic';}
 }
 function drawRunItem(g,o,z0){if(z0<-.2)return;const p=bp(o.lane,o.h,z0),sc=Math.max(.4,p.s*1.8);
   g.save();g.translate(p.x,p.y);g.scale(sc,sc);drawItem(g,o.type,0,0,performance.now()/1000);g.restore();}
@@ -2913,6 +2975,8 @@ function renderBloco(){
   // prédios
   const seg=7,off=m.dist%seg;
   for(let k=Math.floor(BZ.FAR/seg);k>=0;k--){const z=k*seg-off,id=Math.floor((m.dist+k*seg)/seg);
+    if(tunAt(m,id*seg,id*seg+seg-.1)){for(const sd of [-1,1]){const x0=sd*2.05;quad(g,[bp(x0,0,z),bp(x0,0,z+seg),bp(x0,TUN.HT,z+seg),bp(x0,TUN.HT,z)],'#3a7334');
+      quad(g,[bp(x0,TUN.HT-.5,z),bp(x0,TUN.HT-.5,z+seg),bp(x0,TUN.HT,z+seg),bp(x0,TUN.HT,z)],'#4f9a45');}continue;}
     for(const sd of [-1,1]){const x0=sd*2.05,hgt=3.4+h2(id,sd,3)*3.2,tipo=Math.floor(h2(id,sd,4)*6),col=['#e0d6c0','#c9b890','#8aa0b8','#b8b1a3','#6a7f96','#d8c8a8'][tipo];
       const p=[bp(x0,0,z),bp(x0,0,z+seg*.92),bp(x0,hgt,z+seg*.92),bp(x0,hgt,z)];quad(g,p,col);
       quad(g,[bp(x0,hgt-.18,z),bp(x0,hgt-.18,z+seg*.92),bp(x0,hgt,z+seg*.92),bp(x0,hgt,z)],'rgba(0,0,0,.18)'); // cornija
@@ -2922,12 +2986,15 @@ function renderBloco(){
   for(const xw of [-.5,.5])for(let z=-(m.dist%4);z<BZ.FAR;z+=4)quad(g,[bp(xw-.02,0,z),bp(xw+.02,0,z),bp(xw+.02,0,z+1.8),bp(xw-.02,0,z+1.8)],'#f4f1e8');
   // árvores nas calçadas (as copas enormes da avenida)
   {const tseg=3.5,toff=m.dist%tseg;for(let k=Math.floor(BZ.FAR/tseg);k>=0;k--){const z=k*tseg-toff;if(z<-1.5)continue;
+    if(tunAt(m,(m.dist+z)-4,(m.dist+z)+1))continue;
     for(const sd of [-1,1]){const tr=bp(sd*1.75,0,z),top=bp(sd*1.75,1.3,z),s=bsz(z);R(g,tr.x-Math.max(1,1.5*s),top.y,Math.max(1,3*s),tr.y-top.y,'#5a3a22');
       const rr=Math.max(3,22*s),id=Math.floor((m.dist+k*tseg)/tseg);g.fillStyle=['#2f6e32','#3a7a36','#2a6230'][id%3];g.beginPath();g.arc(top.x,top.y-rr*.4,rr,0,Math.PI*2);g.fill();
       g.fillStyle='#4f9a45';g.beginPath();g.arc(top.x-rr*.3,top.y-rr*.7,rr*.5,0,Math.PI*2);g.fill();}}}
   // varais de luz
-  for(let z=-(m.dist%12)+6;z<BZ.FAR;z+=12){const a=bp(-1.8,2.6,z),b=bp(1.8,2.6,z);g.strokeStyle='#222';g.lineWidth=Math.max(1,bsz(z));g.beginPath();g.moveTo(a.x,a.y);g.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+10*bsz(z),b.x,b.y);g.stroke();
+  for(let z=-(m.dist%12)+6;z<BZ.FAR;z+=12){if(tunAt(m,m.dist+z-1,m.dist+z+1))continue;const a=bp(-1.8,2.6,z),b=bp(1.8,2.6,z);g.strokeStyle='#222';g.lineWidth=Math.max(1,bsz(z));g.beginPath();g.moveTo(a.x,a.y);g.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+10*bsz(z),b.x,b.y);g.stroke();
     for(let i=1;i<10;i++){const u=i/10,x=a.x+(b.x-a.x)*u,y=a.y+(b.y-a.y)*u+Math.sin(u*Math.PI)*10*bsz(z);g.fillStyle=['#ff4fd8','#4fffd2','#ffe14f','#ff8a3d'][(i+Math.floor(t*4))%4];g.fillRect(x-1,y,Math.max(1,3*bsz(z)),Math.max(1,3*bsz(z)));}}
+  // túneis por dentro (do mais longe pro mais perto); a boca entra na ordem dos objetos
+  for(const u of [...m.tuns].sort((p,q)=>q.zw-p.zw))drawTunInside(g,m,u);
   // o Bloco Secreto só aparece lá na frente quando você chega perto
   if(m.p>.72){
   const zb=Math.max(2,(BZ.FAR-6)*(1-m.p)/.28+2),pb=bp(0,0,zb),s=pb.s;
@@ -2936,8 +3003,8 @@ function renderBloco(){
   }else{ // ainda buscando: só um "?" piscando no horizonte
     if(Math.floor(t*2)%2)outlineText(g,'?',BZ.CX,BZ.HOR+2,12,'#ffe14f');}
   // objetos (do fundo pra frente)
-  const list=m.objs.map(o=>({o,z0:o.zw-m.dist})).filter(q=>q.z0<BZ.FAR&&q.z0+q.o.len>-2.4).sort((a,b)=>(b.z0+(b.o.len||0))-(a.z0+(a.o.len||0)));
-  for(const {o,z0} of list){if(o.k==='bus')drawBus(g,o,z0,z0+o.len);else if(o.k==='item')drawRunItem(g,o,z0);else drawBarrier(g,o,z0);}
+  const list=m.objs.map(o=>({o,z0:o.zw-m.dist})).concat(m.tuns.map(u=>({o:{k:'portal',len:0,u},z0:u.zw-m.dist}))).filter(q=>q.z0<BZ.FAR&&q.z0+q.o.len>-2.4&&(q.o.k!=='portal'||q.z0>-2.4)).sort((a,b)=>(b.z0+(b.o.len||0))-(a.z0+(a.o.len||0)));
+  for(const {o,z0} of list){if(o.k==='bus')drawBus(g,o,z0,z0+o.len);else if(o.k==='interd')drawInterd(g,o,z0,z0+o.len);else if(o.k==='portal')drawPortal(g,o.u,z0);else if(o.k==='item')drawRunItem(g,o,z0);else drawBarrier(g,o,z0);}
   // Markin (de costas)
   const pp=bp(m.lx,m.h,0),sh=bp(m.lx,m.gl,0);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(sh.x,sh.y,11,3,0,0,Math.PI*2);g.fill();
@@ -2950,6 +3017,7 @@ function renderBloco(){
   // faixa do Bloco Heterotop por cima da multidão
   const fy=cy-36;drawFaixa(g,58,fy,204,15,'BLOCO HETEROTOP',t,'#2d6fd1','#ffe14f','#0a1e5a');
   for(const c of m.conf)R(g,c.x,c.y,2,2,c.c);
+  if(m.dark>.01){g.fillStyle=`rgba(40,20,0,${(m.dark*.28).toFixed(2)})`;g.fillRect(0,0,W,H);} // luz alaranjada do túnel
   // HUD: cara + energia do Markin (acaba rápido aqui)
   R(g,4,3,94,34,'rgba(7,11,20,.72)');
   buildFace(faceState(),{});g.imageSmoothingEnabled=false;g.drawImage(fbuf,6,4,26,32);
