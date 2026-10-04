@@ -4048,7 +4048,7 @@ function abreAviso(tipo){state='aviso';keys.clear();actionQ=false;P.moving=false
     el.id='setaE';el.className='setaE setaD';el.innerHTML=SETA_SVG;document.querySelector('.hud-r').appendChild(el); // presa no painel: a seta fica sempre do lado esquerdo dele
   }else{
     const cm=isTouch?[['Analógico','andar'],['Botão de correr','correr'],['A','interagir, cochilar e passar as falas'],['II','pausar']]
-      :[['WASD / setas','andar'],['SHIFT','correr'],['ESPAÇO / E','interagir, cochilar e passar as falas'],['↑ ↓','escolher a resposta'],['R','recusar ligação da mãe'],['P','pausar'],['M','som']];
+      :[['WASD / setas','andar'],['SHIFT','correr'],['ESPAÇO / E','interagir, cochilar e passar as falas'],['R','recusar ligação da mãe']];
     showScreen(`<div class="card aviso"><div class="kicker">como jogar</div><h2>COMANDOS</h2><div class="cmds">${cm.map(([k,t])=>`<div><kbd>${k}</kbd><span>${t}</span></div>`).join('')}</div>${ok}</div>`);}}
 // celular: tocar no painel da direita abre ou fecha a lista de desafios
 document.querySelector('.hud-r').addEventListener('click',()=>{if(!isTouch||!['play','paused','aviso'].includes(state))return;tarefasAbertas=!tarefasAbertas;if($('game').classList.contains('avisoD'))tarefasAbertas=false;updHUD();});
