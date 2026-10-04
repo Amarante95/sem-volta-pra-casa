@@ -4218,19 +4218,19 @@ function startLabirinto(){
   const dist0={},fila=[[1,(Rr-1)*2+1]];dist0[fila[0]]=0;let longe=fila[0];
   while(fila.length){const p=fila.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const q=[p[0]+dx,p[1]+dy];if(grid[q[1]]&&grid[q[1]][q[0]]===false&&dist0[q]===undefined){dist0[q]=dist0[p]+1;fila.push(q);if(dist0[q]>dist0[longe])longe=q;}}}
   mg={t:0,phase:'anda',grid,GW,GH,ox:Math.floor((W-GW*LB.B)/2),oy:Math.floor((H-GH*LB.B)/2)+2,me:{gx:1,gy:(Rr-1)*2+1,x:1,y:(Rr-1)*2+1,dir:'right'},cria:{gx:longe[0],gy:longe[1]},moveCd:0,
-    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Tavin nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0,cv:null,dica:null};
+    falas:null,fi:0,ens:{i:-1,t:0},seq:[],press:[0,0,0,0],msg:'Ache o Tavin nos becos do Santo Amaro!',msgT:3,result:null,done:0,moving:false,anim:0,cv:null};
   const cam=labCaminho(grid,[1,(Rr-1)*2+1],[longe[0],longe[1]]);
   mg.gente=[['trafica',.34],['mulher',.68]].map(([k,f])=>{const p=cam[Math.max(2,Math.floor(cam.length*f))]||cam[2];return{k,gx:p[0],gy:p[1],falou:false};});}
-// gente no meio dos becos: cada um tem uma resposta que ajuda (mostra o caminho) e uma que atrapalha (volta pra entrada)
+// gente no meio dos becos: cada um tem uma resposta que deixa passar e uma que atrapalha (volta pra entrada)
 const LB_GENTE={
   trafica:{nome:'Traficante',look:{skin:'#8a5a3a',hair:'#1e140e',shirt:'#1d1d22',shorts:'#2d6fd1',cap:'#d0202a'},
     falas:[['Markin','Vc viu o Tavin aí, brother?'],['Traficante','Se eu ver eu mato ele, pagou o Lança com nota falsa na boca, irmão, acredita??']],
-    a:[['Nota falsa?! Aí não, né, irmão.','Né não? Vi ele correndo pra lá. Se achar, avisa que o patrão tá esperando.','dica'],
+    a:[['Nota falsa?! Aí não, né, irmão.','Né não? Então passa aí. Se achar ele, avisa que o patrão tá esperando.','passa'],
        ['Pô, pega leve com o moleque...','Pega leve? Tá defendendo caloteiro? VAZA DAQUI!','expulsa']]},
   mulher:{nome:'Mulher do chefe',look:{skin:'#c98c64',hair:'#e8c070',shirt:'#ff4fa0',shorts:'#ff4fa0',skirt:true,long:true,earring:true},
     falas:[['Mulher do chefe','Ih, olha só quem apareceu nos becos... Tu não é daqui, né? Gostei dessa corrente.']],
     a:[['E tu, gata? Sozinha num beco escuro desses?','Sozinha não, meu marido é o dono da boca... MÔ! VEM VER QUEM TÁ ME CANTANDO!','expulsa'],
-       ['Valeu, mas tô na missão: procurando o Tavin.','Respeitador, hein? Gostei. O Tavin passou correndo pra lá, todo assustado.','dica']]}};
+       ['Valeu, mas tô na missão: procurando o Tavin.','Respeitador, hein? Gostei. Pode passar, vai lá.','passa']]}};
 // caminho mais curto entre duas casas do labirinto
 function labCaminho(grid,a,b){const pai={},k=p=>p[0]+','+p[1],fila=[a];pai[k(a)]=null;
   while(fila.length){const p=fila.shift();if(p[0]===b[0]&&p[1]===b[1])break;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const q=[p[0]+dx,p[1]+dy];if(grid[q[1]]&&grid[q[1]][q[0]]===false&&!(k(q) in pai)){pai[k(q)]=p;fila.push(q);}}}
@@ -4248,7 +4248,6 @@ function updLabirinto(dt){
     m.moving=!!(dx||dy);if(m.moving)m.anim+=dt;
     if((dx||dy)&&m.moveCd<=0){if(dx)me.dir=dx>0?'right':'left';else me.dir=dy>0?'down':'up';
       if(!m.grid[me.gy+dy][me.gx+dx]){me.gx+=dx;me.gy+=dy;m.moveCd=.11;}}
-    m.dica&&(m.dica.t-=dt);if(m.dica&&m.dica.t<=0)m.dica=null;
     for(const p of m.gente)if(!p.falou&&Math.abs(me.gx-p.gx)+Math.abs(me.gy-p.gy)<=1){p.falou=true;m.moving=false;m.phase='conversa';m.cv={p,g:LB_GENTE[p.k],fi:0,fase:'falas',sel:0,t0:m.t,lastIy:0};return;}
     if(Math.abs(me.gx-m.cria.gx)+Math.abs(me.gy-m.cria.gy)<=1){m.phase='fala';m.falas=LB_FALAS;m.fi=0;m.falaT=m.t;m.moving=false;sfx.alert();}
     return;}
@@ -4266,7 +4265,7 @@ function updLabirinto(dt){
     if(i>=MUSICA_TEMPO.length+1){m.phase='repete';m.seq=[];m.msg='Agora tu! '+(isTouch?'Toque nas cores':'Teclas 7 8 9 0');m.msgT=99;}return;}}
 function labEscolhe(i){const m=mg,cv=m.cv;if(!cv||cv.fase!=='escolha')return;const [,resp,ef]=cv.g.a[i];cv.fase='resp';cv.resp=resp;cv.ef=ef;cv.t0=m.t;}
 function labEfeito(ef){const m=mg;
-  if(ef==='dica'){m.dica={t:7,path:labCaminho(m.grid,[m.me.gx,m.me.gy],[m.cria.gx,m.cria.gy])};m.msg='Segue os pontinhos!';m.msgT=2.4;sfx.pick();}
+  if(ef==='passa'){m.msg='Liberou a passagem!';m.msgT=2.4;sfx.pick();}
   else if(ef==='expulsa'){const R2=LB.ROWS;m.me.gx=m.me.x=1;m.me.gy=m.me.y=(R2-1)*2+1;flash=.6;shake=.4;sfx.hit();m.msg='Correu de volta pra entrada dos becos!';m.msgT=2.6;}}
 function labPress(ln){const m=mg;if(state!=='labirinto'||!m||m.phase!=='repete'||m.result)return;m.press[ln]=.2;
   beep(GT_SCALE[[2,4,5,7][ln]],.3,'sawtooth',.04);
@@ -4284,7 +4283,6 @@ function renderLabirinto(){
   if(m.phase==='anda'||m.phase==='conversa'){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='#000';dc.fillRect(0,0,W,H);dc.globalCompositeOperation='destination-out'; // breu total: só a luz em volta do Markin
     const lx=m.ox+me.x*B+B/2,ly=m.oy+me.y*B+B/2,gr=dc.createRadialGradient(lx,ly,0,lx,ly,34);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.6,'rgba(0,0,0,.8)');gr.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=gr;dc.fillRect(0,0,W,H);
     dc.globalCompositeOperation='source-over';g.drawImage(dk,0,0);}
-  if(m.dica){g.globalAlpha=Math.min(1,m.dica.t);for(const [x,y] of m.dica.path){const k=Math.sin(t*6-(x+y)*.5)*.5+.5;R(g,m.ox+x*B+B/2-1,m.oy+y*B+B/2-1,2,2,k>.5?'#ffe14f':'#ff9a3d');}g.globalAlpha=1;}
   if(m.phase==='conversa'&&m.cv){const cv=m.cv,linha=cv.fase==='falas'?cv.g.falas[cv.fi]:cv.fase==='resp'?[cv.g.nome,cv.resp]:cv.g.falas[cv.g.falas.length-1];
     const ls=wrapTxt(linha[0]+': '+linha[1],40),hOp=cv.fase==='escolha'?26:0,y0=118-hOp;
     R(g,30,y0,260,14+ls.length*11+hOp,'rgba(10,6,20,.94)');R(g,30,y0,260,1,'#ffe14f');
