@@ -1530,7 +1530,8 @@ function play(dt){
   if(wasTurbo&&fx.turbo<=0){fx.crash=14;toast('Bateu a bad... tudo pesado.','bad');}
   if(wasSpider&&fx.spider<=0)endSpider();
   webCd=Math.max(0,webCd-dt);tregua=Math.max(0,tregua-dt);
-  let decay=DF().e/3; // dia 3x mais longo: a energia gasta o mesmo tanto por diaif(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
+  let decay=DF().e/3*1.5; // dia 3x mais longo (/3); vida cai 1,5x mais rápido
+  if(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
   decay*=1-.04*buddies.filter(b=>!b.crowd).length; // a galera anima: energia cai mais devagar
   if(!chairS)P.energy-=decay*dt;if(P.energy>maxE())P.energy=maxE();
   if(totalMin-histT>=5){histT=totalMin;histP.push({m:totalMin,x:P.x,y:P.y});while(histP.length&&histP[0].m<totalMin-3000)histP.shift();} // rastro pra Música do Tempo
@@ -4064,11 +4065,11 @@ function drawAjudaEnergia(cx,cy){
   const perto=a=>{let b=null,bd=1e9;for(const o of a){const d=dist(o,P);if(d<bd){bd=d;b=o;}}return b;};
   const tri=(x,y,a,col)=>{ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-5,-6);ctx.lineTo(-2,0);ctx.lineTo(-5,6);ctx.closePath();
     ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#0a0612';ctx.lineWidth=1;ctx.stroke();ctx.restore();};
-  const seta=(o,txt,col)=>{if(!o)return;const tx=o.x-cx,ty=o.y-cy-(o.h||18)-6;
+  const seta=(o,col)=>{if(!o)return;const tx=o.x-cx,ty=o.y-cy-(o.h||18)-6;
     if(tx>8&&tx<W-8&&ty>48&&ty<H-8){if(dist(o,P)>20)tri(tx,ty-4+Math.sin(time*8)*2,Math.PI/2,col);return;} // na tela: setinha pulando em cima
     const a=Math.atan2(ty-(P.y-14-cy),tx-(P.x-cx)),ax=clamp(tx,14,W-14),ay=clamp(ty,58,H-14);
-    tri(ax,ay,a,col);outlineText(ctx,txt,clamp(ax-Math.cos(a)*16,16,W-16),clamp(ay-Math.sin(a)*12+2,52,H-4),6,col);};
-  seta(perto(rest),'COCHILO','#8fd0ff');seta(perto(its),'ITEM','#ffe14f');
+    tri(ax,ay,a,col);};
+  seta(perto(rest),'#8fd0ff');seta(perto(its),'#ffe14f');
 }
 const dk=document.createElement('canvas');dk.width=W;dk.height=H;const dc=dk.getContext('2d');
 function lightHole(wx,wy,r,cx,cy){const x=wx-cx,y=wy-cy;if(x<-r||x>W+r||y<-r||y>H+r)return;const g=dc.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.6,'rgba(0,0,0,.7)');g.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=g;dc.fillRect(x-r,y-r,r*2,r*2);}
