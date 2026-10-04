@@ -2297,7 +2297,7 @@ function surfCai(txt){const m=mg;m.phase='caiu';m.tart=[];m.cai=2;m.msg=txt;m.ms
   for(let i=0;i<26;i++)m.splash.push({x:m.mx+rnd(-12,12),y:m.r?m.r.y:120,vx:rnd(-50,50),vy:rnd(-110,-40),t:rnd(.6,1.1)});
   m.r=null;surfFimOnda();}
 function surfFimOnda(){const m=mg;m.total=Math.round(m.total);
-  if(m.total>=SF.META&&m.r&&!m.ganhou){m.ganhou=true;m.msg='NOTA 10! Continua surfando! (cai ou ESC pra sair)';m.msgT=3;sfx.win();return;} // bateu a meta em pé: segue na onda
+  if(m.total>=SF.META&&m.r&&!m.ganhou){m.ganhou=true;m.auto=4.5;m.tartT=Math.min(m.tartT,1);m.tart=m.tart.filter(o=>!(o.x>m.mx-24&&o.x<m.mx+100&&Math.abs(o.y-m.r.y)<40)); /* a que já tá colada mergulha */m.msg='PASSOU DOS '+SF.META+' PONTOS!';m.msgT=4.5;m.fala='NOTA 10, MARKIN!';m.falaT=4.5;sfx.win();return;} // bateu a meta em pé: segue sozinho na onda e sai
   if(m.total>=SF.META&&m.r)return;
   if(m.total>=SF.META){m.result='win';m.done=2.6;m.msg='NOTA 10! PASSOU DOS '+SF.META+' PONTOS!';m.msgT=2.6;sfx.win();return;}
   if(m.onda>=3){m.result='lose';m.done=2.4;m.msg=`Faltou: ${m.total} de ${SF.META} pontos.`;m.msgT=2.4;}}
@@ -2326,6 +2326,7 @@ function updSurf(dt){
     else if(dx<-26)surfCai('Perdeu a onda! Ela passou direto.');
     return;}
   const r=m.r;r.t+=dt;
+  if(m.auto){surfInp();surfAuto(dt);return;}
   // ---- ficando em pé: animação rápida, ele ainda não controla ----
   if(m.phase==='levanta'){m.lev+=dt;r.y+=18*dt;m.cx+=(SF.CURL-r.v)*dt;m.mx+=(SF.MX-m.mx)*Math.min(1,dt*6);if(m.lev>=SF.LEVANTA){m.phase='ride';m.msg='';m.msgT=0;}return;}
   // ---- surfando: as setas (ou o analógico) apontam pra onde a prancha vai; dá pra virar 360° na onda ----
@@ -2410,6 +2411,20 @@ function updSurf(dt){
   if(m.mx>W-12){surfCai('O tubo fechou em cima de você!');return;}
   if(m.total+m.pts>=SF.META&&!r.air){m.total+=m.pts;m.pts=0;surfFimOnda();} // a onda não acaba: vai até cair ou bater a meta
 }
+// depois da nota 10: o Markin segue sozinho, reto na onda, só desviando das tartarugas, e sai do desafio
+function surfAuto(dt){const m=mg,r=m.r;m.auto-=dt;r.air=null;r.tubo=0;r.tuboPts=0;r.giro=0;r.carga=0;r.segurava=false;
+  let alvo=(SF.TOPO+SF.BASE)/2-8; // meio da parede
+  const q=m.tart.filter(o=>o.x>m.mx-24&&o.x<m.mx+150).sort((a,b)=>a.x-b.x)[0]; // tartaruga mais perto na frente
+  if(q&&(Math.abs(q.y-alvo)<36||(q.y-r.y)*(q.y-alvo)<0)){const cima=q.y-38,baixo=q.y+38,okC=cima>=SF.LABIO+14,okB=baixo<=SF.FUNDO-16;alvo=okC&&(!okB||Math.abs(cima-r.y)<Math.abs(baixo-r.y))?cima:baixo;} // passa pelo lado mais perto, sem cruzar o caminho dela
+  alvo=clamp(alvo,SF.LABIO+14,SF.FUNDO-16);
+  const alvoDir=clamp((alvo-r.y)/24,-.8,.8),dd=Math.atan2(Math.sin(r.dir),Math.cos(r.dir));r.dir=dd+(alvoDir-dd)*Math.min(1,dt*6);
+  const cs=Math.cos(r.dir),sn=Math.sin(r.dir);r.face=1;r.ang=Math.atan2(sn,Math.abs(cs));
+  r.v+=(95-r.v)*Math.min(1,dt*2);r.y=clamp(r.y+sn*r.v*dt,SF.LABIO+8,SF.FUNDO-8);r.lean=(r.lean||0)*(1-Math.min(1,dt*6));
+  const hv=r.v*cs;m.cx=clamp(m.cx+(SF.CURL-hv)*dt,-160,W+60);
+  m.tartT-=dt;if(m.tartT<=0){m.tartT=rnd(2.5,4);m.tart.push({x:W+20,y:rnd(SF.TOPO+12,SF.BASE-4),t:rnd(0,6),fala:null,falaT:0,falou:true});}
+  for(const o of m.tart){o.x-=hv*.9*dt;o.t+=dt;o.falaT-=dt;}m.tart=m.tart.filter(o=>o.x>-30&&o.x<W+60);
+  m.mx+=(SF.MX-m.mx)*Math.min(1,dt*3);
+  if(m.auto<=0){m.auto=0;m.total=Math.round(m.total+m.pts);m.pts=0;m.result='win';m.done=0;}}
 function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   R(g,x-14,y,28,3,'#f4f1e8');R(g,x-14,y+1,28,1,'#e84a4a');
   if(nadando){R(g,x-4,y-12,8,10,'#b8733f');R(g,x-6,y-11,2,7,'#b8733f');R(g,x+4,y-11+Math.round(Math.sin(t*6)*2),2,7,'#b8733f');R(g,x-4,y-4,8,4,'#2d8fe8');}
@@ -2586,7 +2601,7 @@ function renderSurf(){
   outlineText(g,`TOTAL ${Math.floor(m.total)}  · onda ${Math.floor(m.pts)}`,8,24,7,'#8be08b','left');
   outlineText(g,`META ${SF.META}`,W-8,12,7,'#fff1c2','right');R(g,W-78,17,70,5,'#0a1e30');R(g,W-78,17,70*clamp((m.total+m.pts)/SF.META,0,1),5,'#ffe14f');
   if(m.wipe>0){g.fillStyle='rgba(255,255,255,'+(m.wipe/.6)+')';g.fillRect(0,0,W,H);}
-  if(m.result==='win')outlineText(g,'NOTA 10!',W/2,92,24,'#ffe14f');
+  if(m.result==='win'||m.auto)outlineText(g,'NOTA 10!',W/2,92,24,'#ffe14f');
 }
 /* ---------- ALTINHA (estilo Head Volley, sem rede) ---------- */
 const AG=150,ALT_G=300;
