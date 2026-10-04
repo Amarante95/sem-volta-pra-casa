@@ -82,6 +82,8 @@ body.mobile .hud-r{pointer-events:auto;cursor:pointer;touch-action:manipulation}
 .dialog{position:absolute;left:4%;right:4%;bottom:4%;background:rgba(10,14,28,.94);border:3px solid var(--paper);padding:.5em .9em .6em;min-height:4.2em;cursor:pointer}
 .dialog b{display:block;font-family:'Pixelify Sans',monospace;color:var(--sodium);font-size:.9em;letter-spacing:.05em}
 .dialog p{margin:.1em 0 0;font-size:1.25em;line-height:1.1}
+.dialog .retrato{position:absolute;right:.4em;bottom:calc(100% + 3px);height:24cqw;width:auto;image-rendering:pixelated;pointer-events:none;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.45))}
+.dialog .retrato[hidden]{display:none}
 .dialog .more{position:absolute;right:.6em;bottom:.3em;animation:blink 1s steps(2) infinite;color:var(--sodium)}
 @keyframes blink{50%{opacity:0}}
 .phone{position:absolute;right:3%;top:24%;width:6.6em;aspect-ratio:9/17;box-sizing:border-box;background:linear-gradient(#35507a,#131c30 55%,#0a0e18);border:.32em solid #0b0b0d;outline:2px solid #7a808c;border-radius:1.2em;padding:1.1em .45em .5em;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.12em;box-shadow:0 .4em 1.2em rgba(0,0,0,.6);animation:vibra .07s linear infinite alternate}
