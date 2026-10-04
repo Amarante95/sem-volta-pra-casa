@@ -223,7 +223,7 @@ function renderBG(){
   bgSemNavio.getContext('2d').drawImage(bg,0,0);
   drawNavio(bgc,10*T,50*T+4);
   // gangplank
-  R(bgc,9*T,52*T+4,T+8,6,'#a8763f');for(let p=0;p<24;p+=4)R(bgc,9*T+p,52*T+4,1,6,'#6d4322');
+  R(bgc,9*T,52*T,T+8,13,'#a8763f');for(let p=0;p<24;p+=4)R(bgc,9*T+p,52*T,1,13,'#6d4322');R(bgc,9*T,52*T,T+8,1,'#6d4322');R(bgc,9*T,52*T+12,T+8,1,'#5a371b');R(bgc,9*T,52*T+13,T+8,2,'rgba(10,30,60,.35)'); // prancha larga: cabe a galera passando
 }
 
 /* ================= SPRITES ================= */
@@ -1285,9 +1285,16 @@ function* winGen(){
   yield* walkTo(P,9*T+4,52*T+10,46);
   yield* walkTo(P,15*T,52*T+10,46);
   // a galera toda embarca atrás dele e se espalha pelo convés
-  {const n=buddies.length,alvo=buddies.map((b,i)=>({x:11*T+((i*37)%(n||1))/(n||1)*13*T+rnd(-4,4),y:52*T+4+(i%3)*4}));let t=0;
-   while(t<2.6){const dt=yield;t+=dt;buddies.forEach((b,i)=>{const a=alvo[i],dx=a.x-b.x,dy=a.y-b.y;if(Math.abs(dx)+Math.abs(dy)>1){moveAxis(b,dx,dy,70*dt);b.moving=true;b.anim+=dt;}else{b.moving=false;b.dir='down';}});}
-   buddies.forEach((b,i)=>{b.x=alvo[i].x;b.y=alvo[i].y;b.moving=false;b.dir='down';});}
+  {const n=buddies.length,fila=[...buddies].sort((a,b)=>dist(a,{x:6*T+8,y:50*T})-dist(b,{x:6*T+8,y:50*T}));
+   // cada um passa pelo píer, atravessa a prancha e só então vai pro seu lugar no convés (nada de andar por cima da água)
+   const rota=fila.map((b,i)=>{const k=i%3-1;return[{x:6*T+8+k*9,y:50*T+4},{x:8*T+10,y:52*T+7+k*3},{x:10*T+6,y:52*T+7+k*3},{x:11*T+((i*37)%(n||1))/(n||1)*13*T+rnd(-4,4),y:52*T+4+(i%3)*4}];});
+   const passo=fila.map(()=>0);let t=0;
+   while(t<9&&passo.some((p,i)=>p<rota[i].length)){const dt=yield;t+=dt;
+     fila.forEach((b,i)=>{if(t<i*.22||passo[i]>=rota[i].length){b.moving=false;if(passo[i]>=rota[i].length)b.dir='down';return;}
+       const a=rota[i][passo[i]],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy),st=72*dt;
+       if(d<=st){b.x=a.x;b.y=a.y;passo[i]++;}else{b.x+=dx/d*st;b.y+=dy/d*st;b.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}
+       b.moving=true;b.anim+=dt;});}
+   fila.forEach((b,i)=>{const a=rota[i][rota[i].length-1];b.x=a.x;b.y=a.y;b.moving=false;b.dir='down';});}
   sfx.horn();bubble({x:21*T,y:49*T},'FOOOOOOM!',1.6,'big',8);shake=.6;
   // todo mundo a bordo: sobe a bandeira
   bubble(P,'SOBE A BANDEIRA!!',1.8,'big',46);
@@ -1509,7 +1516,7 @@ function update(dt){
   else if(state==='rebobina')updRebobina(dt);
   else if(state==='virando')updVirando(dt);
   else if(state==='capitulo')updCapitulo(dt);
-  if(!MG_STATES.includes(state)&&state!=='title')updBuddies(dt);
+  if(!MG_STATES.includes(state)&&state!=='title'&&!(state==='cut'&&cutKind==='win'))updBuddies(dt); // no embarque a galera segue o roteiro da cena, não o Markin
   updTouchUI();coracao(dt);
   cam.x=clamp(P.x-W/2,0,MW*T-W);cam.y=clamp(P.y-10-H/2,0,MH*T-H);
   updBubbles(dt);
@@ -4002,17 +4009,19 @@ function render(){
   if(keysE)for(const k of keysE)if(vis(k))list.push({y:k.y,d:()=>drawKey(ctx,k.x-cx,k.y-cy,time)});
   for(const c of taxis)if(vis(c))list.push({y:c.y+6,d:()=>{drawTaxi(ctx,c,c.x-cx,c.y-cy);if(c.stuck>0)for(let i=0;i<4;i++){ctx.strokeStyle='rgba(240,240,255,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(c.x-cx-10+i*6,c.y-cy-8);ctx.lineTo(c.x-cx-4+i*3,c.y-cy+8);ctx.stroke();}}});
   if(boss&&finalStage===1&&vis(boss,80))list.push({y:boss.y,d:()=>{drawBossBloco(ctx,boss.x-cx,boss.y-cy,time);outlineText(ctx,'BLOCO DO JAMAL',boss.x-cx,boss.y-cy-50,7,'#ffe14f');}});
-  for(const b of buddies)if(vis(b))list.push({y:b.y,d:()=>{drawBuddy(ctx,b.x-cx,b.y-cy,b,{frame:b.moving?Math.floor(b.anim*8)%4:0,t:time,dir:b.dir});
-    if(b.banner&&finalStage<3)drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true});}});
+  for(const b of buddies)if(vis(b)){list.push({y:b.y,d:()=>drawBuddy(ctx,b.x-cx,b.y-cy,b,{frame:b.moving?Math.floor(b.anim*8)%4:0,t:time,dir:b.dir})});
+    if(b.banner&&finalStage<3)list.push({y:Math.abs(b.x+6-P.x)<30&&b.y>P.y-40?Math.min(b.y,P.y-.01):b.y,d:()=>drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true})});} // perto do Markin o estandarte fica atrás dele
   const pf=P.moving?Math.floor(P.anim*8)%4:0,respira=!P.moving&&!chairS&&!napS&&!grab&&Math.sin(time*2.6)>.2;
-  list.push({y:P.y+(chairS?6:0),d:()=>{
+  const drawP=()=>{
     const py=P.y-cy-(P.jumpZ||0);
     if(P.jumpZ&&(P.escalando||P.queda||Math.abs(P.jumpZ-12)>1))R(ctx,P.x-cx-4,P.y-cy-1,8,2,'rgba(0,0,0,.25)'); // sombra no chão só subindo, descendo ou pulando (parado no telhado não)
-    drawMarkin(ctx,P.x-cx,py,{dir:P.escalando?'up':P.dir,frame:P.escalando?Math.floor(time*12)%4:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});}});
+    drawMarkin(ctx,P.x-cx,py,{dir:P.escalando?'up':P.dir,frame:P.escalando?Math.floor(time*12)%4:pf,outfit:P.outfit,helmet:P.helmet,glasses:fx&&fx.disguise>0,burn:fx&&fx.burn>0,sleep:!!chairS||!!napS,tired:P.energy<45,photo:true,phone:!!P.phoneOut||!!call,spider:fx&&fx.spider>0,breath:respira});};
+  list.push({y:P.y+(chairS?6:0),d:drawP});
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
   if(navioDX===0)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy);
   if(finalStage>=3)for(const b of buddies)if(b.banner&&vis(b))drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true}); // a bordo: o estandarte fica na frente do navio
+  if(finalStage>=3&&navioDX===0)drawP(); // ...mas o Markin fica inteiro na frente dele (a cabeça já é uma camada por cima)
   drawBandeira(ctx,cx,cy);drawBotoMar(ctx,cx,cy);
   for(const o of [mom,...(keysE||[])])if(o&&o.tonto>0&&vis(o)){const hx=o.x-cx,hy=o.y-cy-(o===mom?27:20);for(let i=0;i<3;i++){const a=time*5+i*2.1;outlineText(ctx,'★',hx+Math.cos(a)*7,hy+Math.sin(a)*2.5,6,['#ffe14f','#ffffff','#ff8fc2'][i]);}}
   for(const o of [mom,...keysE,...tias,...taxis,...npcs])if(o&&o.webUntil>time&&vis(o))drawWebWrap(ctx,o.x-cx,o.y-cy,o.h||20);
