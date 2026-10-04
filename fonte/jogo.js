@@ -405,6 +405,16 @@ function drawLamp(c,x,y){x=Math.round(x);y=Math.round(y);R(c,x,y-16,1,16,'#4a4f5
 function drawPhoneIcon(c,x,y){R(c,x-4,y-7,8,14,'#1d1d22');R(c,x-3,y-6,6,10,'#ff8fc2');R(c,x-1,y+5,2,1,'#888');}
 function drawHouseIcon(c,x,y,col='#c2452f'){c.fillStyle=col;c.beginPath();c.moveTo(x-5,y-1);c.lineTo(x,y-6);c.lineTo(x+5,y-1);c.fill();R(c,x-4,y-1,8,6,'#f0e3c4');R(c,x-1,y+1,2,4,'#7a4a24');}
 function drawShipIcon(c,x,y){R(c,x-6,y,12,3,'#8e2b2b');R(c,x-5,y+3,10,1,'#6a1f1f');R(c,x-5,y-1,10,1,'#f4f1e8');R(c,x+1,y-5,4,4,'#f4f1e8');R(c,x+2,y-7,2,2,'#c2452f');R(c,x-4,y-3,4,2,'#2d6fd1');}
+/* cabeça do Liu: dreads, óculos de armação branca, sorrisão e cavanhaque (15x17, menor que a do Markin); de costas, só os dreads e a nuca */
+const LIU_PAL={H:'#24160d',h:'#6b4a2e',S:'#c08250',s:'#9a6238',l:'#dca070',W:'#f4f4f0',K:'#101012',g:'#4a5866',M:'#5a2420',T:'#f6eed6',B:'#1e140e'};
+const LIU_FRENTE=['...h.H.h.H.h...','..HhHHhHHhHHh..','.HHhHHHhHHHhHH.','HhHHhHHHhHHhHHh','HHhHlSSSSSlhHHH','hHSSSSSSSSSSSHh',
+  'HSWWWWWWWWWWWSH','hWKKKgKWKKKgKWh','HSKKKKSsSKKKKSH','HSSSSSssSSSSSSH','.lSSSssssSSSSl.','.sSMMTTTTTMMSs.','..sSSSlllSSSs..','..sSBBBBBBBSs..','...ssBBBBBss...','.....sSSSs.....'];
+const LIU_COSTAS=['...h.H.h.H.h...','..HhHHhHHhHHh..','.HHhHHHhHHHhHH.','HhHHhHHHhHHhHHh','HHhHHhHHHhHHhHH','hHHhHHhHHhHHhHh',
+  'WHhHHhHHhHHhHHW','HhHHhHHHhHHhHHh','HHhHHhHHHhHHhHH','hHHhHHhHHhHHhHh','HhHhHHhHHhHHhHH','.HhHsSSSSSsHhH.','.H.hsSSSSSsh.H.','...ssSSSSSss...','.....sSSSs.....'];
+function drawLiuHead(c,x,y,dir){
+  const grid=dir==='up'?LIU_COSTAS:LIU_FRENTE,y0=y-12-grid.length;
+  for(let r=0;r<grid.length;r++)for(let k=0;k<15;k++){const ch=grid[r][k];if(ch!=='.')R(c,x-7+k,y0+r,1,1,LIU_PAL[ch]);}
+}
 /* amigos que seguem o Markin (um por desafio vencido) */
 function drawBuddy(c,x,y,b,o={}){
   x=Math.round(x);y=Math.round(y);const f=o.frame||0,t=o.t||0,dir=o.dir||'down';
@@ -416,14 +426,15 @@ function drawBuddy(c,x,y,b,o={}){
   R(c,x-4,y-13,8,6,b.shirt||b.skin);if(b.belly)R(c,x-4,y-10,8,3,b.shirt);if(b.belly)R(c,x-5,y-11,10,3,b.shirt);
   if(!b.shirt){R(c,x-2,y-12,1,1,'#9a6040');R(c,x+1,y-12,1,1,'#9a6040');}
   {const s1=f===1?-1:f===3?1:0;R(c,x-5,y-13+s1,1,5,b.skin);R(c,x+4,y-13-s1,1,5,b.skin);} // braços balançam
-  R(c,x-4,y-20,8,7,b.skin);R(c,x-4,y-21,8,2,b.hair);R(c,x-3,y-22,6,1,b.hair);
+  if(b.cabeca==='liu')drawLiuHead(c,x,y,dir);
+  else{R(c,x-4,y-20,8,7,b.skin);R(c,x-4,y-21,8,2,b.hair);R(c,x-3,y-22,6,1,b.hair);
   if(b.long){R(c,x-5,y-20,2,10,b.hair);R(c,x+3,y-20,2,10,b.hair);}
   if(b.cap){R(c,x-4,y-22,8,3,b.cap);R(c,x-6,y-20,4,1,b.cap);}
   if(dir==='up'){R(c,x-4,y-20,8,6,b.long?b.hair:b.hair);}
   else{R(c,x-2,y-17,1,1,'#1a1a1a');R(c,x+1,y-17,1,1,'#1a1a1a');R(c,x-1,y-15,2,1,'#8a3a32');
     if(b.shades){R(c,x-3,y-17,6,1,'#111');R(c,x-3,y-17,2,2,'#111');R(c,x+1,y-17,2,2,'#111');}
     if(b.beard){R(c,x-3,y-15,6,2,b.beard);}
-    if(b.earring){R(c,x-5,y-16,1,2,'#e3b341');R(c,x+4,y-16,1,2,'#e3b341');}}
+    if(b.earring){R(c,x-5,y-16,1,2,'#e3b341');R(c,x+4,y-16,1,2,'#e3b341');}}}
   // o que cada um carrega
   if(b.prop==='ball'){const by=y-24-Math.abs(Math.sin(t*5))*6;R(c,x+5,by,3,3,'#f4f1e8');R(c,x+6,by,1,1,'#2d6fd1');}
   else if(b.prop==='beer'){R(c,x+5,y-14,2,5,'#8a4b12');R(c,x+5,y-15,2,1,'#d9d9d9');R(c,x+5,y-12,2,1,'#f2e6c8');}
@@ -440,12 +451,13 @@ function drawBuddySide(c,x,y,b,f,t,dir){
   if(b.skirt)R(c,x-4,y-8,8,4,b.shorts);else R(c,x-3,y-8,6,4,b.shorts);
   R(c,x-3,y-13,6,6,b.shirt||b.skin);if(b.belly)R(c,x-4+(fw>0?1:0),y-11,7,3,b.shirt||b.skin);
   const sw=f===1?fw*2:f===3?-fw*2:0;R(c,x-1+sw,y-13,2,5,b.skin);
-  R(c,x-3,y-20,7,7,b.skin);R(c,x-3,y-21,7,2,b.hair);R(c,x-2,y-22,5,1,b.hair);R(c,fw>0?x-3:x+2,y-20,2,4,b.hair);
+  if(b.cabeca==='liu')drawLiuHead(c,x,y,dir);
+  else{R(c,x-3,y-20,7,7,b.skin);R(c,x-3,y-21,7,2,b.hair);R(c,x-2,y-22,5,1,b.hair);R(c,fw>0?x-3:x+2,y-20,2,4,b.hair);
   if(b.long)R(c,fw>0?x-4:x+2,y-20,3,10,b.hair);
   if(b.cap){R(c,x-3,y-22,7,3,b.cap);R(c,fw>0?x+3:x-6,y-20,4,1,b.cap);}
   R(c,x+fw*2-(fw>0?0:1),y-17,1,1,'#1a1a1a');R(c,x+fw*2-(fw>0?1:0),y-15,2,1,'#8a3a32');
   if(b.shades)R(c,x+fw*1-(fw>0?0:2),y-17,4,1,'#111');
-  if(b.beard)R(c,x-2+(fw>0?1:0),y-15,5,2,b.beard);
+  if(b.beard)R(c,x-2+(fw>0?1:0),y-15,5,2,b.beard);}
   if(b.prop==='ball'){const by=y-24-Math.abs(Math.sin(t*5))*6;R(c,x+fw*5,by,3,3,'#f4f1e8');}
   else if(b.prop==='beer'){R(c,x+fw*4,y-14,2,5,'#8a4b12');R(c,x+fw*4,y-15,2,1,'#d9d9d9');}
   else if(b.prop==='taco'){for(let i=0;i<14;i++)R(c,x+fw*(4+Math.floor(i*.35)),y-4-i,1,1,i<10?'#c9a060':'#f4f1e8');}
@@ -1815,7 +1827,7 @@ const BUDDY_DEFS={
     lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Mamãe eu quero!']},
   bar:{nome:'Seu Zé',skin:'#c98c64',hair:'#9a9a9a',shirt:'#f4f1e8',shorts:'#2d6fd1',prop:'beer',belly:true,beard:'#bdbdbd',oi:'Seis brejas e de pé? Tu é dos meus!',
     lines:['Mais uma, garçom!','No meu tempo a gente virava 3 dias.','Saideira? Nunca.','Cerveja é hidratação.']},
-  sinuca:{nome:'Liu',skin:'#8a5a3a',hair:'#1e140e',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',shades:true,cap:'#1d1d22',oi:'Me ganhou na bambina... respeito. Tô contigo.',
+  sinuca:{nome:'Liu',skin:'#c08250',hair:'#24160d',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',cabeca:'liu',oi:'Me ganhou na bambina... respeito. Tô contigo.',
     lines:['Vermelha no canto, parceiro.','Taco é extensão do braço.','Ninguém me ganha... quase ninguém.','Fica frio, eu cuido da retaguarda.']},
   festa:{nome:'Gatinha',skin:'#e8b894',hair:'#b58cff',shirt:'#141018',shorts:'#141018',skirt:true,long:true,earring:true,oi:'Eu disse que não era pra sumir. Bora junto!',
     lines:['Tu me deve um nascer do sol.','Que rolê, hein?','Tua mãe liga muito, né?','Vai ter bloco? Eu vou!']}
