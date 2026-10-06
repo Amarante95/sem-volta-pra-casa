@@ -170,8 +170,8 @@ body.mobile .game button.fopt:focus,body.mobile .game button.fopt:focus-visible{
 #btnL::before,#btnR::before{content:'';position:absolute;left:50%;top:50%;width:0;height:0;border-top:.55em solid transparent;border-bottom:.55em solid transparent}
 #btnL::before{border-right:.75em solid #241100;transform:translate(-62%,-50%)}
 #btnR::before{border-left:.75em solid #241100;transform:translate(-38%,-50%)}
-.touch[data-mode=altinha] #btnA,.touch[data-mode=maraca] #btnA{width:10%;right:20%;bottom:5%;font-size:.9em!important}
-.touch[data-mode=altinha] #btnB,.touch[data-mode=maraca] #btnB{width:15%;right:3%;bottom:7%;font-size:1.2em!important}
+.touch[data-mode=altinha] #btnA,.touch[data-mode=futevolei] #btnA,.touch[data-mode=maraca] #btnA{width:10%;right:20%;bottom:5%;font-size:.9em!important}
+.touch[data-mode=altinha] #btnB,.touch[data-mode=futevolei] #btnB,.touch[data-mode=maraca] #btnB{width:15%;right:3%;bottom:7%;font-size:1.2em!important}
 /* camadas: o que precisa de toque fica por cima dos controles */
 .touch{z-index:2}
 .phone,.nap,.dialog,.festa,.beg{z-index:4}
