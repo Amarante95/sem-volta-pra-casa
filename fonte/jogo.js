@@ -419,6 +419,26 @@ const CABECAS={
     costas:['...cC.cCc.Cc...','.cCCcCCcCCcCCc.','cCCcCcCCcCcCCcC','CcCCcCcCCcCCcCc','cCcCCcCcCCcCcCC','CcCcCCcCCcCCcCc',
       'cCCcCcCCcCcCCcC','CcCCcCcCCcCCcCc','cCcCCcCcCCcCcCC','CcCcCCcCCcCCcCc','cCCcCcCCcCcCCcC','.CcCcCCcCCcCcC.','..cCsSSSSSsCc..','...sSSSSSSSs...','.....sSSSs.....']}
 };
+Object.assign(CABECAS,{
+  // Gustavinho: boné preto pra trás, cachinhos, brinco, bigode e cavanhaque
+  gustavinho:{pal:{K:'#141416',k:'#3a3a40',C:'#2a1a10',c:'#5a3a24',S:'#a8683e',s:'#84502c',E:'#1a0e08',B:'#1e140e',T:'#f6eed6',M:'#5a2420',W:'#e8eef4'},
+    frente:['....kKKKKKk....','..KKKKKKKKKKK..','.KKKKKKKKKKKKK.','KKKKKKKKKKKKKKK','KCCcCCcCCcCCcCK','.CSSSSSSSSSSSC.','.SSEESSSSSEESS.',
+      'WSSSSSSsSSSSSSs','.SSSSSssSSSSSS.','.sSBBBBBBBBSSs.','.sSMTTTTTTMSSs.','..sSBSSSSBSSs..','..sBBBBBBBBs...','...sBBBBBBs....','.....sSSSs.....'],
+    costas:['....kKKKKKk....','..KKKKKKKKKKK..','.KKKKKKKKKKKKK.','KKKKKkkkkkKKKKK','KKKKkKKKKKkKKKK','KKKKkCCcCCkKKKK','.KKKKkkkkkKKKK.',
+      'sCCcCCcCCcCCcCs','.CcCCcCCcCCcCC.','.CCcCCcCCcCCcC.','..sSSSSSSSSSs..','...sSSSSSSSs...','.....sSSSs.....']},
+  // Rebecca: cabelão preto liso repartido no meio, brinco dourado, gargantilha e batom
+  rebecca:{pal:{H:'#17121a',h:'#3a3040',S:'#c98a62',s:'#a86e4a',E:'#1a1010',G:'#e3b341',L:'#9a2a3a',T:'#f6eed6',K:'#111111'},
+    frente:['....HHHhHHH....','..HHHHHhHHHHH..','.HHHHHHhHHHHHH.','.HHHHSShSSHHHH.','HHHSSSSSSSSSHHH','HHSSSSSSSSSSSHH','HHSEESSSSSEESHH',
+      'HHSSSSSsSSSSSHH','HGSSSSssSSSSSGH','HGSSSLTTTLSSSGH','HHsSSSLLLSSSsHH','HH.sSSSSSSSs.HH','HH..sSSSSSs..HH','HH...KKKKK...HH','HH...sSSSs...HH','hH....sSs....Hh'],
+    costas:['....HHHhHHH....','..HHHHHhHHHHH..','.HHHHHHhHHHHHH.','HHHHHHHhHHHHHHH','HHHhHHHHHHHhHHH','HHHHHHhHHHHHHHH','HHhHHHHHHhHHHHH',
+      'HHHHHHHHhHHHHHH','HHHHhHHHHHHHhHH','HHHHHHHhHHHHHHH','HhHHHHHHHHhHHHH','HHHHHhHHHHHHHHH','HHHHHHHHhHHHHHH','HHhHHHHHHHHHhHH','HHHHHHhHHHHHHHH','hHHHHHHHHHHHHHh']},
+  // Tavin: cabelo raspado, sobrancelha marcada e biquinho
+  tavin:{pal:{H:'#1e1612',h:'#4a3a2e',S:'#c08458',s:'#9a643c',l:'#d8a070',E:'#1a0e08',b:'#2a1a10',L:'#c86a6a'},
+    frente:['.....hHHHh.....','...hHHHHHHHh...','..hHHHHHHHHHh..','..HhSSSSSSShH..','.sSSSSSSSSSSSs.','.SSbbSSSSSbbSS.','sSSEESSSSSEESSs',
+      'lSSSSSSsSSSSSSl','.SSSSSssSSSSSS.','.sSSSSSSSSSSSs.','..sSSSLLLSSSs..','..sSSSSSSSSSs..','...ssSSSSSss...','.....sSSSs.....'],
+    costas:['.....hHHHh.....','...hHHHHHHHh...','..hHHHhHHhHHh..','..HHhHHHHHhHH..','.sHHHHhHHHHHHs.','.SHhHHHHHhHHHS.','sSHHHHhHHHHHHSs',
+      'lSHHhHHHHHhHHSl','.SsHHHHHHHHHsS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','...ssSSSSSss...','.....sSSSs.....']}
+});
 function drawCabeca(c,x,y,dir,k){
   const h=CABECAS[k],grid=dir==='up'?h.costas:h.frente,y0=y-12-grid.length;
   for(let r=0;r<grid.length;r++)for(let i=0;i<15;i++){const ch=grid[r][i];if(ch!=='.')R(c,x-7+i,y0+r,1,1,h.pal[ch]);}
@@ -431,7 +451,7 @@ function drawBuddy(c,x,y,b,o={}){
   if(dir==='left'||dir==='right'){drawBuddySide(c,x,y,b,f,t,dir);return;}
   R(c,x-3,y-5,2,4-l1,b.skin);R(c,x+1,y-5,2,4-l2,b.skin);R(c,x-3,y-1-l1,3,1,b.shoe||'#f4f1e8');R(c,x+1,y-1-l2,3,1,b.shoe||'#f4f1e8');
   if(b.skirt){R(c,x-5,y-8,10,4,b.shorts);}else R(c,x-4,y-8,8,4,b.shorts);
-  R(c,x-4,y-13,8,6,b.shirt||b.skin);if(b.belly)R(c,x-4,y-10,8,3,b.shirt);if(b.belly)R(c,x-5,y-11,10,3,b.shirt);
+  R(c,x-4,y-13,8,6,b.shirt||b.skin);if(b.listra)for(const yy of [y-12,y-10,y-8])R(c,x-4,yy,8,1,b.listra);if(b.belly)R(c,x-4,y-10,8,3,b.shirt);if(b.belly)R(c,x-5,y-11,10,3,b.shirt);
   if(!b.shirt){R(c,x-2,y-12,1,1,'#9a6040');R(c,x+1,y-12,1,1,'#9a6040');}
   {const s1=f===1?-1:f===3?1:0;R(c,x-5,y-13+s1,1,5,b.skin);R(c,x+4,y-13-s1,1,5,b.skin);} // braços balançam
   if(b.cabeca)drawCabeca(c,x,y,dir,b.cabeca);
@@ -457,7 +477,7 @@ function drawBuddySide(c,x,y,b,f,t,dir){
   const fw=dir==='right'?1:-1,st=f===1?1:f===3?-1:0,fx0=x-1+fw*2*st,bx0=x-1-fw*2*st,sh=b.shoe||'#f4f1e8';
   R(c,bx0,y-5,2,4,b.skin);R(c,fx0,y-5,2,4,b.skin);R(c,bx0-(fw<0?1:0),y-1,3,1,sh);R(c,fx0-(fw<0?1:0),y-1,3,1,sh);
   if(b.skirt)R(c,x-4,y-8,8,4,b.shorts);else R(c,x-3,y-8,6,4,b.shorts);
-  R(c,x-3,y-13,6,6,b.shirt||b.skin);if(b.belly)R(c,x-4+(fw>0?1:0),y-11,7,3,b.shirt||b.skin);
+  R(c,x-3,y-13,6,6,b.shirt||b.skin);if(b.listra)for(const yy of [y-12,y-10,y-8])R(c,x-3,yy,6,1,b.listra);if(b.belly)R(c,x-4+(fw>0?1:0),y-11,7,3,b.shirt||b.skin);
   const sw=f===1?fw*2:f===3?-fw*2:0;R(c,x-1+sw,y-13,2,5,b.skin);
   if(b.cabeca)drawCabeca(c,x,y,dir,b.cabeca);
   else{R(c,x-3,y-20,7,7,b.skin);R(c,x-3,y-21,7,2,b.hair);R(c,x-2,y-22,5,1,b.hair);R(c,fw>0?x-3:x+2,y-20,2,4,b.hair);
@@ -1115,7 +1135,7 @@ const cam={x:0,y:0};let shake=0,flash=0;
 const P={x:0,y:0,h:44,dir:'down',anim:0,frame:0,outfit:'work',energy:100,sono:0,mode:'free',helmet:true,hidden:false,jumpZ:0};
 let fx,totalMin,day,lastDay,items,keysE,mom,tias,particles,fakeT,nextCall,call,napS,chairS,spawnT,idleT,lowLineT,playerField,pfTile,burnWarned,fieldT,shroomTalkT;
 // amigos que seguem o Markin, rastro dele pelo mapa, chefão e fase final (0 tarefas · 1 chefão rodando · 2 bloco indo pro barco · 3 embarcou)
-let buddies=[],trail=[],buddyT=12,boss=null,finalStage=0,webCd=0,gatHair='#b58cff';
+let buddies=[],trail=[],buddyT=12,boss=null,finalStage=0,webCd=0,gatHair='#17121a';
 const DOCKP={x:6*T+8,y:45*T+8};
 const busStops=[],chairs=[],lamps=[],palms=[],kiosks=[];
 let walkTiles=[],spawnSets={};
@@ -1360,7 +1380,7 @@ function continuarJogo(){
   const sv=salvo;if(!sv){resetGame();startPlay();return;}
   resetGame();startPlay();clearBubbles();
   avisoEnergia=true;avisoCmd=true;
-  totalMin=sv.totalMin;day=Math.min(15,Math.floor(totalMin/1440)+1);lastDay=day;gatHair=sv.gatHair;sabeMusica=!!sv.sabeMusica;palhetas=sv.palhetas??3;usosTempo=sv.usosTempo||0;
+  totalMin=sv.totalMin;day=Math.min(15,Math.floor(totalMin/1440)+1);lastDay=day;sabeMusica=!!sv.sabeMusica;palhetas=sv.palhetas??3;usosTempo=sv.usosTempo||0;
   for(const t of TASKS)if(sv.tasks[t.k]){tasksDone[t.k]=true;addBuddy(t.k);}
   const todas=TASKS.every(t=>tasksDone[t.k]);
   if(todas&&sv.finalStage>=2){finalStage=1;for(let i=0;i<8;i++)addCrowd();startMarch();mom.x=70*T;mom.y=10*T;}
@@ -1612,7 +1632,7 @@ function play(dt){
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
-    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){startFesta();return;}if(near.k==='maraca'){startMaraca();return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
+    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){preDesafio('festa',startFesta);return;}if(near.k==='maraca'){preDesafio('maraca',startMaraca);return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
@@ -1816,7 +1836,7 @@ const TASKS=[
   {k:'bloco',curto:'Bloco',nome:'Achar o Bloco Secreto',onde:()=>bloco,lugar:'na Lapa, embaixo dos Arcos'},
   {k:'bar',curto:'Bar',nome:'Beber 6 cervejas',onde:()=>barDoors.find(b=>b.kind==='cabeca'),lugar:'no bar de placa amarela'},
   {k:'sinuca',curto:'Bambina',nome:'Ganhar na bambina',onde:()=>barDoors.find(b=>b.kind==='sinuca'),lugar:'no bar de placa verde'},
-  {k:'festa',curto:'Circo Voador',nome:'Conquistar a gatinha',onde:()=>FESTA,lugar:'no Circo Voador, na Lapa'},
+  {k:'festa',curto:'Circo Voador',nome:'Conquistar a Rebecca',onde:()=>FESTA,lugar:'no Circo Voador, na Lapa'},
   {k:'maraca',curto:'Maracanã',nome:'Fazer gol no Maracanã',onde:()=>MARACA,lugar:'no estádio ao lado da favela'},
   {k:'surf',curto:'Surf',nome:'Surfar 2500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'}
 ];
@@ -1828,7 +1848,7 @@ function markTask(k){if(tasksDone[k])return;tasksDone[k]=true;ultDesafio=totalMi
     if(n>=NT)spawnBoss();},60);}
 /* ---------- A GALERA: cada desafio vencido traz um amigo que segue o Markin ---------- */
 const BUDDY_DEFS={
-  maraca:{nome:'Torcedor',skin:'#c98c64',hair:'#1e140e',shirt:'#f2d230',shorts:'#2d6fd1',prop:'ball',oi:'Tu invadiu o Maracanã e fez gol?! Tô contigo!',
+  maraca:{nome:'Gustavinho',skin:'#a8683e',hair:'#2a1a10',shirt:'#d8202a',listra:'#141414',shorts:'#2d6fd1',prop:'ball',cabeca:'gustavinho',oi:'Tu invadiu o Maracanã e fez gol?! Tô contigo!',
     lines:['Olê, olê, olê, olá!','Aqui é Maracanã!','Tu é o camisa 10!','Bora pra geral!']},
   altinha:{nome:'Amarante',skin:'#d08a58',hair:'#2a1c14',shirt:null,shorts:'#d8332f',prop:'ball',cabeca:'amarante',oi:'Tu é craque na altinha! Vou contigo!',
     lines:['Bora uma altinha depois?','Tô contigo, parceiro!','Areia quente, pé no chão.','Esse rolê não acaba nunca!']},
@@ -1838,7 +1858,7 @@ const BUDDY_DEFS={
     lines:['Mais uma, garçom!','No meu tempo a gente virava 3 dias.','Saideira? Nunca.','Cerveja é hidratação.']},
   sinuca:{nome:'Liu',skin:'#c08250',hair:'#24160d',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',cabeca:'liu',oi:'Me ganhou na bambina... respeito. Tô contigo.',
     lines:['Vermelha no canto, parceiro.','Taco é extensão do braço.','Ninguém me ganha... quase ninguém.','Fica frio, eu cuido da retaguarda.']},
-  festa:{nome:'Gatinha',skin:'#e8b894',hair:'#b58cff',shirt:'#141018',shorts:'#141018',skirt:true,long:true,earring:true,oi:'Eu disse que não era pra sumir. Bora junto!',
+  festa:{nome:'Rebecca',skin:'#c98a62',hair:'#17121a',cabeca:'rebecca',shirt:'#141018',shorts:'#141018',skirt:true,long:true,earring:true,oi:'Eu disse que não era pra sumir. Bora junto!',
     lines:['Tu me deve um nascer do sol.','Que rolê, hein?','Tua mãe liga muito, né?','Vai ter bloco? Eu vou!']}
 };
 const BUDDY_WARN=['Corre, Markin! Tua mãe!','A MÃE! A MÃE TÁ VINDO!','Disfarça que tua mãe tá aí!','Vaza, vaza, vaza!'];
@@ -1924,7 +1944,7 @@ function mgEnter(kind){
   cv.style.filter='';cv.style.transform='';$('vig').style.opacity='0';$('psy').style.opacity='0';headCv.hidden=true;$('dragao').hidden=true;$('dragao').classList.remove('voa');$('toast').hidden=true;$('banner').hidden=true;
   actionQ=false;jumpQ=false;laneQ=0;
 }
-function mgExit(msg,cls,dE,minutes){
+function mgExit(msg,cls,dE,minutes){dlgRetrato=null;hideDialog();
   hideDialog();state='play';mg=null;$('hud').hidden=false;$('festa').hidden=true;if(isTouch)$('touch').hidden=false;cv.style.filter='';
   P.energy=Math.min(maxE(),mgE);if(dE>0)gain(dE); // volta com a energia de quando entrou (+ o prêmio, se ganhou)
   saidaSegura();
@@ -1935,7 +1955,7 @@ function mgQuit(){if(!mg)return;const k=state;
   mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
 const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
-function mgLost(msg){
+function mgLost(msg){dlgRetrato=null;hideDialog();
   hideDialog();mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';if(performance.now()-ultimaDerrota>5000)sfx.lose(); // só toca se o desafio ainda não tocou
   showScreen(`<div class="card"><div class="kicker">não foi dessa vez</div><h2 class="lose">PERDEU</h2><p>${msg}</p><p class="stats">Tempo e energia continuam iguais a quando você entrou.</p><div class="btns"><button data-act="mgRetry" type="button">TENTAR DE NOVO</button><button data-act="mgSair" class="ghost" type="button">Sair</button></div></div>`);
 }
@@ -3430,7 +3450,7 @@ function drawTaxi(g,c,x,y){
     R(g,x-4,y+(c.dir[1]>0?h/2-1:-h/2),2,1,'#fff7c2');R(g,x+2,y+(c.dir[1]>0?h/2-1:-h/2),2,1,'#fff7c2');}
   if(c.chase&&Math.floor(performance.now()/200)%2)R(g,x-1,y-h/2-3,2,2,'#ff6b5d');
 }
-/* ---------- FESTA ALTERNATIVA NO CENTRO: conquistar a gatinha em 5 rodadas ---------- */
+/* ---------- FESTA ALTERNATIVA NO CENTRO: conquistar a Rebecca em 5 rodadas ---------- */
 const FESTA={x:75*T+8,y:7*T+12,h:34}; // porta do Circo Voador, na Lapa
 let festaDay=0;
 // ok = resposta certa · fz = friendzone · esp = espanta
@@ -3488,7 +3508,7 @@ const FESTA_SETS=[
    fz:'Agora cada um pra sua casa, né? Me avisa quando chegar!',
    esp:'Agora tu vem comigo conhecer minha mãe.',
    r:'Podrão e nascer do sol? Fechou.'}]},
- {hair:'#ff7eb6',root:'#9a3a6a',win:'Salva aí meu número: Gatinha. E não some, hein.',rounds:[
+ {hair:'#ff7eb6',root:'#9a3a6a',win:'Salva aí meu número: Rebecca. E não some, hein.',rounds:[
   {q:'Essa fila do banheiro não anda. Tu tá esperando também?',
    ok:'Tava, mas a conversa tá melhor que o banheiro.',
    fz:'Pode passar na minha frente, eu espero, não tem problema nenhum.',
@@ -3519,11 +3539,11 @@ let festaNext=Math.floor(Math.random()*3);
 const FESTA_END={
   fz:['ENTROU NA FRIENDZONE','Ai, tu é muito fofo... parece meu primo! Vamo ser amigos?'],
   esp:['ESPANTOU A MENINA','Vou ali no banheiro e já volto... (ela não voltou)'],
-  win:['CONQUISTOU A GATINHA!','']
+  win:['CONQUISTOU A REBECCA!','']
 };
 function startFesta(){
   mgEnter('festa');
-  const set={...(day<3?FESTA_SETS[1+Math.floor(Math.random()*2)]:FESTA_SETS[Math.floor(Math.random()*FESTA_SETS.length)]),hair:FESTA_SETS[0].hair,root:FESTA_SETS[0].root}; // conversa sorteada, gatinha sempre a de cabelo roxo
+  const set={...(day<3?FESTA_SETS[1+Math.floor(Math.random()*2)]:FESTA_SETS[Math.floor(Math.random()*FESTA_SETS.length)]),hair:'#17121a',root:'#3a3040'}; // conversa sorteada a cada tentativa; a Rebecca é sempre a de cabelo preto
   mg={t:0,set,round:0,hearts:0,phase:'ask',timer:0,sel:0,opts:[],said:'',fala:set.rounds[0].q,gatMood:'neutral',result:null,title:'',beat:0};
   festaAsk();$('festa').hidden=false;
 }
@@ -3533,7 +3553,7 @@ function festaAsk(){
   m.phase='ask';m.sel=0;m.fala=R0.q;m.said='';m.gatMood=m.round?'smile':'neutral';festaUI();
 }
 function festaUI(){
-  const m=mg;$('fname').textContent=m.phase==='said'?'MARKIN':'GATINHA';
+  const m=mg;$('fname').textContent=m.phase==='said'?'MARKIN':'REBECCA';
   $('fline').textContent=m.phase==='said'?m.said:m.fala;
   const box=$('fopts');box.innerHTML='';
   if(m.phase!=='ask')return;
@@ -3561,40 +3581,38 @@ function updFesta(dt){
   if(m.phase==='react'){m.round++;festaAsk();return;}
   if(m.phase==='end'){
     $('festa').hidden=true;
-    if(m.result==='win'){const first=festaDay!==day;festaDay=day;if(!tasksDone.festa)gatHair=m.set.hair;markTask('festa');mgExit('Conquistou a gatinha no Circo Voador! +6h acordado.','good',first?25:8,360);}
-    else if(m.result==='fz')mgLost('Entrou na friendzone... a gatinha te chamou de primo.');
+    if(m.result==='win'){const first=festaDay!==day;festaDay=day;if(!tasksDone.festa)gatHair=m.set.hair;markTask('festa');mgExit('Conquistou a Rebecca no Circo Voador! +6h acordado.','good',first?25:8,360);}
+    else if(m.result==='fz')mgLost('Entrou na friendzone... a Rebecca te chamou de primo.');
     else mgLost('Espantou a menina. Ela foi no banheiro e nunca mais voltou.');
   }
 }
-function drawGatinha(g,x,y,mood,set,corpo){ // retrato pixel 30x38 em escala 2 (com corpo: 30x53)
+function drawGatinha(g,x,y,mood,set,corpo){ // a Rebecca: retrato pixel 30x38 em escala 2 (com corpo: 30x53)
   const P2=(u,v,w,h,c)=>R(g,x+u*2,y+v*2,w*2,h*2,c);
-  const hair=set?set.hair:'#b58cff',root=set?set.root:'#6a4a9a',sk='#e8b894',skD='#d19c78';
-  P2(3,2,24,28,hair);P2(4,2,22,3,root);
-  P2(7,8,16,23,sk);P2(9,31,12,2,sk);P2(11,33,8,4,skD);P2(11,33,8,1,'#111');
+  const hair=set?set.hair:'#17121a',root=set?set.root:'#3a3040',sk='#c98a62',skD='#a86e4a';
+  P2(3,2,24,28,hair);P2(14,2,2,4,root);P2(8,3,3,1,root);P2(19,3,3,1,root); // repartido no meio, brilho
+  P2(7,8,16,23,sk);P2(9,31,12,2,sk);P2(11,33,8,4,skD);P2(11,33,8,1,'#111'); // rosto, pescoço e gargantilha
   P2(4,36,22,3,'#141018');P2(9,36,12,1,'#2a2030');
-  P2(6,5,18,6,hair);for(const u of [7,10,13,16,19,22])P2(u,11,2,1,hair);P2(4,8,4,20,hair);P2(22,8,4,20,hair);
-  P2(5,24,1,2,'#e3b341');P2(24,24,1,2,'#e3b341');
+  P2(6,5,18,4,hair);P2(6,8,3,5,hair);P2(21,8,3,5,hair);P2(4,8,4,20,hair);P2(22,8,4,20,hair);
+  P2(5,23,2,3,'#e3b341');P2(23,23,2,3,'#e3b341');P2(5,24,1,1,'#fff2a0');P2(24,24,1,1,'#fff2a0'); // brincos dourados
   // olhos com delineado
-  const eyes=(sq)=>{for(const [u,w] of [[9,4],[17,4]]){P2(u,16,w,sq?1:2,'#fbf4e8');P2(u+1,16,2,sq?1:2,'#3a2a5a');P2(u-1,15,w+2,1,'#111');}P2(8,14,1,1,'#111');P2(21,14,1,1,'#111');};
-  P2(9,13,4,1,'#4a3a3a');P2(17,13,4,1,'#4a3a3a');
-  P2(14,19,2,4,skD);P2(16,22,1,1,'#e3b341');
-  if(mood==='smile'||mood==='love'){eyes(mood==='love');P2(12,25,6,1,'#7a1f2a');P2(11,24,1,1,'#7a1f2a');P2(18,24,1,1,'#7a1f2a');P2(13,26,4,1,'#b8323a');P2(8,22,3,1,'#f08aa0');P2(19,22,3,1,'#f08aa0');}
-  else if(mood==='awkward'){eyes(false);P2(12,25,5,1,'#7a1f2a');P2(17,24,1,1,'#7a1f2a');P2(9,13,4,1,'#4a3a3a');}
-  else if(mood==='scared'){P2(9,15,4,3,'#fbf4e8');P2(17,15,4,3,'#fbf4e8');P2(10,16,2,1,'#3a2a5a');P2(18,16,2,1,'#3a2a5a');P2(9,12,4,1,'#4a3a3a');P2(17,12,4,1,'#4a3a3a');P2(13,24,4,3,'#7a1f2a');P2(14,25,2,1,'#2a0a10');}
-  else{eyes(false);P2(12,25,6,1,'#9a3040');}
+  const eyes=(sq)=>{for(const [u,w] of [[9,4],[17,4]]){P2(u,16,w,sq?1:2,'#fbf4e8');P2(u+1,16,2,sq?1:2,'#2a1a12');P2(u-1,15,w+2,1,'#111');}P2(8,14,1,1,'#111');P2(21,14,1,1,'#111');};
+  P2(9,13,4,1,'#2a1a1a');P2(17,13,4,1,'#2a1a1a');
+  P2(14,19,2,4,skD);
+  if(mood==='smile'||mood==='love'){eyes(mood==='love');P2(11,24,8,2,'#f6eed6');P2(10,23,1,1,'#7a1f2a');P2(19,23,1,1,'#7a1f2a');P2(11,23,8,1,'#9a2a3a');P2(11,26,8,1,'#9a2a3a');P2(8,21,3,1,'#e07a7a');P2(19,21,3,1,'#e07a7a');}
+  else if(mood==='awkward'){eyes(false);P2(12,25,5,1,'#7a1f2a');P2(17,24,1,1,'#7a1f2a');P2(9,13,4,1,'#2a1a1a');}
+  else if(mood==='scared'){P2(9,15,4,3,'#fbf4e8');P2(17,15,4,3,'#fbf4e8');P2(10,16,2,1,'#2a1a12');P2(18,16,2,1,'#2a1a12');P2(9,12,4,1,'#2a1a1a');P2(17,12,4,1,'#2a1a1a');P2(13,24,4,3,'#7a1f2a');P2(14,25,2,1,'#2a0a10');}
+  else{eyes(false);P2(12,25,6,1,'#9a2a3a');}
   if(mood==='love')for(const [u,v] of [[1,4],[27,8]]){P2(u,v,1,1,'#ff5a8a');P2(u+2,v,1,1,'#ff5a8a');P2(u,v+1,3,1,'#ff5a8a');P2(u+1,v+2,1,1,'#ff5a8a');}
   if(!corpo)return;
-  // corpo: cabelo caindo nas costas, cropped preto de alcinha, barriga de fora, saia preta com cinto da cor do cabelo
+  // corpo: vestido preto de frente única com decote em V, pulseiras douradas e o cabelão caindo pelos ombros
   const top='#141018',topL='#2a2030';
-  P2(3,28,4,11,hair);P2(23,28,4,11,hair);
-  P2(5,36,20,2,sk);P2(4,37,1,2,sk);P2(25,37,1,2,sk);P2(11,36,8,1,skD);
-  P2(9,36,1,2,top);P2(20,36,1,2,top);P2(14,37,2,1,'#e3b341');
-  P2(8,38,14,7,top);P2(9,38,12,1,topL);P2(11,40,1,4,topL);P2(18,40,1,4,topL);
-  P2(4,38,4,9,sk);P2(22,38,4,9,sk);P2(4,38,1,9,skD);P2(25,38,1,9,skD);
-  P2(4,45,4,1,'#4fffd2');P2(22,45,4,1,'#ff4fd8'); // pulseirinhas de festa
-  P2(4,47,4,2,skD);P2(22,47,4,2,skD);
-  P2(9,45,12,2,sk);P2(9,45,12,1,skD);P2(15,46,1,1,skD);
-  P2(8,47,14,1,hair);P2(8,48,14,2,top);P2(7,50,16,3,top);P2(7,52,16,1,topL);P2(12,49,1,3,topL);P2(17,49,1,3,topL);
+  P2(4,36,22,3,sk);P2(11,36,8,1,skD);
+  P2(3,38,4,12,sk);P2(23,38,4,12,sk);P2(3,38,1,12,skD);P2(26,38,1,12,skD);
+  P2(3,47,4,1,'#e3b341');P2(23,47,4,1,'#e3b341');P2(3,50,4,2,skD);P2(23,50,4,2,skD);
+  P2(7,38,16,15,top);P2(7,52,16,1,topL);P2(10,45,1,7,topL);P2(19,45,1,7,topL);
+  for(const [i,w] of [[0,8],[1,6],[2,6],[3,4],[4,4],[5,2],[6,2]])P2(15-w/2,38+i,w,1,sk); // decote em V
+  P2(9,36,1,3,top);P2(20,36,1,3,top); // alças
+  P2(2,26,5,24,hair);P2(23,26,4,14,hair);P2(3,30,1,16,root);P2(24,30,1,8,root);
 }
 function renderFesta(){
   const g=ctx,m=mg,t=m.t;
@@ -3608,7 +3626,7 @@ function renderFesta(){
   for(let i=0;i<14;i++){const x=i*24+6,b=Math.abs(Math.sin(m.beat*6+i))*4,c=['#ff4fd8','#4fffd2','#ffe14f','#6f7ff0','#ff8a3d'][i%5];
     R(g,x,118-b,10,30,'#1d1230');R(g,x+2,110-b,6,8,'#2a1a40');R(g,x+1,120-b,8,2,c);if(Math.sin(m.beat*6+i)>0)R(g,x-2,104-b,2,10,'#2a1a40');}
   R(g,0,140,W,40,'#0a0614');for(let x=0;x<W;x+=16)R(g,x,140,8,2,['#ff4fd8','#4fffd2','#6f7ff0'][(x/16+Math.floor(t*4))%3]);
-  // Markin (esquerda) e a gatinha (direita)
+  // Markin (esquerda) e a Rebecca (direita)
   const st=faceState();st.mood=m.phase==='end'?(m.result==='win'?'hype':'sad'):(m.phase==='react'?'hype':null);
   buildFace(st,{});g.imageSmoothingEnabled=false;
   const bob=Math.sin(m.beat*6)*1.5;
@@ -4128,12 +4146,16 @@ let histP=[],histT=0,rebS=null,tempoCh=3,tempoPend=null; // tempoCh: chances que
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
-const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC};
+const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC};
 const PRE_FALAS={
   altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa tomar sopa de chuchu.']],
     volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
   sinuca:{primeira:[['Liu','Olha quem apareceu... o Markin do navio.'],['Liu','Aqui é bambina: quatro vermelhas, quatro amarelas. E cada tacada tua é um gole.'],['Markin','Gole eu aguento. Perder pra tu é que não.'],['Liu','Gostei. Pega o taco e não chora depois.']],
-    volta:[['Liu','De novo? Pega o taco, Markin.']]}
+    volta:[['Liu','De novo? Pega o taco, Markin.']]},
+  maraca:{primeira:[['Gustavinho','MARKIN! Hoje tem Mengão e a gente tá do lado de fora?!'],['Markin','Ingresso eu não tenho, mas coragem eu tenho.'],['Gustavinho','Então presta atenção: só anda quando os seguranças tiverem olhando o jogo.'],['Gustavinho','Faz um gol lá dentro e eu viro teu torcedor pra sempre.']],
+    volta:[['Gustavinho','Bora de novo, Markin! O Maraca é nosso!']]},
+  festa:{primeira:[['Rebecca','Ih, olha ele... o marinheiro sumido.'],['Markin','Sumido nada, cheguei agora. Bora dançar?'],['Rebecca','Calma. Primeiro me convence que tu vale o rolê.']],
+    volta:[['Rebecca','Voltou, é? Vamos ver se agora tu acerta.']]}
 };
 let preVisto={},preFn=null;
 function preDesafio(k,fn){
@@ -4259,7 +4281,7 @@ function renderTempo(){const g=ctx,s=tempoS;headCv.hidden=true;
 /* ================= LABIRINTO DO SANTO AMARO: achar o Cria nos becos ================= */
 const LB={B:9,COLS:15,ROWS:9}; // blocos de 9px; o labirinto tem 15x9 becos
 const LB_CORES=['#c2452f','#e0a02a','#2d6fd1','#3fa35a','#d8c8a8','#9b76d6','#e8826a'];
-const CRIA_LOOK={skin:'#b8733f',hair:'#1e140e',shirt:'#e8826a',shorts:'#2d6fd1'}; // o Tavin, perdido nos becos
+const CRIA_LOOK={skin:'#c08458',hair:'#1e1612',shirt:'#1d1d22',shorts:'#2d6fd1',cabeca:'tavin'}; // o Tavin, perdido nos becos
 function startLabirinto(){
   mgEnter('labirinto');
   const C=LB.COLS,Rr=LB.ROWS,GW=C*2+1,GH=Rr*2+1,grid=[];for(let y=0;y<GH;y++){grid.push([]);for(let x=0;x<GW;x++)grid[y].push(true);}
@@ -4301,7 +4323,7 @@ function updLabirinto(dt){
     if((dx||dy)&&m.moveCd<=0){if(dx)me.dir=dx>0?'right':'left';else me.dir=dy>0?'down':'up';
       if(!m.grid[me.gy+dy][me.gx+dx]){me.gx+=dx;me.gy+=dy;m.moveCd=.11;}}
     for(const p of m.gente)if(!p.falou&&Math.abs(me.gx-p.gx)+Math.abs(me.gy-p.gy)<=1){p.falou=true;m.moving=false;m.phase='conversa';m.cv={p,g:LB_GENTE[p.k],fi:0,fase:'falas',sel:0,t0:m.t,lastIy:0};return;}
-    if(Math.abs(me.gx-m.cria.gx)+Math.abs(me.gy-m.cria.gy)<=1){m.phase='fala';m.falas=LB_FALAS;m.fi=0;m.falaT=m.t;m.moving=false;sfx.alert();}
+    if(Math.abs(me.gx-m.cria.gx)+Math.abs(me.gy-m.cria.gy)<=1){m.phase='fala';m.falas=LB_FALAS;m.fi=0;m.falaT=m.t;m.moving=false;sfx.alert();dlgRetrato=RETRATOS.tavin;showDialog(...m.falas[0]);}
     return;}
   if(m.phase==='conversa'){const cv=m.cv;
     let iy=0;if(keys.has('ArrowUp')||keys.has('KeyW'))iy=-1;else if(keys.has('ArrowDown')||keys.has('KeyS'))iy=1;else if(Math.abs(joy.y)>.5)iy=Math.sign(joy.y);
@@ -4311,7 +4333,7 @@ function updLabirinto(dt){
       else if(cv.fase==='escolha')labEscolhe(cv.sel);
       else{m.phase='anda';m.cv=null;labEfeito(cv.ef);}}
     return;}
-  if(m.phase==='fala'){if(inp.act&&m.t-m.falaT>.3){m.fi++;m.falaT=m.t;if(m.fi>=m.falas.length){m.phase='ensina';m.ens={i:-1,t:-.6};}}return;}
+  if(m.phase==='fala'){if(inp.act&&m.t-m.falaT>.3){m.falaT=m.t;if(dlg.shown<dlg.full.length){dlg.shown=dlg.full.length;$('dtext').textContent=dlg.full;return;}m.fi++;if(m.fi>=m.falas.length){dlgRetrato=null;hideDialog();m.phase='ensina';m.ens={i:-1,t:-.6};}else showDialog(...m.falas[m.fi]);}return;}
   if(m.phase==='ensina'){m.ens.t+=dt;const i=Math.floor(m.ens.t/.95); // o Cria toca devagar, uma nota de cada vez
     if(i>m.ens.i&&i<MUSICA_TEMPO.length){m.ens.i=i;const ln=MUSICA_TEMPO[i];m.press[ln]=.7;beep(GT_SCALE[[2,4,5,7][ln]],.6,'sawtooth',.04);}
     if(i>=MUSICA_TEMPO.length+1){m.phase='repete';m.seq=[];m.msg='Agora tu! '+(isTouch?'Toque nas cores':'Teclas 7 8 9 0');m.msgT=99;}return;}}
@@ -4341,8 +4363,6 @@ function renderLabirinto(){
     ls.forEach((s,i)=>outlineText(g,s,W/2,y0+12+i*11,7,linha[0]==='Markin'?'#8be08b':'#ffffff'));
     if(cv.fase==='escolha')cv.g.a.forEach((o,i)=>{const y=y0+16+ls.length*11+i*12,sel=cv.sel===i;R(g,38,y-8,244,11,sel?'#2a1a40':'#1d1230');if(sel)R(g,38,y-8,244,1,'#ffe14f');outlineText(g,(sel?'▸ ':'  ')+o[0],42,y,6,sel?'#ffe14f':'#f3ecd8','left');});
     else outlineText(g,isTouch?'toque ▸':'ESPAÇO ▸',284,y0+10+ls.length*11,6,'#ffe14f','right');}
-  if(m.phase==='fala'){const [quem,txt]=m.falas[m.fi],ls=wrapTxt(quem+': '+txt,40);R(g,30,118,260,14+ls.length*11,'rgba(10,6,20,.94)');R(g,30,118,260,1,'#ffe14f');
-    ls.forEach((s,i)=>outlineText(g,s,W/2,130+i*11,7,'#ffffff'));outlineText(g,isTouch?'toque ▸':'ESPAÇO ▸',284,128+ls.length*11,6,'#ffe14f','right');}
   if(m.phase==='ensina'||m.phase==='repete'||m.result){R(g,96,140,128,38,'rgba(10,6,20,.9)');
     for(let i=0;i<4;i++){const x=gtLaneX(i),on=m.press[i]>0;g.fillStyle=on?'#ffffff':'#f7efe0';g.beginPath();g.arc(x,156,10,0,Math.PI*2);g.fill();g.fillStyle=GT_COL[i];g.globalAlpha=on?1:.5;g.beginPath();g.arc(x,156,7,0,Math.PI*2);g.fill();g.globalAlpha=1;
       if(!isTouch)outlineText(g,TECLA[i],x,175,7,'#ffe89a');}
