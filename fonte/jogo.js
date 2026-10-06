@@ -813,7 +813,8 @@ function musWant(){
   if(state==='over')return finalStage>=3?(mus.finalBuf?'final':'axe'):null; // venceu: axé; perdeu: silêncio
   if(state==='guitarra')return null; // a guitarra do Jamal tem o próprio ritmo
   if(state==='maraca')return mus.maracaBuf?null:'torcida'; // com o som gravado, sem batucada por cima
-  if(state==='altinha'||state==='surf')return 'praia';
+  if(state==='futevolei'&&mus.mg&&mus.mg.altinha)return 'mg_altinha'; // futevôlei toca a mesma trilha da altinha
+  if(state==='altinha'||state==='surf'||state==='futevolei')return 'praia';
   if(state==='bloco')return mus.inicioBuf?'blocoRec':'bloco';
   if(state==='bar'||state==='sinuca')return 'boteco';
   if(state==='festa')return mus.festaBuf?'festaRec':'funk';
@@ -1024,10 +1025,10 @@ function updTouchUI(){
   if(mode===touchMode)return;touchMode=mode;touchIx=0;
   const show=(id,v)=>{$(id).hidden=!v;};
   $('touch').hidden=mode==='none'||mode==='festa';$('touch').dataset.mode=mode;
-  show('stick',mode==='play'||mode==='altinha'||mode==='maraca'||mode==='maracaS'||mode==='surf'||mode==='labirinto');
+  show('stick',mode==='play'||mode==='altinha'||mode==='futevolei'||mode==='maraca'||mode==='maracaS'||mode==='surf'||mode==='labirinto');
   const lr=['bar','sinuca'].includes(mode);show('btnL',lr);show('btnR',lr);
-  show('btnB',mode==='altinha'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
-  setIc($('btnA'),{labirinto:'fala',surf:'surf',play:'toque',grab:'solta',cut:'ok',altinha:'chuta',maraca:'chuta',maracaS:'run',bloco:'pula',bar:'bebe',sinuca:'forca'}[mode]||'toque');
+  show('btnB',mode==='altinha'||mode==='futevolei'||mode==='maraca');show('btnA',mode!=='guitarra'&&mode!=='bloco'&&mode!=='cut');show('btnP',mode==='play');show('btnC',mode==='play');if(mode!=='play')runHeld=false;show('btnX',MG_STATES.includes(mode)||mode==='maracaS');
+  setIc($('btnA'),{labirinto:'fala',surf:'surf',play:'toque',grab:'solta',cut:'ok',altinha:'chuta',futevolei:'chuta',maraca:'chuta',maracaS:'run',bloco:'pula',bar:'bebe',sinuca:'forca'}[mode]||'toque');
   if(mode==='play')$('btnA').classList.remove('acao');setIc($('btnB'),'pula');
 }
 // tela cheia no PC: o botão do canto e a tecla F ligam e desligam (ESC também sai)
@@ -1060,7 +1061,7 @@ function bubble(target,text,dur=2.4,cls='',off,prio){
   bubbles.push({el,target,t:dur,off:off??(target.h||24),dead:false,born:performance.now()});
 }
 // placas das entradas dos jogos (em coordenadas do mundo): os balões desviam delas
-function placasEntradas(){const l=[FESTA,ALT,MARACA,SURF,...barDoors];if(bloco)l.push(bloco);if(boss)l.push(boss);return l;}
+function placasEntradas(){const l=[FESTA,ALT,FUTV,MARACA,SURF,...barDoors];if(bloco)l.push(bloco);if(boss)l.push(boss);return l;}
 function updBubbles(dt){
   for(const b of bubbles){if(b.dead)continue;b.t-=dt;if(b.t<=0){b.el.remove();b.dead=true;}}
   for(let i=bubbles.length-1;i>=0;i--)if(bubbles[i].dead)bubbles.splice(i,1);
@@ -1214,7 +1215,7 @@ function resetGame(){bandeira=0;
   fx={turbo:0,crash:0,trip:0,disguise:0,drunk:0,burn:0,spider:0,sleepy:0,beers:[]};
   buddies=[];trail=[];buddyT=12;boss=null;finalStage=0;webCd=0;
   totalMin=0;day=1;lastDay=1;time=0;
-  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;palhetas=3;usosTempo=0;palhetaT=60;fimOferecido=false;tempoCh=3;tempoPend=false;histP=[];histT=0;rebS=null;avisoEnergia=false;avisoCmd=false;cmdT=0;ultDesafio=null;tarefasAbertas=false;batidaT=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
+  P.x=4*T+8;P.y=47*T+10;P.dir='down';P.outfit='casual';P.energy=100;P.sono=0;P.sonoAviso=false;diaSnap={1:{energy:100,sono:0}};sabeMusica=false;criaLiberou=false;palhetas=3;usosTempo=0;palhetaT=60;fimOferecido=false;tempoCh=3;tempoPend=false;histP=[];histT=0;rebS=null;avisoEnergia=false;avisoCmd=false;cmdT=0;ultDesafio=null;tarefasAbertas=false;batidaT=0;P.mode='free';P.helmet=false;P.hidden=false;P.jumpZ=0;P.queda=null;P.escalando=false;aranhaPend=false;virar=null;
   items=[];particles=[];keysE=[];tias=[];
   mom={x:HOME.x,y:HOME.y+4,h:26,dir:'down',state:'wander',target:null,field:null,stun:0,alertT:0,moving:false,anim:0,chasing:false};
   // três tias espalhadas: uma no quarteirão de casa, uma no do sambinha (leste) e uma do lado oeste
@@ -1380,7 +1381,7 @@ function continuarJogo(){
   const sv=salvo;if(!sv){resetGame();startPlay();return;}
   resetGame();startPlay();clearBubbles();
   avisoEnergia=true;avisoCmd=true;
-  totalMin=sv.totalMin;day=Math.min(15,Math.floor(totalMin/1440)+1);lastDay=day;sabeMusica=!!sv.sabeMusica;palhetas=sv.palhetas??3;usosTempo=sv.usosTempo||0;
+  totalMin=sv.totalMin;day=Math.min(15,Math.floor(totalMin/1440)+1);lastDay=day;sabeMusica=!!sv.sabeMusica;criaLiberou=!!sv.criaLiberou||sabeMusica;palhetas=sv.palhetas??3;usosTempo=sv.usosTempo||0;
   for(const t of TASKS)if(sv.tasks[t.k]){tasksDone[t.k]=true;addBuddy(t.k);}
   const todas=TASKS.every(t=>tasksDone[t.k]);
   if(todas&&sv.finalStage>=2){finalStage=1;for(let i=0;i<8;i++)addCrowd();startMarch();mom.x=70*T;mom.y=10*T;}
@@ -1407,7 +1408,7 @@ function skipToFinal(stage){
 // atalho de teste: dia 15, faltando 14h, com o sax, a Música do Tempo e as 3 palhetas (em 2h aparece a pergunta)
 function skipToFim(){
   skipToFinal(1);
-  totalMin=15*1440-14*60;day=15;lastDay=15;diaSnap[15]={energy:P.energy,sono:P.sono};sabeMusica=true;palhetas=3;
+  totalMin=15*1440-14*60;day=15;lastDay=15;diaSnap[15]={energy:P.energy,sono:P.sono};sabeMusica=true;criaLiberou=true;palhetas=3;
   // rastro de mentira dos últimos 2 dias (uns pontos do mapa ligados), pra rebobina ter caminho
   const wp=[];for(let i=0;i<10;i++)wp.push(randTileFrom(walkTiles,0));wp.push({x:P.x,y:P.y});
   histP=[];for(let m=totalMin-2900;m<=totalMin;m+=5){const f=(m-(totalMin-2900))/2900*(wp.length-1),i=Math.min(wp.length-2,Math.floor(f)),k=f-i;histP.push({m,x:wp[i].x+(wp[i+1].x-wp[i].x)*k,y:wp[i].y+(wp[i+1].y-wp[i].y)*k});}histT=totalMin;
@@ -1452,7 +1453,7 @@ function goTitle(){
   $('hud').hidden=true;$('touch').hidden=true;$('skip').hidden=true;$('festa').hidden=true;
   showScreen(`<div class="card"><div class="kicker">um jogo sobre o Markin</div><h2>SEM VOLTA<br>PRA CASA</h2><p>Depois de 15 dias embarcado, o Markin pisa em terra firme. O desafio: mais 15 dias acordado, sem voltar pra casa.</p><div class="btns"><button data-act="intro" type="button">COMEÇAR</button><button data-act="skipintro" class="ghost" type="button">Pular intro</button><button data-act="fases" class="ghost" type="button">Escolher fase</button><button data-act="controle" class="ghost" type="button">Controle</button></div><div class="difrow">Dificuldade: ${Object.keys(DIFFS).map(k=>`<button data-act="dif" data-d="${k}" type="button" class="${k===diff?'':'ghost'}">${DIFFS[k].nome}</button>`).join('')}</div></div>`);
 }
-const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['chefao','★ Chefão: Guerra dos Músicos'],['barco','★ Marcha ao barco'],['tempo','★ Música do Tempo (14h pro fim)']];
+const FASES=[['altinha','Altinha'],['bloco','Bloco Secreto'],['bar','Bar (6 cervejas)'],['sinuca','Bambina'],['festa','Circo Voador'],['maraca','Maracanã'],['surf','Surf'],['futevolei','Futevôlei'],['chefao','★ Chefão: Guerra dos Músicos'],['barco','★ Marcha ao barco'],['tempo','★ Música do Tempo (14h pro fim)']];
 let fasesBack='title';
 function showFases(back){
   fasesBack=back;
@@ -1466,7 +1467,7 @@ function playFase(f){
   if(f==='barco'){skipToFinal(2);return;}
   if(f==='tempo'){skipToFim();return;}
   if(fasesBack==='pause')state='play';else{resetGame();startPlay();clearBubbles();}
-  ({surf:startSurf,altinha:startAltinha,bloco:startBloco,bar:startBar,sinuca:startSinuca,festa:startFesta,maraca:startMaraca})[f]();
+  ({surf:startSurf,altinha:startAltinha,futevolei:startFutevolei,bloco:startBloco,bar:startBar,sinuca:startSinuca,festa:startFesta,maraca:startMaraca})[f]();
 }
 function resume(){hideScreen();state='play';}
 
@@ -1498,7 +1499,9 @@ const naPedraPao=(px,py)=>((px-71*T-26)/22)**2+((py-21*T+34)/30)**2<1||((px-71*T
 const solidAt=(px,py)=>{const t=tileAt(Math.floor(px/T),Math.floor(py/T));if(t===MORRO&&px>=71*T&&py>=11*T&&py<21*T&&!naPedraPao(px,py))return false;return SOLID.has(t)&&!(fx&&fx.spider>0&&CLIMB.has(t));};
 function incog(){return fx.disguise>0||fx.spider>0;} // disfarçado: de óculos ou de Homem-Aranha
 function hitsWall(x,y){return solidAt(x-4,y-5)||solidAt(x+4,y-5)||solidAt(x-4,y)||solidAt(x+4,y);}
-function moveP(dx,dy){if(dx&&!hitsWall(P.x+dx,P.y))P.x+=dx;if(dy&&!hitsWall(P.x,P.y+dy))P.y+=dy;P.x=clamp(P.x,6,MW*T-6);P.y=clamp(P.y,8,MH*T-2);}
+// o Cria do Santo Amaro é sólido pro Markin até trocar ideia com ele já com o sax (só barra se o passo entra nele; se já tá encostado, deixa sair)
+function criaBarra(x,y){if(criaLiberou)return false;const c=npcs.find(n=>n.k==='criaSA');if(!c)return false;const em=(px,py)=>Math.abs(px-c.x)<10&&Math.abs(py-c.y)<7;return em(x,y)&&!em(P.x,P.y);}
+function moveP(dx,dy){if(dx&&!hitsWall(P.x+dx,P.y)&&!criaBarra(P.x+dx,P.y))P.x+=dx;if(dy&&!hitsWall(P.x,P.y+dy)&&!criaBarra(P.x,P.y+dy))P.y+=dy;P.x=clamp(P.x,6,MW*T-6);P.y=clamp(P.y,8,MH*T-2);}
 function interruptRest(){if(napS){napS=null;$('nap').hidden=true;}if(chairS){P.y=chairS.oy;chairS=null;}P.mode='free';}
 function teleportTowardHome(frac){
   const tx=P.x+(HOME.x-P.x)*frac,ty=P.y+(HOME.y-P.y)*frac;
@@ -1511,7 +1514,7 @@ function gameOver(reason,semTempo){
   if(state!=='play')return;
   state='over';
   const podeSeguir=reason!=='tarefas'&&reason!=='navio'; // se os 15 dias acabaram, não tem de onde continuar
-  salvo=podeSeguir?{tasks:{...tasksDone},finalStage,totalMin,gatHair,sabeMusica,palhetas,usosTempo}:null;closeBeg();interruptRest();$('phone').hidden=true;call=null;sfx.lose();
+  salvo=podeSeguir?{tasks:{...tasksDone},finalStage,totalMin,gatHair,sabeMusica,criaLiberou,palhetas,usosTempo}:null;closeBeg();interruptRest();$('phone').hidden=true;call=null;sfx.lose();
   const hrs=Math.floor(totalMin/60);
   const why=reason==='door'?['VOLTOU PRA CASA','Entrou pela porta da frente. A sopa de chuchu tava ótima. Você perdeu.']
     :reason==='tarefas'?['FALTOU TAREFA',`Os 15 dias acabaram, mas faltou: ${TASKS.filter(t=>!tasksDone[t.k]).map(t=>t.nome.toLowerCase()).join(', ')}. O Markin embarcou sem viver tudo. Você perdeu.`]
@@ -1547,6 +1550,7 @@ function update(dt){
   else if(state==='guitarra')updGuitarra(dt);
   else if(state==='maraca')updMaraca(dt);
   else if(state==='altinha')updAltinha(dt);
+  else if(state==='futevolei')updFutevolei(dt);
   else if(state==='surf')updSurf(dt);
   else if(state==='bloco')updBloco(dt);
   else if(state==='bar')updBar(dt);
@@ -1622,17 +1626,18 @@ function play(dt){
     if(!near&&dist(FESTA,P)<22)near={k:'festa',o:FESTA};
     if(!near&&dist(MARACA,P)<24)near={k:'maraca',o:MARACA};
     if(!near&&dist(SURF,P)<24)near={k:'surf',o:SURF};
+    if(!near&&dist(FUTV,P)<24)near={k:'futv',o:FUTV};
     if(boss&&finalStage===1&&dist(boss,P)<34)near={k:'boss',o:boss};
     if(!near)for(const b of barDoors)if(dist(b,P)<15){near={k:b.kind==='sinuca'?'sinuca':'bar',o:b};break;}
     if(!near){let v=null,vd=22;for(const n of npcs){const d=dist(n,P);if(!n.beggar&&n.stun<=0&&n.flee<=0&&totalMin-(n.falouEm??-1e9)>=CONV_GAP&&d<vd){v=n;vd=d;}}if(v)near={k:'npc',o:v};}
     if(!near)for(const s of busStops)if(dist(s,P)<16){near={k:'bus',o:s};break;}
     if(!near)for(const c of chairs)if(dist(c,P)<14){near={k:'chair',o:c};break;}
     const sleepy=near&&(near.k==='bus'||near.k==='chair'),rest=sleepy&&!canRest(near.o);nearK=near?near.k:null;
-    setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',lab:'entrar nos becos do Santo Amaro',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
+    setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',lab:'entrar nos becos do Santo Amaro',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',futv:'aula de futevôlei com o Professor Arthur',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
-    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){preDesafio('festa',startFesta);return;}if(near.k==='maraca'){preDesafio('maraca',startMaraca);return;}if(near.k==='surf'){startSurf();return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
+    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax()&&!criaLiberou)toast('O Cria tá na frente. Troca uma ideia com ele primeiro.','',3);else if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){preDesafio('festa',startFesta);return;}if(near.k==='maraca'){preDesafio('maraca',startMaraca);return;}if(near.k==='surf'){startSurf();return;}if(near.k==='futv'){preDesafio('futevolei',startFutevolei);return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
@@ -1828,9 +1833,10 @@ function updGrab(dt,act){
 
 /* ================= MINIGAMES ================= */
 const ALT={x:57*T+8,y:47*T+6,h:34};
-const MG_STATES=['altinha','bloco','bar','sinuca','festa','guitarra','maraca','surf','labirinto'];
+const FUTV={x:75*T+8,y:47*T+6,h:34}; // aula de futevôlei: areia do canto direito, perto do calçadão
+const MG_STATES=['altinha','futevolei','bloco','bar','sinuca','festa','guitarra','maraca','surf','labirinto'];
 const MARACA={x:19*T,y:21*T+10,h:34}; // portão do Maracanã, na calçada embaixo do estádio
-/* ---------- TAREFAS: só zera cumprindo as 5 dentro dos 15 dias ---------- */
+/* ---------- TAREFAS: só zera cumprindo todas dentro dos 15 dias ---------- */
 const TASKS=[
   {k:'altinha',curto:'Altinha',nome:'Altinha de 8 toques',onde:()=>ALT,lugar:'na areia da praia'},
   {k:'bloco',curto:'Bloco',nome:'Achar o Bloco Secreto',onde:()=>bloco,lugar:'na Lapa, embaixo dos Arcos'},
@@ -1838,7 +1844,8 @@ const TASKS=[
   {k:'sinuca',curto:'Bambina',nome:'Ganhar na bambina',onde:()=>barDoors.find(b=>b.kind==='sinuca'),lugar:'no bar de placa verde'},
   {k:'festa',curto:'Circo Voador',nome:'Conquistar a Rebecca',onde:()=>FESTA,lugar:'no Circo Voador, na Lapa'},
   {k:'maraca',curto:'Maracanã',nome:'Fazer gol no Maracanã',onde:()=>MARACA,lugar:'no estádio ao lado da favela'},
-  {k:'surf',curto:'Surf',nome:'Surfar 2500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'}
+  {k:'surf',curto:'Surf',nome:'Surfar 2500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'},
+  {k:'futevolei',curto:'Futevôlei',nome:'Ganhar a aula de futevôlei',onde:()=>FUTV,lugar:'na areia do canto direito, perto do calçadão'}
 ];
 let tasksDone={},hintT=12;
 function markTask(k){if(tasksDone[k])return;tasksDone[k]=true;ultDesafio=totalMin;const n=TASKS.filter(t=>tasksDone[t.k]).length;
@@ -1852,6 +1859,8 @@ const BUDDY_DEFS={
     lines:['Olê, olê, olê, olá!','Aqui é Maracanã!','Tu é o camisa 10!','Bora pra geral!']},
   altinha:{nome:'Amarante',skin:'#d08a58',hair:'#2a1c14',shirt:null,shorts:'#d8332f',prop:'ball',cabeca:'amarante',oi:'Tu é craque na altinha! Vou contigo!',
     lines:['Bora uma altinha depois?','Tô contigo, parceiro!','Areia quente, pé no chão.','Esse rolê não acaba nunca!']},
+  futevolei:{nome:'Professor Arthur',skin:'#c98a5a',hair:'#1e140e',shirt:'#f2c230',shorts:'#1d1d22',prop:'ball',oi:'Aluno que ganha do professor vira parceiro. Tô contigo!',
+    lines:['Futevôlei é cabeça, aluno.','Peito, cabeça e pé. Mão nunca!','Amanhã tem treino às 6h.','Shark attack é arte.']},
   bloco:{nome:'Folião',skin:'#8a5a3a',hair:'#ff4fd8',shirt:'#ffe14f',shorts:'#4fffd2',prop:'glitter',oi:'Achou o Bloco Secreto?! Agora eu te sigo!',
     lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Mamãe eu quero!']},
   bar:{nome:'Seu Zé',skin:'#c98c64',hair:'#9a9a9a',shirt:'#f4f1e8',shorts:'#2d6fd1',prop:'beer',belly:true,beard:'#bdbdbd',oi:'Seis brejas e de pé? Tu é dos meus!',
@@ -1903,7 +1912,7 @@ function updBuddies(dt){
     else if(b.crowd)bubble(b,pick(['FODA-SE A CASA!','Sem volta pra casa!','Bloco do Markin!','ALALAÔ!']),2,'buddy');
     else bubble(b,pick(b.lines),2.4,'buddy');}
 }
-/* ---------- CHEFÃO: o Bloco do Jamal roda pelas ruas depois das 7 tarefas ---------- */
+/* ---------- CHEFÃO: o Bloco do Jamal roda pelas ruas depois de todas as tarefas ---------- */
 function spawnBoss(){
   if(finalStage>0)return;finalStage=1;
   for(let i=0;i<60;i++){const x=(pick(VROADS)+1)*T,y=(pick(TX_H)+1)*T;const b={x,y,h:48,dir:pick([[1,0],[-1,0],[0,1],[0,-1]]),node:'',lineT:rnd(2,4)};if(dist(b,P)>260||i===59){boss=b;break;}}
@@ -1952,9 +1961,9 @@ function mgExit(msg,cls,dE,minutes){dlgRetrato=null;hideDialog();
 }
 function mgQuit(){if(!mg)return;const k=state;
   if(k==='surf'&&mg.ganhou&&!mg.result){mg.total=Math.round(mg.total+mg.pts);mg.result='win';mg.done=0;return;} /* já tinha tirado 10: sai ganhando */
-  mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
+  mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',futevolei:'Saiu no meio da aula. O Professor Arthur ficou batendo bola sozinho.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
-const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
+const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),futevolei:()=>startFutevolei(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
 function mgLost(msg){dlgRetrato=null;hideDialog();
   hideDialog();mg=null;$('festa').hidden=true;cv.style.filter='';P.energy=Math.min(maxE(),mgE);state='mglost';if(performance.now()-ultimaDerrota>5000)sfx.lose(); // só toca se o desafio ainda não tocou
   showScreen(`<div class="card"><div class="kicker">não foi dessa vez</div><h2 class="lose">PERDEU</h2><p>${msg}</p><p class="stats">Tempo e energia continuam iguais a quando você entrou.</p><div class="btns"><button data-act="mgRetry" type="button">TENTAR DE NOVO</button><button data-act="mgSair" class="ghost" type="button">Sair</button></div></div>`);
@@ -2019,9 +2028,9 @@ function updNpcs(dt){
     const naLapa=P.x>=49*T&&P.y<=10*T;
     if(n.flee>0){n.flee-=dt;gx=n.x+(n.x-P.x);gy=n.y+(n.y-P.y);sp=n.feliz?30:64;}
     else if(n.beggar&&n.cd<=0&&tregua<=0&&!incog()&&dist(n,P)<100&&P.mode==='free'&&!grab&&naLapa){gx=P.x;gy=P.y;sp=34;} // vem atrás pedir dinheiro (não sai da Lapa)
-    else if(n.k==='criaSA'){const fe=FAVELA_ENT,barra=!temSax()&&P.mode==='free'&&dist(P,fe)<110; // sem sax ele barra: anda de lado e fica sempre na frente do Markin, no pé da escada
-      gx=barra?clamp(P.x,fe.x-28,fe.x+28):fe.x+(temSax()?22:0);gy=fe.y;sp=barra?75:30; // com sax ele dá um passo pro lado e libera
-      if(barra&&n.lineT<=0&&dist(n,P)<60){n.lineT=rnd(5,8);bubble(n,pick(['Aqui não, parceiro.','Só entra os cria.','Pode voltar, Markin.','Daqui tu não passa.','Tá perdido, playboy?']),2.4,'',28);}}
+    else if(n.k==='criaSA'){const fe=FAVELA_ENT,barra=!criaLiberou&&P.mode==='free'&&dist(P,fe)<110; // até liberar ele barra: anda de lado e fica sempre na frente do Markin, no pé da escada
+      gx=barra?clamp(P.x,fe.x-28,fe.x+28):fe.x+(criaLiberou?22:0);gy=fe.y;sp=barra?75:30; // depois de trocar ideia com o sax ele dá um passo pro lado e libera
+      if(barra&&n.lineT<=0&&dist(n,P)<60){n.lineT=rnd(5,8);bubble(n,pick(temSax()?['Que rifle é esse aí? Chega mais.','Coe, troca uma ideia comigo.','Pera aí, deixa eu ver isso aí.']:['Aqui não, parceiro.','Só entra os cria.','Pode voltar, Markin.','Daqui tu não passa.','Tá perdido, playboy?']),2.4,'',28);}}
     else if(n.route){const tg=n.route[n.ri];if(Math.hypot(tg.x-n.x,tg.y-n.y)<1.5)n.ri=(n.ri+(n.rev?3:1))%4;gx=n.route[n.ri].x;gy=n.route[n.ri].y;naRota=true;}
     else{if(!n.tgt||dist(n,n.tgt)<3){if(n.wait>0){n.wait-=dt;n.moving=false;}else{n.tgt=npcGoal(n);n.wait=rnd(.5,3);}}
       if(n.tgt){gx=n.tgt.x;gy=n.tgt.y;}}
@@ -2098,6 +2107,7 @@ function convDe(n){
 // o Cria fica na escadaria do Santo Amaro: sem sax não deixa entrar; com sax manda resgatar o Tavin nos becos
 function convCria(){
   if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Cadê teu fuzil?']]};
+  criaLiberou=true; // conversou com o sax na mão: ele sai da frente
   if(sabeMusica)return{f:'Coe, Markin! O Tavin tá bem graças a tu. Tamo junto!',a:[['Tamo junto, Cria!','Qualquer coisa, a favela é tua.'],['Toca aquela do Tavin aí?','Toca tu, que agora tu sabe!']]};
   return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá... esse mlk tá a dias aí...',
     a:[['Deixa comigo, vou achar o Tavin!',null,()=>startLabirinto()],['Agora não, depois eu volto.','Não demora não, o Tavin tá sofrendo lá dentro.']]};}
@@ -2796,6 +2806,163 @@ function renderAltinha(){
   outlineText(g,`recorde ${Math.max(m.best,m.touches)}`,W-8,15,8,'#f3ecd8','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,62,10,'#ffffff');
   else if(m.t<4&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA':'← → anda · ↑ pula · ESPAÇO chuta · ESC sai',W/2,174,8,'#fff1c2');
+}
+
+/* ---------- FUTEVÔLEI (aula com o Professor Arthur): igual à altinha, mas com rede no meio. 5 pontos ganha ---------- */
+const FV={NET:160,NT:AG-38,PTS:5,ACERTO:.75}; // rede no meio (topo em NT); o professor rebate certo 75% das bolas
+let futvDay=0;
+const ARTHUR_BOA=['Boa, aluno!','Essa eu deixei cair...','Tá aprendendo, hein!','Opa! Vacilei.'];
+const ARTHUR_ZOA=['Mexe esse pé, Markin!','Futevôlei é com a cabeça!','Aula 1: não deixa cair.','Tá dormindo em pé?'];
+function startFutevolei(){
+  mgEnter('futevolei');
+  mg={t:0,ptsMe:0,ptsPc:0,msg:'Quem fizer 5 pontos primeiro ganha!',msgT:2.6,done:0,result:null,saque:'pc',serveT:2,pauseT:0,pops:[],mood:null,moodT:0,
+    lado:'pc',last:null,meToques:0,pcToques:0,pcErro:null,
+    me:{x:80,y:AG,vy:0,face:1,kick:0,cd:0,ground:true},
+    pc:{x:240,y:AG,vy:0,face:-1,kick:0,cd:0,ground:true,think:0,goal:240},
+    ball:{x:232,y:AG-20,vx:0,vy:0,r:12,rot:0,live:false}};
+}
+// mira em tx passando por cima da rede (sobe o arco até a bola limpar a fita)
+function fvAim(b,tx,up){
+  for(let u=up;u<=430;u+=10){aimTo(b,tx,u);const t=(FV.NET-b.x)/b.vx;if(!(t>0))return;if(b.y+b.vy*t+ALT_G*t*t/2<FV.NT-b.r-4)return;}
+}
+function fvPop(x,y,txt,col){mg.pops.push({x,y,t:.9,txt,col});}
+function fvPonto(quem,msg){
+  const m=mg;m.ball.live=false;m.pauseT=1.1;m.saque=quem;m.serveT=quem==='me'?4:1.6;m.last=null;
+  if(quem==='me'){m.ptsMe++;m.mood='hype';m.moodT=1.4;beep(660,.1,'square',.06);beep(880,.12,'square',.06);}
+  else{m.ptsPc++;m.mood='sad';m.moodT=1.4;sfx.hit();shake=.25;}
+  m.msg=msg+' · '+(quem==='me'?pick(ARTHUR_BOA):pick(ARTHUR_ZOA));m.msgT=2;
+  if(m.ptsMe>=FV.PTS){m.result='win';m.done=2.4;m.msg=`GANHOU DO PROFESSOR! ${m.ptsMe} a ${m.ptsPc}!`;m.msgT=2.4;m.mood='hype';m.moodT=2.4;sfx.win();}
+  else if(m.ptsPc>=FV.PTS){m.result='lose';m.done=2.4;m.msg=`O Professor Arthur fechou ${m.ptsPc} a ${m.ptsMe}.`;m.msgT=2.4;}
+}
+// toque do Markin: cabeça ou chute. Segurando ← levanta pra si mesmo; → corta (no pulo, perto da rede) ou dá uma curtinha; sem direção manda no fundo
+function fvHitMe(inp){
+  const m=mg,b=m.ball,p=m.me;if(!b.live||p.cd>0||b.x>FV.NET+4)return;
+  const hx=p.x,hy=p.y-36,dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),RR=16+b.r;
+  const head=d<RR&&d>0&&dy<8;
+  const kx=p.x+p.face*12,ky=p.y-10,foot=p.kick>0&&Math.hypot(b.x-kx,b.y-ky)<28;
+  if(!head&&!foot)return;
+  if(head){const nx=dx/d,ny=dy/d;b.x=hx+nx*RR;b.y=hy+ny*RR;}else{b.y=Math.min(b.y,ky-4);p.kick=0;}
+  m.meToques++;m.last=p;p.cd=.28;
+  if(m.meToques>3){fvPonto('pc','Quatro toques!');return;}
+  const ix=inp.ix;let nome=String(m.meToques);
+  if(ix<-.3&&m.meToques<3)aimTo(b,clamp(p.x+18,30,FV.NET-34),rnd(250,280)); // levantada pra ele mesmo
+  else if(ix>.3&&head&&!p.ground&&p.x>FV.NET-75){fvAim(b,rnd(178,212),30);nome='CORTADA!';shake=.15;} // shark attack
+  else if(ix>.3)fvAim(b,rnd(176,200),220); // curtinha colada na rede
+  else fvAim(b,rnd(235,285),260); // no fundo
+  fvPop(b.x,b.y-10,nome,nome==='CORTADA!'?'#ff8a3d':'#ffe14f');
+  if(head)beep(520+m.meToques*60,.08,'square',.05);else beep(180,.08,'triangle',.08);
+  if(nome==='CORTADA!'){m.mood='hype';m.moodT=.6;}
+}
+// toque do professor: o erro (25%) já vem sorteado quando a bola passa a rede
+function fvHitPc(){
+  const m=mg,b=m.ball,pc=m.pc;m.pcToques++;m.last=pc;pc.cd=.3;if(b.y>pc.y-30)pc.kick=.22;
+  if(m.pcErro==='rede'){aimTo(b,FV.NET+6,rnd(80,120));m.pcErro=null;m.pcToques=3;}            // bate fraco e morre antes da rede
+  else if(m.pcErro==='fora'){b.vx=-rnd(195,220);b.vy=-rnd(270,300);m.pcErro=null;m.pcToques=3;} // isola pra fora
+  else if(m.pcToques===1&&b.vy>120&&Math.random()<.5)aimTo(b,clamp(pc.x-14,FV.NET+34,300),rnd(230,260)); // domina e levanta
+  else if(m.pcToques>=2)fvAim(b,rnd(40,135),rnd(150,190)); // depois de levantar, ataca mais rápido
+  else{const r=Math.random();
+    if(r<.2)fvAim(b,rnd(112,140),220);       // curtinha
+    else if(r<.4)fvAim(b,rnd(25,50),280);    // no fundo
+    else fvAim(b,rnd(50,125),rnd(220,290));}
+  if(b.y<pc.y-30)beep(440,.08,'square',.04);else beep(170,.08,'triangle',.07);
+}
+function fvServe(){
+  const m=mg,b=m.ball;b.live=true;b.vx=0;b.vy=0;
+  if(m.saque==='me'){m.me.kick=.25;m.last=m.me;m.lado='me';m.meToques=1;m.me.cd=.3;fvAim(b,rnd(225,280),250);beep(180,.08,'triangle',.08);}
+  else{m.pc.kick=.25;m.last=m.pc;m.lado='pc';m.pcToques=1;m.pc.cd=.3;fvAim(b,rnd(40,130),rnd(230,280));sfx.pick();}
+}
+function updFutevolei(dt){
+  const m=mg,b=m.ball,me=m.me,pc=m.pc;m.t+=dt;m.msgT-=dt;m.moodT-=dt;if(m.moodT<=0)m.mood=null;
+  for(const q of m.pops){q.t-=dt;q.y-=20*dt;}m.pops=m.pops.filter(q=>q.t>0);
+  const inp=mgInput();
+  if(m.result){m.done-=dt;if(m.done<=0){
+    if(m.result==='win'){const first=futvDay!==day;futvDay=day;markTask('futevolei');mgExit(first?'Ganhou a aula de futevôlei! +6h acordado e +30 de energia.':'Ganhou do professor de novo! +6h acordado (+8 de energia)','good',first?30:8,360);}
+    else mgLost(`O Professor Arthur ganhou de ${m.ptsPc} a ${m.ptsMe}. Aula é aula.`);}
+    altMove(me,0,false,dt,120);altMove(pc,0,false,dt,110);me.x=Math.min(me.x,FV.NET-10);pc.x=Math.max(pc.x,FV.NET+10);return;}
+  // Markin (não passa da rede)
+  if(inp.act&&me.kick<=0&&(b.live||m.pauseT>0||m.saque!=='me'))me.kick=.32;
+  altMove(me,inp.ix,inp.jump,dt,125);me.x=Math.min(me.x,FV.NET-10);
+  // professor (CPU): vai pra onde a bola cai; se for errar deixando passar, chega atrasado
+  let tx=240,sp=112;
+  if(b.live){let px=b.x,py=b.y,vx=b.vx,vy=b.vy;for(let i=0;i<220;i++){vy+=ALT_G*.016;px+=vx*.016;py+=vy*.016;if(vy>0&&py>=AG-42)break;}
+    if(px>FV.NET+2||(b.x>FV.NET&&m.lado==='pc')){sp=175;tx=m.pcErro==='passa'?px+(px>FV.NET+60?-38:38):px+6;}}
+  else if(m.saque==='pc')tx=232;
+  pc.think-=dt;if(pc.think<=0){pc.think=.12;pc.goal=clamp(tx+rnd(-2,2),FV.NET+12,306);}
+  const dg=pc.goal-pc.x,pix=Math.abs(dg)>3?Math.sign(dg)*Math.min(1,Math.abs(dg)/18):0;
+  altMove(pc,pix,false,dt,sp);pc.x=Math.max(pc.x,FV.NET+10);pc.face=-1;
+  // bola
+  if(!b.live){
+    if(m.pauseT>0){m.pauseT-=dt;b.y=Math.min(b.y+120*dt,AG+3-b.r);return;}
+    if(m.result)return;
+    m.serveT-=dt;
+    if(m.saque==='me'){b.x=me.x+me.face*12;b.y=AG-46+Math.sin(m.t*5)*3;b.rot=0;if((inp.act&&me.cd<=0)||m.serveT<=0)fvServe();}
+    else{b.x=pc.x-8;b.y=AG-20;if(m.serveT<=0)fvServe();}
+    return;
+  }
+  const px0=b.x;
+  b.vy+=ALT_G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vx*dt*.06;
+  // rede: a bola bate e volta pro lado de onde veio
+  if(Math.abs(b.x-FV.NET)<b.r*.5+1&&b.y>FV.NT-b.r*.4){const esq=px0<FV.NET;b.x=esq?FV.NET-b.r*.5-1:FV.NET+b.r*.5+1;b.vx=(esq?-1:1)*Math.abs(b.vx)*.3;if(!(m.redeT>0))beep(120,.1,'sawtooth',.05);m.redeT=.3;}
+  m.redeT=(m.redeT||0)-dt;
+  const lado=b.x<FV.NET?'me':'pc';
+  if(lado!==m.lado){m.lado=lado;
+    if(lado==='pc'){m.pcToques=0;m.pcErro=Math.random()<FV.ACERTO?null:pick(['passa','passa','rede','fora']);}
+    else m.meToques=0;}
+  fvHitMe(inp);
+  // o professor rebate quando a bola chega nele (de cabeça, peito ou peixinho rente à areia)
+  if(b.live&&lado==='pc'&&pc.cd<=0&&m.pcErro!=='passa'&&(m.last!==pc||m.pcToques===1)&&b.vy>0){
+    const near=Math.abs(b.x-(pc.x-4))<20&&b.y>pc.y-62,peixe=b.y+b.r>=AG-2&&Math.abs(b.x-pc.x)<52;
+    if(near||peixe){if(peixe&&!near){pc.x=clamp(b.x+6,FV.NET+10,306);fvPop(pc.x,pc.y-60,'peixinho!','#fff1c2');}fvHitPc();}}
+  if(b.x<-b.r||b.x>W+b.r){fvPonto(m.last===me?'pc':'me',m.last===me?'Foi pra fora!':'O professor mandou pra fora!');return;}
+  if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Arthur! PONTO!':'Caiu no teu campo.');}
+}
+function drawArthur(g,hx,hy,look){ // o Professor Arthur: viseira branca, cabelo curto espetado, cavanhaque e sorriso de professor
+  const sk='#c98a5a',skD='#a26a40',hair='#1e140e';
+  R(g,hx-13,hy-23,26,9,hair);for(let i=0;i<6;i++)R(g,hx-12+i*5,hy-26+(i%2),3,4,hair); // espetado
+  R(g,hx-12,hy-15,24,31,sk);R(g,hx-14,hy-10,28,22,sk);R(g,hx-9,hy+16,18,3,sk);R(g,hx-16,hy-1,3,6,sk);R(g,hx+13,hy-1,3,6,sk);
+  R(g,hx-14,hy-12,3,8,hair);R(g,hx+11,hy-12,3,8,hair); // costeletas
+  R(g,hx-15,hy-17,30,5,'#f4f1e8');R(g,hx-15,hy-13,30,1,'#c9c2b2');R(g,hx-25,hy-14,12,3,'#f4f1e8');R(g,hx-25,hy-12,12,1,'#c9c2b2'); // viseira (aba pra frente)
+  R(g,hx-10,hy-6,7,2,hair);R(g,hx+3,hy-6,7,2,hair);
+  const lk=clamp(Math.round(look),-1,1);
+  R(g,hx-8,hy-2,5,3,'#fff');R(g,hx+3,hy-2,5,3,'#fff');R(g,hx-7+lk,hy-1,2,2,'#2a1608');R(g,hx+5+lk,hy-1,2,2,'#2a1608');
+  R(g,hx-1,hy+2,3,5,skD);
+  R(g,hx-6,hy+9,12,2,'#fff');R(g,hx-7,hy+8,2,2,skD);R(g,hx+5,hy+8,2,2,skD); // sorrisão
+  R(g,hx-4,hy+13,8,5,hair);R(g,hx-2,hy+18,4,2,hair); // cavanhaque
+}
+function renderFutevolei(){
+  const g=ctx,m=mg,t=performance.now()/1000;
+  const sky=g.createLinearGradient(0,0,0,100);sky.addColorStop(0,'#5ab0f0');sky.addColorStop(1,'#bfe4ff');g.fillStyle=sky;g.fillRect(0,0,W,100);
+  g.fillStyle='#fff6c8';g.beginPath();g.arc(56,30,12,0,Math.PI*2);g.fill();
+  g.fillStyle='#4f7a5a';g.beginPath();g.moveTo(196,98);g.lineTo(228,58);g.lineTo(244,66);g.lineTo(268,40);g.lineTo(300,80);g.lineTo(320,74);g.lineTo(320,98);g.fill(); // morro do fim da praia
+  R(g,0,96,W,28,'#2a6fa8');for(let i=0;i<14;i++){const wx=((i*37+t*18)%340)-10;R(g,wx,100+(i%3)*7,12,1,'#6fb3e8');}
+  R(g,0,120,W,4,'#e9f4ff');
+  R(g,0,124,W,56,'#e8d193');for(let i=0;i<60;i++)R(g,(i*53)%W,126+(i*29)%52,1,1,i%2?'#d9bf7c':'#f3e2ad');
+  R(g,10,AG+2,300,1,'#2d6fd1');R(g,10,AG+2,1,4,'#2d6fd1');R(g,309,AG+2,1,4,'#2d6fd1'); // linha da quadra
+  // rede (de lado): poste, malha e fita branca
+  R(g,FV.NET-1,FV.NT-4,3,AG-FV.NT+6,'#6d6d6d');
+  for(let y=FV.NT;y<AG-2;y+=3)for(let x=-2;x<=2;x+=2)R(g,FV.NET+x+((y/3)%2?1:0),y,1,1,'rgba(30,30,30,.55)');
+  R(g,FV.NET-3,FV.NT-3,7,3,'#f4f4f4');
+  // jogadores
+  const me=m.me;
+  drawMkCorpo(g,me.x,me.y,{frame:me.ground?Math.floor((me.run||0)*10)%2:1,face:me.face,kick:me.kick>0,moving:me.ground&&Math.abs(me.vx||0)>5,chao:AG,arms:me.ground?'down':'up'});
+  drawAltBody(g,m.pc,'#1d1d22','#f2c230','#c98a5a');
+  R(g,Math.round(m.pc.x)-2,Math.round(m.pc.y)-20,1,4,'#2d6fd1');R(g,Math.round(m.pc.x)+1,Math.round(m.pc.y)-20,1,4,'#2d6fd1');R(g,Math.round(m.pc.x)-2,Math.round(m.pc.y)-16,4,2,'#d8d8d8'); // apito
+  const st=faceState();if(m.mood)st.mood=m.mood;
+  buildFace(st,{});g.imageSmoothingEnabled=false;g.drawImage(fbuf,Math.round(me.x-17),Math.round(me.y-57),34,42);
+  drawArthur(g,Math.round(m.pc.x),Math.round(m.pc.y-37),(m.ball.x-m.pc.x)/40);
+  // bola
+  const b=m.ball,hgt=clamp((AG-b.y)/120,0,1);
+  g.fillStyle=`rgba(0,0,0,${(.25-hgt*.15).toFixed(2)})`;g.beginPath();g.ellipse(b.x,AG+2,6-hgt*3,2,0,0,Math.PI*2);g.fill();
+  g.save();g.translate(b.x,b.y);g.rotate(b.rot);if(ballImg.complete&&ballImg.naturalWidth)g.drawImage(ballImg,-b.r,-b.r,b.r*2,b.r*2);else{g.fillStyle='#e8f040';g.beginPath();g.arc(0,0,b.r,0,Math.PI*2);g.fill();}g.restore();
+  for(const q of m.pops){g.globalAlpha=clamp(q.t/.9,0,1);outlineText(g,q.txt,q.x,q.y,q.txt.length>2?8:10,q.col||'#ffe14f');g.globalAlpha=1;}
+  // placar
+  outlineText(g,`${m.ptsMe}  x  ${m.ptsPc}`,W/2,22,18,m.ptsMe>m.ptsPc?'#8be08b':m.ptsPc>m.ptsMe?'#ff9a8a':'#fff1c2');
+  outlineText(g,'MARKIN',W/2-34,32,7,'#f3ecd8','right');outlineText(g,'PROF. ARTHUR',W/2+34,32,7,'#f3ecd8','left');
+  outlineText(g,`até ${FV.PTS}`,8,15,8,'#f3ecd8','left');
+  if(b.live&&m.lado==='me'&&m.meToques>0)outlineText(g,`toques ${m.meToques}/3`,W-8,15,8,m.meToques>=3?'#ff9a8a':'#f3ecd8','right');
+  if(m.msgT>0)outlineText(g,m.msg,W/2,62,9,m.result==='lose'?'#ff6b5d':m.result==='win'?'#8be08b':'#ffffff');
+  else if(!b.live&&m.saque==='me'&&!m.result&&m.pauseT<=0)outlineText(g,isTouch?'CHUTA pra sacar':'ESPAÇO pra sacar',W/2,62,9,'#ffe14f');
+  if(m.t<6&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA · ← levanta · → corta':'← → anda · ↑ pula · ESPAÇO chuta · segure → corta, ← levanta',W/2,174,7,'#fff1c2');
 }
 
 /* ---------- BLOCO SECRETO (corrida estilo Subway Surfers) ---------- */
@@ -3824,6 +3991,15 @@ function drawAltinhaSpot(g,x,y,t){
   const ph=(t*.9)%2,dir=ph<1?1:-1,u=ph%1,bx=x-9+18*(dir>0?u:1-u),by=y-20-Math.sin(u*Math.PI)*16;
   R(g,bx-2,y-1,4,1,'rgba(0,0,0,.2)');if(ballImg.complete&&ballImg.naturalWidth)g.drawImage(ballImg,Math.round(bx-3),Math.round(by-3),6,6);
 }
+function drawFutevoleiSpot(g,x,y,t){ // placa FUTEVOLEI, redinha no meio e a bola indo de um lado pro outro
+  x=Math.round(x);y=Math.round(y);
+  R(g,x-20,y-44,39,9,'#8a5a2e');R(g,x-1,y-35,2,6,'#6d4322');pxText(g,'FUTEVOLEI',x-18,y-42,'#fff1c2');
+  R(g,x-1,y-28,2,24,'#6d6d6d');for(let yy=y-26;yy<y-12;yy+=2)R(g,x-1+((yy>>1)%2),yy,1,1,'#3a3a3a');R(g,x-2,y-29,4,2,'#f4f4f4');R(g,x-2,y-5,4,2,'rgba(0,0,0,.2)');
+  const guy=(gx,col,sk,cap)=>{R(g,gx-3,y-1,6,2,'rgba(0,0,0,.2)');R(g,gx-2,y-5,1,4,sk);R(g,gx+1,y-5,1,4,sk);R(g,gx-3,y-8,6,3,'#1d1d22');R(g,gx-3,y-13,6,5,col);R(g,gx-3,y-17,6,4,sk);R(g,gx-3,y-18,6,2,cap);};
+  guy(x-14,'#e84a4a','#b8733f','#2a1c14');guy(x+14,'#f2c230','#c98a5a','#f4f1e8');R(g,x+9,y-17,3,1,'#f4f1e8'); // o professor de viseira
+  const ph=(t*.8)%2,dir=ph<1?1:-1,u=ph%1,bx=x-11+22*(dir>0?u:1-u),by=y-22-Math.sin(u*Math.PI)*16;
+  R(g,bx-2,y-1,4,1,'rgba(0,0,0,.2)');if(ballImg.complete&&ballImg.naturalWidth)g.drawImage(ballImg,Math.round(bx-3),Math.round(by-3),6,6);
+}
 function drawBlocoSpot(g,x,y,t){
   x=Math.round(x);y=Math.round(y);
   drawEstandarte(g,x+30,y+2,1,{t,topo:'BLOCO',base:'SECRETO'});
@@ -4024,7 +4200,7 @@ function updHUD(){
 function render(){
   if(state==='mglost'){headCv.hidden=true;return;} // congela a última imagem do desafio atrás da tela de tentar de novo
   tx.clearRect(0,0,tcv.width,tcv.height);
-  if(MG_STATES.includes(state)){headCv.hidden=true;ctx.save();if(shake>0)ctx.translate(rnd(-2,2),rnd(-2,2));({surf:renderSurf,altinha:renderAltinha,bloco:renderBloco,bar:renderBar,sinuca:renderSinuca,festa:renderFesta,guitarra:renderGuitarra,maraca:renderMaraca,labirinto:renderLabirinto})[state]();if(mg&&(state==='sinuca'||(state==='maraca'&&mg.phase==='sneak')))galeraMG(ctx,state,mg.t);ctx.restore();
+  if(MG_STATES.includes(state)){headCv.hidden=true;ctx.save();if(shake>0)ctx.translate(rnd(-2,2),rnd(-2,2));({surf:renderSurf,altinha:renderAltinha,futevolei:renderFutevolei,bloco:renderBloco,bar:renderBar,sinuca:renderSinuca,festa:renderFesta,guitarra:renderGuitarra,maraca:renderMaraca,labirinto:renderLabirinto})[state]();if(mg&&(state==='sinuca'||(state==='maraca'&&mg.phase==='sneak')))galeraMG(ctx,state,mg.t);ctx.restore();
     if(flash>0){ctx.fillStyle=`rgba(255,80,80,${clamp(flash,0,.5)})`;ctx.fillRect(0,0,W,H);}return;}
   const sx=shake>0?rnd(-2,2):0,sy=shake>0?rnd(-2,2):0;
   const cx=Math.round(cam.x+sx),cy=Math.round(cam.y+sy);
@@ -4043,6 +4219,7 @@ function render(){
   if(vis(MARACA))list.push({y:MARACA.y,d:()=>drawMaracaSpot(ctx,MARACA.x-cx,MARACA.y-cy,time)});
   if(vis(ALT))list.push({y:ALT.y,d:()=>drawAltinhaSpot(ctx,ALT.x-cx,ALT.y-cy,time)});
   if(vis(SURF))list.push({y:SURF.y,d:()=>drawSurfSpot(ctx,SURF.x-cx,SURF.y-cy,time)});
+  if(vis(FUTV))list.push({y:FUTV.y,d:()=>drawFutevoleiSpot(ctx,FUTV.x-cx,FUTV.y-cy,time)});
   if(bloco&&vis(bloco,60))list.push({y:bloco.y,d:()=>drawBlocoSpot(ctx,bloco.x-cx,bloco.y-cy,time)});
   for(const c of chairs)if(vis(c)){list.push({y:c.y-2,d:()=>drawChair(ctx,c.x-cx,c.y-cy)});list.push({y:c.y+4,d:()=>drawUmbrella(ctx,c.x-cx-2,c.y-cy-4)});}
   for(const it of (items||[]))if(vis(it))list.push({y:it.y,d:()=>drawItem(ctx,it.type,it.x-cx,it.y-cy,time,it.aluc?(.55+.35*Math.sin(time*9)):1)});
@@ -4141,7 +4318,7 @@ const K7890=GT_KEYS;
 const TECLA=['7','8','9','0'];
 const MUSICA_TEMPO=[0,2,1,3,0,0]; // 7 9 8 0 7 7
 const FAVELA_ENT={x:3*T+8,y:21*T+12,h:30}; // escadaria do Santo Amaro
-let sabeMusica=false,palhetas=3,usosTempo=0,diaSnap={},tempoS=null,palhetaT=60,fimOferecido=false; // fimOferecido: já perguntou se quer tocar nas 12h finais
+let sabeMusica=false,criaLiberou=false,palhetas=3,usosTempo=0,diaSnap={},tempoS=null,palhetaT=60,fimOferecido=false; // fimOferecido: já perguntou se quer tocar nas 12h finais
 let histP=[],histT=0,rebS=null,tempoCh=3,tempoPend=null; // tempoCh: chances que sobram na palheta atual // histP: onde o Markin andou (a cada 5 min de jogo), pra rebobinar quando voltar no tempo
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
@@ -4150,6 +4327,8 @@ const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,mara
 const PRE_FALAS={
   altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa tomar sopa de chuchu.']],
     volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
+  futevolei:{primeira:[['Professor Arthur','Ô, aluno novo! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra bater uma bolinha...'],['Professor Arthur','Aqui é futevôlei: pé, peito e cabeça. Mão, nunca. Até três toques do teu lado.'],['Professor Arthur','Derruba a bola no meu campo. Quem fizer 5 pontos primeiro ganha.'],['Markin','E se eu ganhar do professor?'],['Professor Arthur','Aí eu viro teu aluno. Mas eu acerto quase todas, hein.']],
+    volta:[['Professor Arthur','Voltou pra aula? Bora, até 5!']]},
   sinuca:{primeira:[['Liu','Olha quem apareceu... o Markin do navio.'],['Liu','Aqui é bambina: quatro vermelhas, quatro amarelas. E cada tacada tua é um gole.'],['Markin','Gole eu aguento. Perder pra tu é que não.'],['Liu','Gostei. Pega o taco e não chora depois.']],
     volta:[['Liu','De novo? Pega o taco, Markin.']]},
   maraca:{primeira:[['Gustavinho','MARKIN! Hoje tem Mengão e a gente tá do lado de fora?!'],['Markin','Ingresso eu não tenho, mas coragem eu tenho.'],['Gustavinho','Então presta atenção: só anda quando os seguranças tiverem olhando o jogo.'],['Gustavinho','Faz um gol lá dentro e eu viro teu torcedor pra sempre.']],
