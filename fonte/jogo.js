@@ -2106,7 +2106,7 @@ function convDe(n){
   const c=pick(lista.length?lista:CONVERSAS[n.conv]);return{f:typeof c.f==='function'?c.f():c.f,a:c.a};}
 // o Cria fica na escadaria do Santo Amaro: sem sax não deixa entrar; com sax manda resgatar o Tavin nos becos
 function convCria(){
-  if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Cadê teu fuzil?']]};
+  if(!temSax())return{f:'Na favela só entra os cria.',a:[['Tranquilo, depois eu volto.','Volta com alguma coisa que preste, Markin.'],['Pô, eu sou cria também!','Cria? Cadê seu fuzil (serve um sax)?']]};
   criaLiberou=true; // conversou com o sax na mão: ele sai da frente
   if(sabeMusica)return{f:'Coe, Markin! O Tavin tá bem graças a tu. Tamo junto!',a:[['Tamo junto, Cria!','Qualquer coisa, a favela é tua.'],['Toca aquela do Tavin aí?','Toca tu, que agora tu sabe!']]};
   return{f:'Coeeee bracock, que Rifle PICA, entra aí e resgata o Tavin lá... esse mlk tá a dias aí...',
