@@ -671,7 +671,7 @@ function renderHead(cx,cy){
   headCv.style.transform=`translate(-50%,-100%) translateY(${bob}%) rotate(${tilt+bob*.8}deg)`;
   // atrás do casario do navio: corta o pedaço da cabeça que fica escondido
   let corte=0;const hx0=10*T+176;
-  if(navioDX===0&&P.x>hx0-6&&P.x<hx0+60){const topo=P.x>hx0+16&&P.x<hx0+36?50*T+4-44:50*T+4-30;corte=(P.y-12)-topo;}
+  if(navioDX===0&&finalStage<3&&P.x>hx0-6&&P.x<hx0+60){const topo=P.x>hx0+16&&P.x<hx0+36?50*T+4-44:50*T+4-30;corte=(P.y-12)-topo;}
   const altH=headCv.offsetHeight*W/(cv.clientWidth||1);
   headCv.style.clipPath=corte>0&&altH>0?`inset(0 0 ${Math.min(100,corte/altH*100).toFixed(1)}% 0)`:'';
   const na=(state==='play'||state==='paused'||state==='over')?nightA():0;
@@ -1325,7 +1325,7 @@ function* winGen(){
   P.mode='cut';bandeira=0;
   yield* talk('Markin','Chegamo no porto, galera!! Embarca todo mundo!',true);
   yield* walkTo(P,6*T+8,50*T+4,46);
-  yield* walkTo(P,9*T+4,52*T+10,46);
+  yield* walkTo(P,6*T+8,52*T+10,46); // desce pelo píer até a prancha (o walkTo anda um eixo por vez: sem isso cortava pela água)
   yield* walkTo(P,15*T,52*T+10,46);
   // a galera toda embarca atrás dele e se espalha pelo convés
   {const n=buddies.length,fila=[...buddies].sort((a,b)=>dist(a,{x:6*T+8,y:50*T})-dist(b,{x:6*T+8,y:50*T}));
@@ -4259,7 +4259,7 @@ function render(){
   list.push({y:P.y+(chairS?6:0),d:drawP});
   for(const n of npcs)if(vis(n))list.push({y:n.y,d:()=>drawNpc(ctx,n,n.x-cx,n.y-cy)});
   list.sort((a,b)=>a.y-b.y);for(const o of list)o.d();
-  if(navioDX===0)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy);
+  if(navioDX===0&&finalStage<3)ctx.drawImage(navioTopo(),10*T-4-cx,50*T+4-56-cy); // embarcou: a galera toda fica na frente do navio
   if(finalStage>=3)for(const b of buddies)if(b.banner&&vis(b))drawEstandarte(ctx,b.x-cx+6,b.y-cy-2,1,{t:time,topo:'BLOCO DO',base:'MARKIN',face:true}); // a bordo: o estandarte fica na frente do navio
   if(finalStage>=3&&navioDX===0)drawP(); // ...mas o Markin fica inteiro na frente dele (a cabeça já é uma camada por cima)
   drawBandeira(ctx,cx,cy);drawBotoMar(ctx,cx,cy);
