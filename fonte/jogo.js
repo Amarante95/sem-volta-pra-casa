@@ -2501,13 +2501,19 @@ function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   if(nadando){R(g,x-4,y-12,8,10,'#b8733f');R(g,x-6,y-11,2,7,'#b8733f');R(g,x+4,y-11+Math.round(Math.sin(t*6)*2),2,7,'#b8733f');R(g,x-4,y-4,8,4,'#2d8fe8');}
   drawCabeca(g,x,y+1,'down','lucas');
 }
-const SURFISTA={skin:'#c98a5a',hair:'#f2d27a',shirt:null,shorts:'#2d8fe8',cap:'#e84a4a'}; // surfista genérico da placa (o Lucas só aparece na água e depois seguindo o Markin)
-function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na areia e um surfista do lado
+/* quem ainda não entrou pra galera espera do lado de fora do desafio (o Tavin não: ele tá perdido nos becos) */
+const ESPERA=[['altinha',()=>ALT,16,4],['surf',()=>SURF,-2,0],['futevolei',()=>FUTV,-22,4],['festa',()=>FESTA,-22,6],['maraca',()=>MARACA,18,6],
+  ['bloco',()=>bloco,18,6],['bar',()=>barDoors.find(b=>b.kind==='cabeca'),12,10],['sinuca',()=>barDoors.find(b=>b.kind==='sinuca'),12,10]];
+function esperando(){const out=[];
+  for(const [k,f,dx,dy] of ESPERA){if(tasksDone[k])continue;const o=f();if(!o)continue;
+    const looks=k==='surf'?[DUDU]:[BUDDY_DEFS[k],BUDDY_DEFS[k+'2']].filter(Boolean);
+    looks.forEach((look,i)=>out.push({x:o.x+dx+i*13,y:o.y+dy,look}));}
+  return out;}
+function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF e a prancha fincada na areia (o Lucas espera do lado até o Markin vencer)
   x=Math.round(x);y=Math.round(y);
   R(g,x-19,y-1,2,4,'rgba(0,0,0,.25)');R(g,x-20,y-30,2,30,'#6d4322');R(g,x-34,y-40,34,12,'#f4f1e8');R(g,x-34,y-40,34,1,'#2d8fe8');R(g,x-34,y-29,34,1,'#c9c2b2');
   pxText(g,'AULA DE',x-31,y-38,'#1f6ab8');pxText(g,'SURF',x-25,y-33,'#e84a4a');
   R(g,x+10,y-2,8,3,'rgba(0,0,0,.25)');R(g,x+11,y-32,6,30,'#f4f1e8');R(g,x+12,y-34,4,2,'#f4f1e8');R(g,x+13,y-31,2,28,'#e84a4a');R(g,x+11,y-4,6,2,'#d9bf7c');
-  drawBuddy(g,x-2,y,SURFISTA,{dir:'down',frame:Math.sin(t*2)>.7?1:0,t});
 }
 // Markin na prancha. pose: 'deitado' (remando), 'flexao' (empurrando a prancha), 'agacha' ou 'pe'.
 // Prancha grande, vista meio de cima (igual ao jogo); os dois pés ficam sempre em cima dela (inclusive no aéreo).
@@ -4256,6 +4262,7 @@ function render(){
   if(vis(SURF))list.push({y:SURF.y,d:()=>drawSurfSpot(ctx,SURF.x-cx,SURF.y-cy,time)});
   if(vis(FUTV))list.push({y:FUTV.y,d:()=>drawFutevoleiSpot(ctx,FUTV.x-cx,FUTV.y-cy,time)});
   if(bloco&&vis(bloco,60))list.push({y:bloco.y,d:()=>drawBlocoSpot(ctx,bloco.x-cx,bloco.y-cy,time)});
+  for(const e of esperando())if(vis(e))list.push({y:e.y,d:()=>drawBuddy(ctx,e.x-cx,e.y-cy,e.look,{dir:'down',frame:Math.sin(time*2+e.x)>.75?1:0,t:time})});
   for(const c of chairs)if(vis(c)){list.push({y:c.y-2,d:()=>drawChair(ctx,c.x-cx,c.y-cy)});list.push({y:c.y+4,d:()=>drawUmbrella(ctx,c.x-cx-2,c.y-cy-4)});}
   for(const it of (items||[]))if(vis(it))list.push({y:it.y,d:()=>drawItem(ctx,it.type,it.x-cx,it.y-cy,time,it.aluc?(.55+.35*Math.sin(time*9)):1)});
   if(mom&&state!=='title')list.push({y:mom.y,d:()=>drawMom(ctx,mom.x-cx,mom.y-cy,{dir:mom.dir,frame:mom.moving?Math.floor(mom.anim*8)%4:0,chase:mom.chasing,angry:mom.chasing||mom.stun>0})});
