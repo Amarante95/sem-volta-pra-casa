@@ -439,6 +439,7 @@ Object.assign(CABECAS,{
     costas:['.....hHHHh.....','...hHHHHHHHh...','..hHHHhHHhHHh..','..HHhHHHHHhHH..','.sHHHHhHHHHHHs.','.SHhHHHHHhHHHS.','sSHHHHhHHHHHHSs',
       'lSHHhHHHHHhHHSl','.SsHHHHHHHHHsS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','...ssSSSSSss...','.....sSSSs.....']}
 });
+Object.assign(CABECAS,{arthur:{pal:{'K':'#141416',k:'#2e2e34','W':'#e8e8e0','S':'#c48850',s:'#9a6638','E':'#1a0e08',b:'#2a1a10','B':'#1e140e','T':'#f6eed6','M':'#5a2420'},frente:['....kKKKKKk....','..KKKKKWKKKKK..','.KKKKKWWWKKKKK.','.KKKKKKKKKKKKK.','kkkkkkkkkkkkkkk','.bSSSSSSSSSSSb.','.SbbbSSSSSbbbS.','sSSEESSSSSEESSs','.SSSSSSsSSSSSS.','.SSSSSssSSSSSS.','.sSBBBBBBBBBSs.','.sSMTTTTTTTMSs.','..sSSSBBBSSSs..','...sSBBBBBSs...','.....sSSSs.....'],costas:['....kKKKKKk....','..KKKKKKKKKKK..','.KKKKKKKKKKKKK.','.KKKKkWkWkKKKK.','.KKKkkkkkkkKKK.','.bbbbbbbbbbbbb.','sbbbbbbbbbbbbbs','.SbbbbbbbbbbbS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','....sSSSSSs....','.....sSSSs.....']},lucas:{pal:{'G':'#c8962a',g:'#8a6420','O':'#3a2a1a','L':'#5a5a62',l:'#9aa0a8','R':'#c8783a','Y':'#f0c080','P':'#1a1a1a','C':'#2a1a10',c:'#4a3220','S':'#b8784a',s:'#8e5632','E':'#1a0e08','B':'#1e140e','T':'#f6eed6','M':'#5a2420'},frente:['....G.gGg.G....','...GgG.P.GgG...','..gGGgYYYgGGg..','.RRRgGYYYGgRRR.','RLLLRgGGGgRLLLR','RLlLRgggggRLlLR','.RRRggOOOggRRR.','CgOOOOOOOOOOOgC','CCSSSSSSSSSSSCC','CSSEESSSSSEESSC','CSSSSSSsSSSSSSC','.sSSSSssSSSSSs.','.sBBBBBBBBBBBs.','.sBMTTTTTTTMBs.','..BBBBBBBBBBB..','...BBBBBBBBB...','.....sSSSs.....'],costas:['....G.gGg.G....','...GgGgGgGgG...','..gGGgGGGgGGg..','.RRRgGGGGGgRRR.','ROOORgGGGgROOOR','ROOORgggggROOOR','.RRRggOOOggRRR.','COOOOOOOOOOOOOC','CCCCCCCCCCCCCCC','CCcCCCcCCCcCCCC','CCCCcCCCCcCCCCC','.CsSSSSSSSSSsC.','..sSSSSSSSSSs..','.....sSSSs.....']},gabriel:{pal:{'C':'#2a1a10',c:'#5a3a24','K':'#141418',k:'#4a5a7a','S':'#c08458',s:'#9a643c','E':'#1a0e08',b:'#2a1a10','B':'#2a1a10','T':'#f6eed6','M':'#5a2420'},frente:['...cCcCcCcC....','..CcCCcCCcCCc..','.KKKKKKKKKKKKK.','CKkKKcCcCKkKKCc','cCSSSSSSSSSSSCc','CSbbbSSSSSbbbSC','sSSEESSSSSEESSs','.SSSSSSsSSSSSS.','.SSSSSssSSSSSS.','.sSBBBBBBBBBSs.','.sSMTTTTTTTMSs.','..sSSSSSSSSSs..','...sSSBBBSSs...','.....sSSSs.....'],costas:['...cCcCcCcC....','..CcCCcCCcCCc..','.KKKKKKKKKKKKK.','CcCcCCcCCcCCcCc','cCCcCcCCcCcCCcC','CcCCcCcCCcCCcCc','sCcCCcCCcCcCCcs','.SCcCcCCcCcCCS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','.....sSSSs.....']},giraldi:{pal:{'H':'#3a2618',h:'#6a4a30','K':'#101014',k:'#5a6a8a','S':'#d09a70',s:'#a8744c','B':'#5a3a20',b:'#3a2618','T':'#f6eed6','M':'#5a2420','G':'#111111'},frente:['....hHHHHHh....','..hHHHHHHHHHh..','.hHHHHHHHHHHHh.','.HSSSSSSSSSSSH.','.SSbbSSSSSbbSS.','sKKKKKKKKKKKKKs','SKkKKKSSSKkKKKS','GSSSSSSsSSSSSSs','.SSSSSssSSSSSS.','.BBSSSSSSSSSBB.','.BBBMTTTTTMBBB.','.BBBBBBBBBBBBB.','..BBBBBBBBBBB..','...BBBBBBBBB...','.....sSSSs.....'],costas:['....hHHHHHh....','..hHHHHHHHHHh..','.hHHHHHHHHHHHh.','.HHHHHHHHHHHHH.','.HHHHHHHHHHHHH.','sKHHHHHHHHHHHKs','SsHHHHHHHHHHHsS','.shhhhhhhhhhhs.','.sSSSSSSSSSSSs.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','.....sSSSs.....']},cuiabano:{pal:{'C':'#2a1a10',c:'#5a3a24','S':'#d8a078',s:'#b07850','E':'#1a0e08',b:'#2a1a10','B':'#2a1a10','T':'#f6eed6','M':'#5a2420'},frente:['...cCcCcCcC....','.cCCcCCcCCcCCc.','cCcCCcCcCCcCCcC','CcCcCCcCCcCCcCc','cCSSSSSSSSSSSCc','CSbbbSSSSSbbbSC','sSSEESSSSSEESSs','.SSSSSSsSSSSSS.','.SSSSSssSSSSSS.','.sSSBBBBBBBSSs.','.sSSMTTTTTMSSs.','..sSSSBBBSSSs..','...sSBBBBBSs...','.....sSSSs.....'],costas:['...cCcCcCcC....','.cCCcCCcCCcCCc.','cCcCCcCcCCcCCcC','CcCcCCcCCcCCcCc','cCCcCcCCcCcCCcC','CcCCcCcCCcCCcCc','sCcCcCCcCcCcCcs','.SCcCCcCcCCcCS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','.....sSSSs.....']},sa:{pal:{'H':'#1e1410',f:'#6a5040','S':'#c88a5a',s:'#a06838','E':'#1a0e08',b:'#1a100a','B':'#1e140e','L':'#c86a6a'},frente:['.....HHHHH.....','...HHHHHHHHH...','..fHHHHHHHHHf..','.fSSSSSSSSSSSf.','.SbbbSSSSSbbbS.','sSSEESSSSSEESSs','.SSSSSSsSSSSSS.','.SSSSSssSSSSSS.','.sSBBBBBBBBBSs.','.sSSSLLLLLSSSs.','..sSSSSBSSSSs..','...sSSBBBSSs...','.....sSSSs.....'],costas:['.....HHHHH.....','...HHHHHHHHH...','..fHHHHHHHHHf..','.ffHHHHHHHHHff.','.fffHHHHHHHfff.','sfffffffffffffs','.SfffffffffffS.','.sSSSSSSSSSSSs.','..sSSSSSSSSSs..','.....sSSSs.....']}}); // Arthur, Lucas, Gabriel, Giraldi, Cuiabano e Sá
 function drawCabeca(c,x,y,dir,k){
   const h=CABECAS[k],grid=dir==='up'?h.costas:h.frente,y0=y-12-grid.length;
   for(let r=0;r<grid.length;r++)for(let i=0;i<15;i++){const ch=grid[r][i];if(ch!=='.')R(c,x-7+i,y0+r,1,1,h.pal[ch]);}
@@ -1637,7 +1638,7 @@ function play(dt){
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
-    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax()&&!criaLiberou)toast('O Cria tá na frente. Troca uma ideia com ele primeiro.','',3);else if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){startBloco();return;}if(near.k==='bar'){startBar();return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){preDesafio('festa',startFesta);return;}if(near.k==='maraca'){preDesafio('maraca',startMaraca);return;}if(near.k==='surf'){startSurf();return;}if(near.k==='futv'){preDesafio('futevolei',startFutevolei);return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
+    else if(act&&near){if(near.k==='boss'){startGuitarra();return;}if(near.k==='lab'){if(temSax()&&!criaLiberou)toast('O Cria tá na frente. Troca uma ideia com ele primeiro.','',3);else if(temSax())startLabirinto();else toast('Um moleque na escada: "Os becos só abrem pra quem tem sax. Acha o saxofone no Bloco Secreto e volta aqui."','',4);return;}if(near.k==='alt'){preDesafio('altinha',startAltinha);return;}if(near.k==='bloco'){preDesafio('bloco',startBloco);return;}if(near.k==='bar'){preDesafio('bar',()=>startBar());return;}if(near.k==='sinuca'){preDesafio('sinuca',startSinuca);return;}if(near.k==='festa'){preDesafio('festa',startFesta);return;}if(near.k==='maraca'){preDesafio('maraca',startMaraca);return;}if(near.k==='surf'){preDesafio('surf',startSurf);return;}if(near.k==='futv'){preDesafio('futevolei',startFutevolei);return;}if(near.k==='bus')startNap(near.o);else startChair(near.o);}
     if(tileAt(Math.floor(P.x/T),Math.floor((P.y-2)/T))===DOOR){gameOver('door');return;}
     // chegou no porto com o bloco: embarca!
     if(finalStage===2&&dist(P,DOCKP)<22){finalStage=3;winGame();return;}
@@ -1850,8 +1851,8 @@ const TASKS=[
 let tasksDone={},hintT=12;
 function markTask(k){if(tasksDone[k])return;tasksDone[k]=true;ultDesafio=totalMin;const n=TASKS.filter(t=>tasksDone[t.k]).length;
   const b=addBuddy(k);
-  setTimeout(()=>{const NT=TASKS.length;banner(n>=NT?'TODAS AS TAREFAS!':`TAREFA ${n}/${NT}`,n>=NT?'O BLOCO DO JAMAL saiu pelas ruas. Ache o chefão!':`${TASKS.find(t=>t.k===k).nome} · ${b.nome} entrou pra galera!`,3.2);
-    if(b)bubble(b,b.oi,2.8,'buddy');
+  setTimeout(()=>{const NT=TASKS.length;banner(n>=NT?'TODAS AS TAREFAS!':`TAREFA ${n}/${NT}`,n>=NT?'O BLOCO DO JAMAL saiu pelas ruas. Ache o chefão!':`${TASKS.find(t=>t.k===k).nome} · ${b.nome}${b.par?' e '+b.par.nome+' entraram':' entrou'} pra galera!`,3.2);
+    if(b)bubble(b,b.oi,2.8,'buddy');if(b&&b.par)setTimeout(()=>bubble(b.par,b.par.oi,2.8,'buddy'),1400);
     if(n>=NT)spawnBoss();},60);}
 /* ---------- A GALERA: cada desafio vencido traz um amigo que segue o Markin ---------- */
 const BUDDY_DEFS={
@@ -1859,12 +1860,16 @@ const BUDDY_DEFS={
     lines:['Olê, olê, olê, olá!','Aqui é Maracanã!','Tu é o camisa 10!','Bora pra geral!']},
   altinha:{nome:'Amarante',skin:'#d08a58',hair:'#2a1c14',shirt:null,shorts:'#d8332f',prop:'ball',cabeca:'amarante',oi:'Tu é craque na altinha! Vou contigo!',
     lines:['Bora uma altinha depois?','Tô contigo, parceiro!','Areia quente, pé no chão.','Esse rolê não acaba nunca!']},
-  futevolei:{nome:'Professor Arthur',skin:'#c98a5a',hair:'#1e140e',shirt:'#f2c230',shorts:'#1d1d22',prop:'ball',oi:'Aluno que ganha do professor vira parceiro. Tô contigo!',
+  futevolei:{nome:'Professor Arthur',skin:'#c48850',hair:'#1e140e',cabeca:'arthur',shirt:'#f2c230',shorts:'#1d1d22',prop:'ball',oi:'Aluno que ganha do professor vira parceiro. Tô contigo!',
     lines:['Futevôlei é cabeça, aluno.','Peito, cabeça e pé. Mão nunca!','Amanhã tem treino às 6h.','Shark attack é arte.']},
-  bloco:{nome:'Folião',skin:'#8a5a3a',hair:'#ff4fd8',shirt:'#ffe14f',shorts:'#4fffd2',prop:'glitter',oi:'Achou o Bloco Secreto?! Agora eu te sigo!',
-    lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Mamãe eu quero!']},
-  bar:{nome:'Seu Zé',skin:'#c98c64',hair:'#9a9a9a',shirt:'#f4f1e8',shorts:'#2d6fd1',prop:'beer',belly:true,beard:'#bdbdbd',oi:'Seis brejas e de pé? Tu é dos meus!',
-    lines:['Mais uma, garçom!','No meu tempo a gente virava 3 dias.','Saideira? Nunca.','Cerveja é hidratação.']},
+  bloco:{nome:'Giraldi',skin:'#d09a70',hair:'#3a2618',shirt:'#5a5e66',shorts:'#4fffd2',prop:'glitter',cabeca:'giraldi',oi:'Achou o Bloco Secreto?! Agora a gente te segue!',
+    lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Hidrata, Markin!']},
+  bloco2:{nome:'Gabriel',skin:'#c08458',hair:'#2a1a10',shirt:null,shorts:'#ff4fd8',prop:'tamborim',cabeca:'gabriel',oi:'Agora tu é do bloco, Markin!',
+    lines:['Mamãe eu quero!','Toca o tamborim aí!','Esse bloco não para!','Sem volta pra casa!']},
+  bar:{nome:'Sá',skin:'#c88a5a',hair:'#1e1410',shirt:'#7a7c80',shorts:'#2d6fd1',prop:'beer',cabeca:'sa',oi:'Seis brejas e de pé? Tu é dos nossos!',
+    lines:['Mais uma, garçom!','Saideira? Nunca.','Cerveja é hidratação.','Essa mesa é nossa.']},
+  bar2:{nome:'Cuiabano',skin:'#d8a078',hair:'#2a1a10',shirt:'#1d1d22',shorts:'#2d6fd1',prop:'beer',cabeca:'cuiabano',oi:'Bora que a rodada agora é contigo!',
+    lines:['Desce mais uma!','Tá gelada, Markin?','Brinda aí!','Ninguém vai pra casa hoje.']},
   sinuca:{nome:'Liu',skin:'#c08250',hair:'#24160d',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',cabeca:'liu',oi:'Me ganhou na bambina... respeito. Tô contigo.',
     lines:['Vermelha no canto, parceiro.','Taco é extensão do braço.','Ninguém me ganha... quase ninguém.','Fica frio, eu cuido da retaguarda.']},
   festa:{nome:'Rebecca',skin:'#c98a62',hair:'#17121a',cabeca:'rebecca',shirt:'#141018',shorts:'#141018',skirt:true,long:true,earring:true,oi:'Eu disse que não era pra sumir. Bora junto!',
@@ -1875,7 +1880,9 @@ function addBuddy(k){
   const d=k==='surf'?DUDU:BUDDY_DEFS[k];if(!d)return null;
   const b={...d,k,x:P.x+rnd(-8,8),y:P.y+6,dir:'down',anim:0,moving:false};
   if(k==='festa')b.hair=gatHair;
-  buddies.splice(buddies.filter(o=>!o.crowd).length,0,b);return b;
+  buddies.splice(buddies.filter(o=>!o.crowd).length,0,b);
+  if(BUDDY_DEFS[k+'2'])b.par=addBuddy(k+'2'); // bloco e bar trazem uma dupla
+  return b;
 }
 function addCrowd(){ // foliões genéricos do Bloco do Markin
   const i=buddies.filter(o=>o.crowd).length;
@@ -2326,7 +2333,7 @@ function drawMkCabeca(g,x,y,w){buildFace(faceState(),{});g.imageSmoothingEnabled
 /* ---------- SURF (estilo Kelly Slater, simplificado): o Lucas fica na água incentivando (e zoando) ---------- */
 const SURF={x:30*T+8,y:48*T+8,h:34}; // aula de surf na areia, um pouco depois do navio
 let surfDay=0;
-const DUDU={nome:'Lucas',skin:'#b8733f',hair:'#f2c230',shirt:null,shorts:'#2d8fe8',prop:'prancha',oi:'Que surf, Markin! Agora é da família do surf. Tô contigo!',
+const DUDU={nome:'Lucas',skin:'#b8784a',hair:'#2a1a10',cabeca:'lucas',shirt:null,shorts:'#2d8fe8',prop:'prancha',oi:'Que surf, Markin! Agora é da família do surf. Tô contigo!',
   lines:['Hoje o mar tá clássico!','Rabeou a onda, hein?','Sem onda, sem rolê.','Bora pegar a série das 5?']};
 const DUDU_BORA=['Rema, Markin! Rema!','Olha a série chegando!','Essa é tua! Prepara pra dropar!','Vai que é tua, Markin!'];
 const DUDU_ZOA=['Tomou uma vaca, hein!','Isso é surf ou natação?','Caiu igual jaca do pé!','Engoliu meio litro de mar!','Tá bebendo a praia, Markin?','Até o boto riu dessa!','Ô, a prancha é pra ficar EM CIMA!'];
@@ -2492,7 +2499,7 @@ function surfAuto(dt){const m=mg,r=m.r;m.auto-=dt;r.air=null;r.tubo=0;r.tuboPts=
 function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   R(g,x-14,y,28,3,'#f4f1e8');R(g,x-14,y+1,28,1,'#e84a4a');
   if(nadando){R(g,x-4,y-12,8,10,'#b8733f');R(g,x-6,y-11,2,7,'#b8733f');R(g,x+4,y-11+Math.round(Math.sin(t*6)*2),2,7,'#b8733f');R(g,x-4,y-4,8,4,'#2d8fe8');}
-  R(g,x-5,y-21,10,9,'#b8733f');R(g,x-5,y-23,10,4,'#f2c230');R(g,x-3,y-17,2,1,'#111');R(g,x+1,y-17,2,1,'#111');R(g,x-2,y-14,4,1,'#7a2e2a');
+  drawCabeca(g,x,y+1,'down','lucas');
 }
 function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na areia e o Lucas do lado
   x=Math.round(x);y=Math.round(y);
@@ -2933,18 +2940,19 @@ function updFutevolei(dt){
     if(near||peixe){if(peixe&&!near){pc.x=clamp(b.x+6,FV.NET+10,306);fvPop(pc.x,pc.y-60,'peixinho!','#fff1c2');}fvHitPc();}}
   if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Arthur! PONTO!':'Caiu no teu campo.');}
 }
-function drawArthur(g,hx,hy,look){ // o Professor Arthur: viseira branca, cabelo curto espetado, cavanhaque e sorriso de professor
-  const sk='#c98a5a',skD='#a26a40',hair='#1e140e';
-  R(g,hx-13,hy-23,26,9,hair);for(let i=0;i<6;i++)R(g,hx-12+i*5,hy-26+(i%2),3,4,hair); // espetado
+function drawArthur(g,hx,hy,look){ // o Professor Arthur: boné preto com logo branco, bigode e cavanhaque
+  const sk='#c48850',skD='#9a6638',hair='#1e140e',cap='#141416',capL='#2e2e34';
   R(g,hx-12,hy-15,24,31,sk);R(g,hx-14,hy-10,28,22,sk);R(g,hx-9,hy+16,18,3,sk);R(g,hx-16,hy-1,3,6,sk);R(g,hx+13,hy-1,3,6,sk);
-  R(g,hx-14,hy-12,3,8,hair);R(g,hx+11,hy-12,3,8,hair); // costeletas
-  R(g,hx-15,hy-17,30,5,'#f4f1e8');R(g,hx-15,hy-13,30,1,'#c9c2b2');R(g,hx-25,hy-14,12,3,'#f4f1e8');R(g,hx-25,hy-12,12,1,'#c9c2b2'); // viseira (aba pra frente)
+  R(g,hx-14,hy-12,3,10,hair);R(g,hx+11,hy-12,3,10,hair); // cabelo curto do lado
+  R(g,hx-10,hy-28,20,2,cap);R(g,hx-13,hy-26,26,5,cap);R(g,hx-15,hy-21,30,7,cap);R(g,hx-17,hy-15,34,3,capL);R(g,hx-17,hy-12,34,1,'#0a0a0c'); // boné de copa redonda e aba reta
+  R(g,hx-3,hy-22,6,2,'#e8e8e0');R(g,hx-5,hy-23,2,2,'#e8e8e0');R(g,hx+3,hy-23,2,2,'#e8e8e0'); // logo
   R(g,hx-10,hy-6,7,2,hair);R(g,hx+3,hy-6,7,2,hair);
   const lk=clamp(Math.round(look),-1,1);
   R(g,hx-8,hy-2,5,3,'#fff');R(g,hx+3,hy-2,5,3,'#fff');R(g,hx-7+lk,hy-1,2,2,'#2a1608');R(g,hx+5+lk,hy-1,2,2,'#2a1608');
   R(g,hx-1,hy+2,3,5,skD);
-  R(g,hx-6,hy+9,12,2,'#fff');R(g,hx-7,hy+8,2,2,skD);R(g,hx+5,hy+8,2,2,skD); // sorrisão
-  R(g,hx-4,hy+13,8,5,hair);R(g,hx-2,hy+18,4,2,hair); // cavanhaque
+  R(g,hx-8,hy+8,16,2,hair); // bigode
+  R(g,hx-6,hy+10,12,2,'#fff');R(g,hx-6,hy+12,12,1,'#c7665e'); // sorrisão
+  R(g,hx-3,hy+14,6,4,hair);R(g,hx-2,hy+18,4,1,hair); // cavanhaque
 }
 function renderFutevolei(){
   const g=ctx,m=mg,t=performance.now()/1000;
@@ -3332,9 +3340,9 @@ function renderBar(){
   R(g,236,96,84,84,'#8a5a2e');R(g,236,96,84,4,'#a8763f');
   R(g,244,56,62,18,'#c2452f');pxText(g,'BAR DA',264,59,'#fff1c2');pxText(g,'CACHACA',262,66,'#fff1c2');
   barFundo(g,t);
-  // Seu Zé sentado do lado do Markin, do mesmo tamanho
-  {const z={...BUDDY_DEFS.bar,prop:null};g.save();g.translate(100,140);g.scale(3.9,3.9);drawBuddy(g,0,0,z,{dir:'down',frame:0,t});g.restore();
-   const ze=m.beers>=m.goal&&!m.result?'SEGURA, MARKIN!':null;if(ze)outlineText(g,ze,100,48,7,'#fff1c2');}
+  // o Cuiabano e o Sá sentados do lado do Markin
+  {for(const [k,x] of [['bar2',58],['bar',104]]){const z={...BUDDY_DEFS[k],prop:null};g.save();g.translate(x,140);g.scale(3.1,3.1);drawBuddy(g,0,0,z,{dir:'down',frame:0,t});g.restore();}
+   const ze=m.beers>=m.goal&&!m.result?'SEGURA, MARKIN!':null;if(ze)outlineText(g,ze,82,40,7,'#fff1c2');}
   // Markin sentado
   const px=160,py=104;
   drawMkTorso(g,136,104,48,34);
@@ -3346,8 +3354,8 @@ function renderBar(){
   R(g,92,128,136,7,'#f2c230');R(g,92,134,136,2,'#c99a1a');R(g,100,136,4,44,'#c99a1a');R(g,216,136,4,44,'#c99a1a');
   // braços
   R(g,138,114,10,12,'#5a3a26');R(g,172,114,10,12,'#5a3a26');R(g,128,122,20,7,'#d29a6c');R(g,172,122,20,7,'#d29a6c');R(g,124,121,6,8,'#b8804f');R(g,190,121,6,8,'#b8804f'); // mangas, antebraços e mãos na mesa
-  R(g,104,122,22,7,'#c98c64'); // braço do Seu Zé na mesa
-  R(g,116,106,9,22,'#6b3a0e');R(g,118,98,5,8,'#6b3a0e');R(g,117,112,7,6,'#f2e6c8'); // a 600 do Seu Zé
+  R(g,112,122,16,6,'#c88a5a'); // braço do Sá na mesa
+  R(g,116,106,9,22,'#6b3a0e');R(g,118,98,5,8,'#6b3a0e');R(g,117,112,7,6,'#f2e6c8'); // a 600 do Sá
   {const zy=128-Math.max(0,Math.sin(t*1.3))*4;R(g,128-4,zy-12,8,12,'rgba(230,240,250,.55)');R(g,128-3,zy-9,6,8,'#f2b63a');R(g,128-3,zy-10,6,2,'#fffbe8');}
   // garrafa 600
   R(g,206,100,10,28,'#6b3a0e');R(g,209,92,4,8,'#6b3a0e');R(g,208,90,6,2,'#d9d9d9');R(g,207,108,8,8,'#f2e6c8');R(g,209,110,4,3,'#c2452f');
@@ -4340,7 +4348,7 @@ let histP=[],histT=0,rebS=null,tempoCh=3,tempoPend=null; // tempoCh: chances que
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
-const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC};
+const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
 const PRE_FALAS={
   altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa tomar sopa de chuchu.']],
     volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
@@ -4350,6 +4358,12 @@ const PRE_FALAS={
     volta:[['Liu','De novo? Pega o taco, Markin.']]},
   maraca:{primeira:[['Gustavinho','MARKIN! Hoje tem Mengão e a gente tá do lado de fora?!'],['Markin','Ingresso eu não tenho, mas coragem eu tenho.'],['Gustavinho','Então presta atenção: só anda quando os seguranças tiverem olhando o jogo.'],['Gustavinho','Faz um gol lá dentro e eu viro teu torcedor pra sempre.']],
     volta:[['Gustavinho','Bora de novo, Markin! O Maraca é nosso!']]},
+  surf:{primeira:[['Lucas','Ô Markin! Já surfou alguma vez na vida?'],['Markin','Já vi na TV. Conta?'],['Lucas','Conta nada! Rema forte, espera a onda e fica de pé na prancha.'],['Lucas','Se cair, eu vou zoar. Se pegar onda boa, tô contigo.']],
+    volta:[['Lucas','Mais uma série chegando! Bora, Markin!']]},
+  bloco:{primeira:[['Gabriel','Markin! Tá sabendo do Bloco Secreto?'],['Giraldi','Ninguém sabe onde ele sai. Tem que ir atrás do som.'],['Markin','Então bora! Eu acho esse bloco nem que seja pulando ônibus.'],['Gabriel','Se tu achar, a gente cola contigo até o fim!']],
+    volta:[['Giraldi','Bora de novo! O bloco tá andando, Markin!']]},
+  bar:{primeira:[['Cuiabano','Markin! Senta aí que a rodada é nossa.'],['Sá','Regra da mesa: seis brejas e a cabeça tem que ficar em pé.'],['Markin','Seis? Fiquei quinze dias no mar, mermão. Manda vir.'],['Cuiabano','Se tu aguentar, a gente vira teu bloco.']],
+    volta:[['Sá','Voltou pra mesa? Garçom, desce mais uma!']]},
   festa:{primeira:[['Rebecca','Ih, olha ele... o marinheiro sumido.'],['Markin','Sumido nada, cheguei agora. Bora dançar?'],['Rebecca','Calma. Primeiro me convence que tu vale o rolê.']],
     volta:[['Rebecca','Voltou, é? Vamos ver se agora tu acerta.']]}
 };
