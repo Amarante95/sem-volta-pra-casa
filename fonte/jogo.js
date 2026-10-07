@@ -1637,7 +1637,7 @@ function play(dt){
     if(!near)for(const c of chairs)if(dist(c,P)<14){near={k:'chair',o:c};break;}
     if(near&&!['npc','bus','chair'].includes(near.k)&&performance.now()-mgSaiuEm<5000)near=null; // acabou de sair de um desafio: 5s sem entrar de novo (ESPAÇO pra pular fala não te joga de volta)
     const sleepy=near&&(near.k==='bus'||near.k==='chair'),rest=sleepy&&!canRest(near.o);nearK=near?near.k:null;
-    setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',lab:'entrar nos becos do Santo Amaro',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',futv:'aula de futevôlei com o Professor Arthur',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
+    setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',lab:'entrar nos becos do Santo Amaro',maraca:'invadir o Maracanã',surf:'pegar onda com o Caslu',futv:'aula de futevôlei com o Tchuco',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
     if(act&&rest){toast('Já cochilei aqui. Bora achar outro canto.','',2.2);}
     else if(act&&!near&&fx.spider>0)shootWeb();
     else if(act&&near&&near.k==='npc')abreConversa(near.o);
@@ -1857,19 +1857,19 @@ function markTask(k){if(tasksDone[k])return;tasksDone[k]=true;ultDesafio=totalMi
     if(n>=NT)spawnBoss();},60);}
 /* ---------- A GALERA: cada desafio vencido traz um amigo que segue o Markin ---------- */
 const BUDDY_DEFS={
-  maraca:{nome:'Gustavinho',skin:'#a8683e',hair:'#2a1a10',shirt:'#d8202a',listra:'#141414',shorts:'#2d6fd1',prop:'ball',cabeca:'gustavinho',oi:'Tu invadiu o Maracanã e fez gol?! Tô contigo!',
+  maraca:{nome:'Gus',skin:'#a8683e',hair:'#2a1a10',shirt:'#d8202a',listra:'#141414',shorts:'#2d6fd1',prop:'ball',cabeca:'gustavinho',oi:'Tu invadiu o Maracanã e fez gol?! Tô contigo!',
     lines:['Olê, olê, olê, olá!','Aqui é Maracanã!','Tu é o camisa 10!','Bora pra geral!']},
-  altinha:{nome:'Amarante',skin:'#d08a58',hair:'#2a1c14',shirt:null,shorts:'#d8332f',prop:'ball',cabeca:'amarante',oi:'Tu é craque na altinha! Vou contigo!',
+  altinha:{nome:'Amara',skin:'#d08a58',hair:'#2a1c14',shirt:null,shorts:'#d8332f',prop:'ball',cabeca:'amarante',oi:'Tu é craque na altinha! Vou contigo!',
     lines:['Bora uma altinha depois?','Tô contigo, parceiro!','Areia quente, pé no chão.','Esse rolê não acaba nunca!']},
-  futevolei:{nome:'Professor Arthur',skin:'#c48850',hair:'#1e140e',cabeca:'arthur',shirt:'#f2c230',shorts:'#1d1d22',prop:'ball',oi:'Aluno que ganha do professor vira parceiro. Tô contigo!',
-    lines:['Futevôlei é cabeça, aluno.','Peito, cabeça e pé. Mão nunca!','Amanhã tem treino às 6h.','Shark attack é arte.']},
+  futevolei:{nome:'Tchuco',skin:'#c48850',hair:'#1e140e',cabeca:'arthur',shirt:'#f2c230',shorts:'#1d1d22',prop:'ball',oi:'Aluno que ganha do professor vira parceiro. Tô contigo!',
+    lines:['Futevôlei é cabeça.','Peito, cabeça e pé. Mão nunca!','Amanhã tem treino às 6h.','Shark attack é arte.']},
   bloco:{nome:'Giraldi',skin:'#d09a70',hair:'#3a2618',shirt:'#5a5e66',shorts:'#4fffd2',prop:'glitter',cabeca:'giraldi',oi:'Achou o Bloco Secreto?! Agora a gente te segue!',
     lines:['ALALAÔ-Ô-Ô!','Purpurina não sai nunca mais.','Cadê o próximo bloco?','Hidrata, Markin!']},
   bloco2:{nome:'Gabriel',skin:'#c08458',hair:'#2a1a10',shirt:null,shorts:'#ff4fd8',prop:'tamborim',cabeca:'gabriel',oi:'Agora tu é do bloco, Markin!',
     lines:['Mamãe eu quero!','Toca o tamborim aí!','Esse bloco não para!','Sem volta pra casa!']},
   bar:{nome:'Sá',skin:'#c88a5a',hair:'#1e1410',shirt:'#7a7c80',shorts:'#2d6fd1',prop:'beer',cabeca:'sa',oi:'Seis brejas e de pé? Tu é dos nossos!',
     lines:['Mais uma, garçom!','Saideira? Nunca.','Cerveja é hidratação.','Essa mesa é nossa.']},
-  bar2:{nome:'Cuiabano',skin:'#d8a078',hair:'#2a1a10',shirt:'#1d1d22',shorts:'#2d6fd1',prop:'beer',cabeca:'cuiabano',oi:'Bora que a rodada agora é contigo!',
+  bar2:{nome:'Goiaba',skin:'#d8a078',hair:'#2a1a10',shirt:'#1d1d22',shorts:'#2d6fd1',prop:'beer',cabeca:'cuiabano',oi:'Bora que a rodada agora é contigo!',
     lines:['Desce mais uma!','Tá gelada, Markin?','Brinda aí!','Ninguém vai pra casa hoje.']},
   sinuca:{nome:'Liu',skin:'#c08250',hair:'#24160d',shirt:'#2f6e52',shorts:'#1d1d22',prop:'taco',cabeca:'liu',oi:'Me ganhou na bambina... respeito. Tô contigo.',
     lines:['Vermelha no canto, parceiro.','Taco é extensão do braço.','Ninguém me ganha... quase ninguém.','Fica frio, eu cuido da retaguarda.']},
@@ -1969,7 +1969,7 @@ function mgExit(msg,cls,dE,minutes){dlgRetrato=null;hideDialog();
 }
 function mgQuit(){if(!mg)return;const k=state;
   if(k==='surf'&&mg.ganhou&&!mg.result){mg.total=Math.round(mg.total+mg.pts);mg.result='win';mg.done=0;return;} /* já tinha tirado 10: sai ganhando */
-  mgExit({surf:'Saiu da água. O Lucas ficou pegando as ondas.',altinha:'Largou a altinha no meio.',futevolei:'Saiu no meio da aula. O Professor Arthur ficou batendo bola sozinho.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
+  mgExit({surf:'Saiu da água. O Caslu ficou pegando as ondas.',altinha:'Largou a altinha no meio.',futevolei:'Saiu no meio da aula. O Tchuco ficou batendo bola sozinho.',bloco:'Desistiu de buscar o Bloco Secreto.',bar:'Pediu a conta e saiu do bar.',sinuca:'Largou o taco e saiu.',festa:'Saiu do Circo Voador de fininho.',maraca:'Desistiu de invadir o Maracanã.',guitarra:'Largou a Guerra dos Músicos. O Jamal riu e seguiu tocando pela rua.',labirinto:'Saiu dos becos sem achar o Tavin.'}[k],'bad',0,0);}
 // perdeu o desafio: não sai sozinho, escolhe tentar de novo ou sair (sem perder tempo nem energia)
 const MG_RETRY={surf:()=>startSurf(),altinha:()=>startAltinha(),futevolei:()=>startFutevolei(),bloco:()=>startBloco(),bar:()=>startBar(barDoors.find(b=>b.kind==='cabeca')),sinuca:()=>startSinuca(barDoors.find(b=>b.kind==='sinuca')),festa:()=>startFesta(),maraca:()=>startMaraca(),guitarra:()=>startGuitarra()};
 function mgLost(msg){dlgRetrato=null;hideDialog();
@@ -2092,7 +2092,7 @@ const CONVERSAS={
     {f:'Estamos em outro patamar!',a:[['Coee Brother! Outro patamar mesmo!','Isso aí, Markin! Mengão!'],['Patamar do rebaixamento?','Respeita o maior do Brasil, rapaz!']]},
     {f:'Eu teria um desgosto profundo se faltasse o Flamengo no mundo.',a:[['Coee Brother! Eu também!','Coee! Mengão até morrer!'],['E se faltasse cama no mundo?','Aí tu nem ia sentir falta, né, Markin?']]}],
   tartaruga:[
-    {f:'Ei Markin, kd meu canudo?',a:[['Vou arranjar um pra tu.','Salvou, Markola!'],['Usei no meu mate, foi mal.','MARKIN!!! Vou contar pro Lucas!']]}],
+    {f:'Ei Markin, kd meu canudo?',a:[['Vou arranjar um pra tu.','Salvou, Markola!'],['Usei no meu mate, foi mal.','MARKIN!!! Vou contar pro Caslu!']]}],
   aranha:[
     {f:'Psssiu... humano... tá pisando na minha teia.',a:[['Foi mal, dona aranha. Já tô saindo.','Educado... gostei. Pode passar.'],['Sai daqui, bicho nojento!','Nojento é tu! *NHAC*',()=>picadaAranha()]]},
     {f:'Tu tem cara de quem não dorme há dias...',a:[['É, tô na luta. E tu?','Aranha nunca dorme. Boa sorte, Markin.'],['Cuida da tua vida, oito-pernas.','Oito pernas e um dente afiado! *NHAC*',()=>picadaAranha()]]},
@@ -2334,7 +2334,7 @@ function drawMkCabeca(g,x,y,w){buildFace(faceState(),{});g.imageSmoothingEnabled
 /* ---------- SURF (estilo Kelly Slater, simplificado): o Lucas fica na água incentivando (e zoando) ---------- */
 const SURF={x:30*T+8,y:48*T+8,h:34}; // aula de surf na areia, um pouco depois do navio
 let surfDay=0;
-const DUDU={nome:'Lucas',skin:'#b8784a',hair:'#2a1a10',cabeca:'lucas',shirt:null,shorts:'#2d8fe8',prop:'prancha',oi:'Que surf, Markin! Agora é da família do surf. Tô contigo!',
+const DUDU={nome:'Caslu',skin:'#b8784a',hair:'#2a1a10',cabeca:'lucas',shirt:null,shorts:'#2d8fe8',prop:'prancha',oi:'Que surf, Markin! Agora é da família do surf. Tô contigo!',
   lines:['Hoje o mar tá clássico!','Rabeou a onda, hein?','Sem onda, sem rolê.','Bora pegar a série das 5?']};
 const DUDU_BORA=['Rema, Markin! Rema!','Olha a série chegando!','Essa é tua! Prepara pra dropar!','Vai que é tua, Markin!'];
 const DUDU_ZOA=['Tomou uma vaca, hein!','Isso é surf ou natação?','Caiu igual jaca do pé!','Engoliu meio litro de mar!','Tá bebendo a praia, Markin?','Até o boto riu dessa!','Ô, a prancha é pra ficar EM CIMA!'];
@@ -2387,8 +2387,8 @@ function updSurf(dt){
   for(const q of m.pops){q.t-=dt;q.y-=16*dt;}m.pops=m.pops.filter(q=>q.t>0);
   if(m.result){m.done-=dt;if(m.done<=0){
     if(m.result==='win'){const first=surfDay!==day;surfDay=day;markTask('surf');
-      mgExit(first?`Surfou ${m.total} pontos! +3h acordado e +20 de energia. O Lucas entrou pro teu bloco.`:`Mais uma sessão boa (${m.total} pontos)! +3h acordado (+6 de energia).`,'good',first?20:6,180);}
-    else mgLost(`Somou ${m.total} de ${SF.META} pontos nas 3 ondas. O Lucas tá rindo até agora.`);}return;}
+      mgExit(first?`Surfou ${m.total} pontos! +3h acordado e +20 de energia. O Caslu entrou pro teu bloco.`:`Mais uma sessão boa (${m.total} pontos)! +3h acordado (+6 de energia).`,'good',first?20:6,180);}
+    else mgLost(`Somou ${m.total} de ${SF.META} pontos nas 3 ondas. O Caslu tá rindo até agora.`);}return;}
   if(m.phase==='caiu'){m.cai-=dt;if(m.cai<=0&&!m.result)surfOnda();return;}
   if(m.phase==='espera'){const w=m.wave;w.x-=w.sp*dt;w.h=Math.min(1,w.h+dt*.7);const dx=w.x-m.me.x;
     m.cx=100-dx*.85; // a quebra vem chegando pela esquerda (mesmo ritmo de quando ele tá em pé) e tá quase nele quando a barra chega no verde
@@ -2672,7 +2672,7 @@ function renderSurf(){
   else if(r&&r.tubo>0){outlineText(g,`x${surfMult(r.tubo).toFixed(1)}`,W/2,40-camY,16,'#ffffff');outlineText(g,`${Math.floor(r.tuboPts||0)}`,W/2,54-camY,10,'#ffe14f');}
   else if(aperta)outlineText(g,'APERTA AGORA!!!',W/2,40,12,'#ffe14f');
   else if(tq)outlineText(g,tq.fala,clamp(tq.x,50,W-50),tq.y-20,7,'#c8ffb0');
-  else if(m.falaT>0)outlineText(g,'LUCAS: '+m.fala,W/2,150,7,'#fff1c2');
+  else if(m.falaT>0)outlineText(g,'CASLU: '+m.fala,W/2,150,7,'#fff1c2');
   g.restore();
   // placar
   if(r&&m.phase==='ride'){R(g,W-70,168,60,5,'#0a1e30');R(g,W-70,168,60*clamp((r.v-28)/(SF.VMAX-28),0,1),5,r.v>110?'#ffe14f':'#8be08b');outlineText(g,'VELOCIDADE',W-40,166,6,'#e9f4ff');}
@@ -2847,7 +2847,7 @@ function fvPonto(quem,msg){
   else{m.ptsPc++;m.mood='sad';m.moodT=1.4;sfx.hit();shake=.25;}
   m.msg=msg+' · '+(quem==='me'?pick(ARTHUR_BOA):pick(ARTHUR_ZOA));m.msgT=2;
   if(m.ptsMe>=FV.PTS){m.result='win';m.done=2.4;m.msg=`GANHOU DO PROFESSOR! ${m.ptsMe} a ${m.ptsPc}!`;m.msgT=2.4;m.mood='hype';m.moodT=2.4;sfx.win();}
-  else if(m.ptsPc>=FV.PTS){m.result='lose';m.done=2.4;m.msg=`O Professor Arthur fechou ${m.ptsPc} a ${m.ptsMe}.`;m.msgT=2.4;}
+  else if(m.ptsPc>=FV.PTS){m.result='lose';m.done=2.4;m.msg=`O Tchuco fechou ${m.ptsPc} a ${m.ptsMe}.`;m.msgT=2.4;}
 }
 // toque do Markin: a cabeçada é automática, com a mesma força da altinha. A CORTADA é no botão de chute:
 // só sai se a bola estiver no alcance no instante em que aperta (janela curta). A direção vem de onde ele pega na bola:
@@ -2918,7 +2918,7 @@ function updFutevolei(dt){
   const inp=mgInput();
   if(m.result){m.done-=dt;if(m.done<=0){
     if(m.result==='win'){const first=futvDay!==day;futvDay=day;markTask('futevolei');mgExit(first?'Ganhou a aula de futevôlei! +6h acordado e +30 de energia.':'Ganhou do professor de novo! +6h acordado (+8 de energia)','good',first?30:8,360);}
-    else mgLost(`O Professor Arthur ganhou de ${m.ptsPc} a ${m.ptsMe}. Aula é aula.`);}
+    else mgLost(`O Tchuco ganhou de ${m.ptsPc} a ${m.ptsMe}. Aula é aula.`);}
     altMove(me,0,false,dt,120);altMove(pc,0,false,dt,110);me.x=Math.min(me.x,FV.NET-10);pc.x=Math.max(pc.x,FV.NET+10);return;}
   // Markin (não passa da rede)
   me.cortT=Math.max(0,me.cortT-dt);me.cortCd=Math.max(0,me.cortCd-dt);me.headT=Math.max(0,(me.headT||0)-dt);
@@ -2958,7 +2958,7 @@ function updFutevolei(dt){
   if(b.live&&!m.saqueVoo&&lado==='pc'&&pc.cd<=0&&m.pcErro!=='passa'&&(m.last!==pc||m.pcToques===1)&&b.vy>0){
     const near=Math.abs(b.x-(pc.x-4))<20&&b.y>pc.y-62,peixe=b.y+b.r>=AG-2&&Math.abs(b.x-pc.x)<52;
     if(near||peixe){if(peixe&&!near){pc.x=clamp(b.x+6,FV.NET+10,306);fvPop(pc.x,pc.y-60,'peixinho!','#fff1c2');}fvHitPc();}}
-  if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Arthur! PONTO!':'Caiu no teu campo.');}
+  if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Tchuco! PONTO!':'Caiu no teu campo.');}
 }
 function drawArthur(g,hx,hy,look){ // o Professor Arthur: boné preto com logo branco, bigode e cavanhaque
   const sk='#c48850',skD='#9a6638',hair='#1e140e',cap='#141416',capL='#2e2e34';
@@ -3002,7 +3002,7 @@ function renderFutevolei(){
   for(const q of m.pops){g.globalAlpha=clamp(q.t/.9,0,1);outlineText(g,q.txt,q.x,q.y,q.txt.length>2?8:10,q.col||'#ffe14f');g.globalAlpha=1;}
   // placar
   outlineText(g,`${m.ptsMe}  x  ${m.ptsPc}`,W/2,22,18,m.ptsMe>m.ptsPc?'#8be08b':m.ptsPc>m.ptsMe?'#ff9a8a':'#fff1c2');
-  outlineText(g,'MARKIN',W/2-34,32,7,'#f3ecd8','right');outlineText(g,'PROF. ARTHUR',W/2+34,32,7,'#f3ecd8','left');
+  outlineText(g,'MARKIN',W/2-34,32,7,'#f3ecd8','right');outlineText(g,'TCHUCO',W/2+34,32,7,'#f3ecd8','left');
   outlineText(g,`até ${FV.PTS}`,8,15,8,'#f3ecd8','left');
   if(b.live&&m.lado==='me'&&m.meToques>0)outlineText(g,`toques ${m.meToques}/3`,W-8,15,8,m.meToques>=3?'#ff9a8a':'#f3ecd8','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,62,9,m.result==='lose'?'#ff6b5d':m.result==='win'?'#8be08b':'#ffffff');
@@ -4371,19 +4371,19 @@ const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
 const RETRATOS={jamal:SVPC_ASSETS.JAMAL_SRC,altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
 const PRE_FALAS={
-  altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
-    volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
-  futevolei:{primeira:[['Professor Arthur','Ô, aluno novo! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra bater uma bolinha...'],['Professor Arthur','Aqui é futevôlei: pé, peito e cabeça. Mão, nunca. Até três toques do teu lado.'],['Professor Arthur','Derruba a bola no meu campo. Quem fizer 5 pontos primeiro ganha.'],['Markin','E se eu ganhar do professor?'],['Professor Arthur','Aí eu viro teu aluno. Mas eu acerto quase todas, hein.']],
-    volta:[['Professor Arthur','Voltou pra aula? Bora, até 5!']]},
-  sinuca:{primeira:[['Liu','Olha quem apareceu... o Markin do navio.'],['Liu','Aqui é bambina: quatro vermelhas, quatro amarelas. E cada tacada tua é um gole.'],['Markin','Gole eu aguento. Perder pra tu é que não.'],['Liu','Gostei. Pega o taco e não chora depois.']],
-    volta:[['Liu','De novo? Pega o taco, Markin.']]},
-  maraca:{primeira:[['Gustavinho','MARKIN! Hoje tem Mengão e a gente tá do lado de fora?!'],['Markin','Ingresso eu não tenho, mas coragem eu tenho.'],['Gustavinho','Então presta atenção: só anda quando os seguranças tiverem olhando o jogo.'],['Gustavinho','Faz um gol lá dentro e eu viro teu torcedor pra sempre.']],
-    volta:[['Gustavinho','Bora de novo, Markin! O Maraca é nosso!']]},
-  surf:{primeira:[['Lucas','Ô Markin! Já surfou alguma vez na vida?'],['Markin','Já vi na TV. Conta?'],['Lucas','Conta nada! Rema forte, espera a onda e fica de pé na prancha.'],['Lucas','Se cair, eu vou zoar. Se pegar onda boa, tô contigo.']],
-    volta:[['Lucas','Mais uma série chegando! Bora, Markin!']]},
-  bloco:{primeira:[['Gabriel','Markin! Tá sabendo do Bloco Secreto?'],['Giraldi','Ninguém sabe onde ele sai. Tem que ir atrás do som.'],['Markin','Então bora! Eu acho esse bloco nem que seja pulando ônibus.'],['Gabriel','Se tu achar, a gente cola contigo até o fim!']],
-    volta:[['Giraldi','Bora de novo! O bloco tá andando, Markin!']]},
-  bar:{primeira:[['Cuiabano','Markin! Senta aí que a rodada é nossa.'],['Sá','Regra da mesa: seis brejas e a cabeça tem que ficar em pé.'],['Markin','Seis? Fiquei quinze dias no mar, mermão. Manda vir.'],['Cuiabano','Se tu aguentar, a gente vira teu bloco.']],
+  altinha:{primeira:[['Amara','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amara','Então mostra que tu é cria do leme: oito toques sem deixar cair.'],['Amara','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
+    volta:[['Amara','Voltou pra outro X1? Bora, oito toques!']]},
+  futevolei:{primeira:[['Tchuco','Coee perna de pau! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra mostrar minha peitada na lua...'],['Tchuco','Então bora, peito cachoeira.'],['Markin','E se eu ganhar do professor?'],['Tchuco','Aí eu vou contigo pro próximo rolé.']],
+    volta:[['Tchuco','Voltou pra aula? Bora, até 5!']]},
+  sinuca:{primeira:[['Liu','Visãaaao, cria!'],['Liu','Quero ver ganhar de mim: quatro vermelhas, quatro amarelas. E cada tacada tua é uma cerveja. Vai sair daqui trocando perna.'],['Markin','Doidão eu jogo melhor. Impossível perder pra tu.'],['Liu','Pega no taco meu rapa.']],
+    volta:[['Liu','De novo? Pega no taco, Markin.']]},
+  maraca:{primeira:[['Gus','MARKIN! O jogo já começou e a gente tá do lado de fora?!'],['Markin','Eu já to doidão, vou invadir o campo hj.'],['Gus','Então presta atenção: só anda quando os seguranças tiverem olhando o jogo. Na direita tem uma parte do alambrado quebrada.'],['Gus','Faz um gol lá dentro e eu viro teu torcedor pra sempre.']],
+    volta:[['Gus','Bora de novo, Markin! O Maraca é nosso!']]},
+  surf:{primeira:[['Caslu','Ô Markin! Já surfou alguma vez na vida?'],['Markin','Já vi na TV. Conta?'],['Caslu','Conta nada! Rema forte, espera a onda e fica de pé na prancha.'],['Caslu','Se cair, eu vou zoar. Se pegar onda boa, tô contigo.']],
+    volta:[['Caslu','Mais uma série chegando! Bora, Markin!']]},
+  bloco:{primeira:[['Gabriel','Markin! Tá sabendo do Bloco Secreto?'],['Giraldi','Porra, desisti de achar já. Cansadão, vou pra casa.'],['Markin','Mané casa, irmão! To com um MD do bom aqui pra nós. Vou achar esses caras.'],['Gabriel','Se tu achar, a gente cola contigo até o fim!']],
+    volta:[['Giraldi','Me da mais um pouco desse MD e bora de novo! O bloco tá andando, Markin!']]},
+  bar:{primeira:[['Goiaba','Coeee Daucu.'],['Markin','Falaa Cheira Bife, qual ideia?'],['Sá','Regra da mesa: seis brejas e a cabeça tem que ficar em pé.'],['Markin','Seis? Fiquei quinze dias no mar, mermão. Manda vir.'],['Goiaba','Se tu aguentar, a gente vira teu bloco.']],
     volta:[['Sá','Voltou pra mesa? Garçom, desce mais uma!']]},
   festa:{primeira:[['Rebecca','Ih, olha ele... o marinheiro sumido.'],['Markin','Sumido nada, cheguei agora. Bora dançar?'],['Rebecca','Calma. Primeiro me convence que tu vale o rolê.']],
     volta:[['Rebecca','Voltou, é? Vamos ver se agora tu acerta.']]}
