@@ -1582,16 +1582,17 @@ function play(dt){
   for(const k of ['turbo','crash','trip','disguise','drunk','burn','spider','sleepy'])fx[k]=Math.max(0,fx[k]-dt);
   if(wasTurbo&&fx.turbo<=0){fx.crash=14;toast('Bateu a bad... tudo pesado.','bad');}
   if(wasSpider&&fx.spider<=0)endSpider();
-  webCd=Math.max(0,webCd-dt);tregua=Math.max(0,tregua-dt);
+  webCd=Math.max(0,webCd-dt);tregua=Math.max(0,tregua-dt);posGrab=Math.max(0,posGrab-dt);
   let decay=DF().e/3*1.5; // dia 3x mais longo (/3); vida cai 1,5x mais rápido
   if(nightA()>.4)decay*=1.2;if(fx.crash>0)decay*=2.2;
   decay*=1-.04*buddies.filter(b=>!b.crowd).length; // a galera anima: energia cai mais devagar
   if(!chairS)P.energy-=decay*dt;if(P.energy>maxE())P.energy=maxE();
   if(totalMin-histT>=5){histT=totalMin;histP.push({m:totalMin,x:P.x,y:P.y});while(histP.length&&histP[0].m<totalMin-3000)histP.shift();} // rastro pra Música do Tempo
-  if(!avisoEnergia&&P.energy<=60){avisoEnergia=true;abreAviso('energia');return;}
-  if(!avisoCmd){cmdT+=dt;if(cmdT>=5){avisoCmd=true;abreAviso('comandos');return;}}
+  const podeAviso=!grab&&posGrab<=0; // sendo arrastado (ou até 5s depois de se soltar): nenhum aviso
+  if(podeAviso&&!avisoEnergia&&P.energy<=60){avisoEnergia=true;abreAviso('energia');return;}
+  if(!avisoCmd){cmdT+=dt;if(podeAviso&&cmdT>=5){avisoCmd=true;abreAviso('comandos');return;}}
   if(ultDesafio==null)ultDesafio=totalMin;
-  if(finalStage===0&&!TASKS.every(t=>tasksDone[t.k])&&P.mode==='free'&&!grab&&!napS&&!chairS&&totalMin-ultDesafio>=2*1440){ultDesafio=totalMin;abreAviso('desafios');return;} // 2 dias sem vencer desafio: aviso apontando pro painel
+  if(finalStage===0&&!TASKS.every(t=>tasksDone[t.k])&&P.mode==='free'&&podeAviso&&!napS&&!chairS&&totalMin-ultDesafio>=2*1440){ultDesafio=totalMin;abreAviso('desafios');return;} // 2 dias sem vencer desafio: aviso apontando pro painel
   let ix=0,iy=0;
   if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;
   if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;
@@ -1803,7 +1804,7 @@ function updTias(dt){
   }
 }
 /* ---------- PRESO: a chave ou a mãe te arrastam pra casa; toque várias vezes pra se soltar ---------- */
-let grab=null,homeField=null,tregua=0;
+let grab=null,homeField=null,tregua=0,posGrab=0; // posGrab: segundos depois de se soltar (os avisos esperam zerar)
 // depois que alguém pega o Markin, os outros se afastam por um tempo
 function apanhou(){tregua=Math.max(tregua,8);}
 const afasta=(o,sp,dt)=>moveAxis(o,o.x-P.x,o.y-P.y,sp*dt,(x,y)=>!hitsWall(x,y));
@@ -1821,7 +1822,7 @@ function updGrab(dt,act){
   if(g.left<=0){ // soltou!
     if(g.kind==='chave'){g.ref.cd=10;g.ref.tonto=10;g.ref.y+=10;toast('Se soltou da chave! Ela ficou tonta.','good');}
     else{mom.stun=10;mom.tonto=10;mom.chasing=false;bubble(mom,'Volta aqui, menino!!',2,'mom');moveP(0,10);toast('Se soltou da mãe! Corre!','good');}
-    grab=null;flash=.3;tregua=8;return;
+    grab=null;flash=.3;tregua=8;posGrab=5;return;
   }
   // arrastado pro rumo da porta
   g.drainT=(g.drainT||0)+dt;if(g.drainT>=2){g.drainT-=2;lose(5);} // arrastado cansa: -5 a cada 2 s
