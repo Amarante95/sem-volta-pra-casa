@@ -3401,6 +3401,9 @@ function renderBar(){
    O Liu também bebe a cada tacada: o taco dele balança cada vez mais, mas só no desenho. */
 const SN={x0:36,y0:44,x1:284,y1:158,r:4};
 const POCKETS=[[36,44],[160,41],[284,44],[36,158],[160,161],[284,158]];
+// caçapa do meio: só cai quem entra na boca indo pra tabela; colada na tabela, correndo paralela, passa direto
+function snCai(b,px,py){if(px!==160)return Math.hypot(b.x-px,b.y-py)<11;
+  const vai=py<100?-b.vy:b.vy;return Math.abs(b.x-px)<8&&Math.abs(b.y-py)<12&&vai>0&&vai>Math.abs(b.vx)*.35;}
 const BB_COL={r:'#d0202a',y:'#f2c230'};
 const BB_NOME={r:'VERMELHAS',y:'AMARELAS'};
 const bbOutra=t=>t==='r'?'y':'r';
@@ -3420,7 +3423,7 @@ function snWob(m){if(m.turn!=='me')return 0;const d=(m.beers*.12+(fx.drunk>0?.15
 function snPhysics(m,h){
   const B=m.balls.filter(b=>!b.in),r=SN.r;
   for(const b of B){b.x+=b.vx*h;b.y+=b.vy*h;const sp=Math.hypot(b.vx,b.vy);if(sp>0){const ns=Math.max(0,sp-(30+sp*.8)*h);b.vx*=ns/sp;b.vy*=ns/sp;}
-    for(const [px,py] of POCKETS)if(Math.hypot(b.x-px,b.y-py)<11){b.in=true;b.vx=b.vy=0;if(b.cue)m.scratch=true;else m.potThis.push(b.team);beep(300,.12,'triangle',.07,120);break;}
+    for(const [px,py] of POCKETS)if(snCai(b,px,py)){b.in=true;b.vx=b.vy=0;if(b.cue)m.scratch=true;else m.potThis.push(b.team);beep(300,.12,'triangle',.07,120);break;}
     if(b.in)continue;
     if(b.x<SN.x0+r){b.x=SN.x0+r;b.vx=Math.abs(b.vx)*.8;}if(b.x>SN.x1-r){b.x=SN.x1-r;b.vx=-Math.abs(b.vx)*.8;}
     if(b.y<SN.y0+r){b.y=SN.y0+r;b.vy=Math.abs(b.vy)*.8;}if(b.y>SN.y1-r){b.y=SN.y1-r;b.vy=-Math.abs(b.vy)*.8;}}
@@ -3435,6 +3438,7 @@ function snAiPlan(m,cue){
   const r=SN.r,cor=bbCor(m,'pc');let best=null;
   for(const b of m.balls){if(b.in||b.cue||(cor&&b.team!==cor))continue;
     for(const [px,py] of POCKETS){const dx=px-b.x,dy=py-b.y,dl=Math.hypot(dx,dy),ux=dx/dl,uy=dy/dl;
+      if(px===160&&Math.abs(uy)<.4)continue; // pro meio só de frente: rente à tabela não cai
       const gx=b.x-ux*r*2,gy=b.y-uy*r*2,cx=gx-cue.x,cy=gy-cue.y,cl=Math.hypot(cx,cy)||1,corte=(cx*ux+cy*uy)/cl;
       if(corte<.3)continue;const sc=corte*2-dl/300-cl/400;if(!best||sc>best.sc)best={sc,ang:Math.atan2(cy,cx),d:dl+cl,b};}}
   if(!best){const b=m.balls.find(b=>!b.in&&!b.cue&&(!cor||b.team===cor));best={ang:b?Math.atan2(b.y-cue.y,b.x-cue.x):Math.PI,d:200};}
