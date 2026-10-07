@@ -493,6 +493,7 @@ function drawBuddySide(c,x,y,b,f,t,dir){
   else if(b.prop==='glitter'){for(let k=0;k<3;k++){const a=t*3+k*2.1;R(c,x+Math.round(Math.cos(a)*7),y-18+Math.round(Math.sin(a)*5),1,1,['#ffe14f','#4fffd2','#ff4fd8'][k]);}}
   else if(b.prop==='tamborim'){const hit=Math.sin(t*12+x)>0;R(c,x+fw*4,y-14,4,4,'#d8d8d8');R(c,x+fw*5,y-(hit?17:15),1,3,'#6b4423');}
   else if(b.prop==='bandeira')R(c,x+fw*5,y-30,1,24,'#6d4322');
+  else if(b.prop==='prancha'){const bx=fw>0?x-8:x+4;R(c,bx,y-24,4,22,'#f4f1e8');R(c,bx+1,y-23,2,20,'#e84a4a');} // prancha debaixo do braço, atrás do corpo
 }
 /* o Jamal: velho saxofonista de chapéu e barba branca */
 function drawMestre(c,x,y,o={}){
