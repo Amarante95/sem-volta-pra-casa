@@ -2817,7 +2817,7 @@ function renderAltinha(){
 }
 
 /* ---------- FUTEVÔLEI (aula com o Professor Arthur): igual à altinha, mas com rede no meio. 5 pontos ganha ---------- */
-const FV={NET:160,NT:AG-57,PTS:5,ACERTO:.75,CORTE:245,JANELA:.15}; // rede no meio (topo em NT); o professor rebate certo 75% das bolas; cortada 1,5x mais forte
+const FV={NET:160,NT:AG-57,PTS:5,ACERTO:.75,CORTE:245,JANELA:.3}; // rede no meio (topo em NT); o professor rebate certo 75% das bolas; cortada 1,5x mais forte
 let futvDay=0;
 const ARTHUR_BOA=['Boa, aluno!','Essa eu deixei cair...','Tá aprendendo, hein!','Opa! Vacilei.'];
 const ARTHUR_ZOA=['Mexe esse pé, Markin!','Futevôlei é com a cabeça!','Aula 1: não deixa cair.','Tá dormindo em pé?'];
@@ -2849,14 +2849,15 @@ function fvHitMe(){
   const m=mg,b=m.ball,p=m.me;if(!b.live||m.saqueVoo||p.cd>0||b.x>FV.NET+4)return;
   const hx=p.x,hy=p.y-36,dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),RR=16+b.r;
   const kx=p.x+p.face*12,ky=p.y-10,fd=Math.hypot(b.x-kx,b.y-ky);
-  const corta=p.cortT>0&&(d<RR+4||fd<26),head=d<RR&&d>0&&dy<8;
+  const corta=p.cortT>0&&(d<RR+10||fd<30),head=d<RR&&d>0&&dy<8;
   if(!corta&&!head)return;
   m.meToques++;m.last=p;p.cd=.28;
   if(m.meToques>3){fvPonto('pc','Quatro toques!');return;}
   if(corta){
-    const pe=d>=RR+4,cx=pe?(b.x-kx)/(fd||1):dx/(d||1),cy=pe?(b.y-ky)/(fd||1):dy/(d||1);
+    const pe=d>=RR+10,cx=pe?(b.x-kx)/(fd||1):dx/(d||1),cy=pe?(b.y-ky)/(fd||1):dy/(d||1);
     if(!pe&&d<RR){b.x=hx+cx*RR;b.y=hy+cy*RR;}
-    const ang=clamp(-cy*.75-Math.max(0,-cx)*.35-(pe?.45:0),-.6,.9); // radianos abaixo da horizontal
+    let ang=clamp(-cy*.75-Math.max(0,-cx)*.35-(pe?.45:0),-.6,.9); // radianos abaixo da horizontal
+    while(ang>-.6&&!fvPassaRede(b.x,b.y,ang,b.r))ang-=.05; // se ia na rede, levanta só o necessário pra passar
     b.vx=FV.CORTE*Math.cos(ang);b.vy=FV.CORTE*Math.sin(ang);
     p.cortT=0;p.kick=.25;shake=.18;m.mood='hype';m.moodT=.6;
     fvPop(b.x,b.y-10,'CORTADA!','#ff8a3d');beep(150,.1,'square',.09);beep(90,.12,'sawtooth',.05);return;
@@ -2865,6 +2866,14 @@ function fvHitMe(){
   const up=clamp(185+(p.vy<0?-p.vy*.55:0)+(-ny)*55+Math.abs(b.vy)*.1,160,350);
   b.vy=-up;b.vx=clamp((nx*155+p.vx*.55)*.8+aimVx(b,m.pc.x,up)*.2,-180,180);
   fvPop(b.x,b.y-10,String(m.meToques),'#ffe14f');beep(520+m.meToques*60,.08,'square',.05);
+}
+// a cortada do Markin com esse ângulo passa por cima da rede?
+function fvPassaRede(x,y,a,r){
+  let vx=FV.CORTE*Math.cos(a),vy=FV.CORTE*Math.sin(a);
+  for(let i=0;i<300;i++){const x0=x;vy+=ALT_G*.008;x+=vx*.008;y+=vy*.008;
+    if(x0<=FV.NET&&x>FV.NET)return y<FV.NT-r-2;
+    if(y+r>=AG+3)return false;}
+  return false;
 }
 // cortada do professor: do alto do pulo, procura o ângulo mais cravado que passa a rede e cai no campo do Markin
 function fvCortePc(b){
@@ -2903,7 +2912,7 @@ function updFutevolei(dt){
     altMove(me,0,false,dt,120);altMove(pc,0,false,dt,110);me.x=Math.min(me.x,FV.NET-10);pc.x=Math.max(pc.x,FV.NET+10);return;}
   // Markin (não passa da rede)
   me.cortT=Math.max(0,me.cortT-dt);me.cortCd=Math.max(0,me.cortCd-dt);
-  if(inp.act&&b.live&&me.cortCd<=0){me.cortT=FV.JANELA;me.cortCd=.45;me.kick=.2;beep(300,.05,'triangle',.03);} // arma a cortada: errou o tempo, espera um pouco
+  if(inp.act&&b.live&&me.cortCd<=0){me.cortT=FV.JANELA;me.cortCd=.3;me.kick=.2;beep(300,.05,'triangle',.03);} // arma a cortada: errou o tempo, espera um pouco
   altMove(me,inp.ix,inp.jump,dt,125);me.x=Math.min(me.x,FV.NET-10);
   // professor (CPU): vai pra onde a bola cai; se for errar deixando passar, chega atrasado
   let tx=240,sp=112;
