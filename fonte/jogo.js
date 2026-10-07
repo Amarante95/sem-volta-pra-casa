@@ -495,17 +495,18 @@ function drawBuddySide(c,x,y,b,f,t,dir){
   else if(b.prop==='bandeira')R(c,x+fw*5,y-30,1,24,'#6d4322');
   else if(b.prop==='prancha'){const bx=fw>0?x-8:x+4;R(c,bx,y-24,4,22,'#f4f1e8');R(c,bx+1,y-23,2,20,'#e84a4a');} // prancha debaixo do braço, atrás do corpo
 }
-/* o Jamal: velho saxofonista de chapéu e barba branca */
+/* o Jamal: saxofonista sem camisa, cabelo castanho, barba cheia e bermuda azul */
 function drawMestre(c,x,y,o={}){
-  x=Math.round(x);y=Math.round(y);const t=o.t||0,f=o.frame||0,sk='#8a5a3a';
+  x=Math.round(x);y=Math.round(y);const t=o.t||0,f=o.frame||0,sk='#c47a4a',skD='#a0603a',hair='#4a2a16',barba='#3a2414';
   R(c,x-5,y-1,10,2,'rgba(0,0,0,.28)');
-  R(c,x-3,y-5,2,4-(f===1?1:0),'#2a2a2a');R(c,x+1,y-5,2,4-(f===3?1:0),'#2a2a2a');R(c,x-3,y-1,3,1,'#f4f1e8');R(c,x+1,y-1,3,1,'#f4f1e8');
-  R(c,x-4,y-8,8,4,'#f4f1e8');
-  R(c,x-4,y-14,8,7,'#e84a4a');R(c,x-3,y-13,2,2,'#ffe14f');R(c,x+1,y-11,2,2,'#ffe14f');R(c,x-2,y-9,2,1,'#ffe14f'); // camisa florida
+  R(c,x-3,y-5,2,4-(f===1?1:0),sk);R(c,x+1,y-5,2,4-(f===3?1:0),sk);R(c,x-3,y-1,3,1,'#f4f1e8');R(c,x+1,y-1,3,1,'#f4f1e8');
+  R(c,x-4,y-8,8,4,'#2d5fb0');R(c,x-4,y-8,8,1,'#1d1d22'); // bermuda azul com cós preto
+  R(c,x-4,y-14,8,7,sk);R(c,x-2,y-12,1,1,skD);R(c,x+1,y-12,1,1,skD);R(c,x-1,y-10,2,2,skD); // peito de fora
+  for(let k=0;k<5;k++)R(c,x-3+k,y-14+k,1,1,'#1a1a1a'); // alça do sax
   R(c,x-5,y-14,1,5,sk);R(c,x+4,y-14,1,5,sk);
-  R(c,x-4,y-21,8,7,sk);R(c,x-4,y-16,8,3,'#f4f1e8');R(c,x-3,y-14,6,1,'#f4f1e8'); // barba branca
+  R(c,x-4,y-21,8,7,sk);R(c,x-4,y-22,8,3,hair);R(c,x-3,y-23,6,1,hair);R(c,x-4,y-20,1,2,hair);R(c,x+3,y-20,1,2,hair); // cabelo castanho
+  R(c,x-4,y-17,8,3,barba);R(c,x-3,y-14,6,1,barba);R(c,x-1,y-16,2,1,'#7a3a2a'); // barba cheia
   R(c,x-2,y-19,1,1,'#1a1a1a');R(c,x+1,y-19,1,1,'#1a1a1a');
-  R(c,x-6,y-22,12,1,'#e8d193');R(c,x-4,y-25,8,3,'#e8d193');R(c,x-4,y-23,8,1,'#1a1a1a'); // chapéu panamá
   // saxofone dourado
   const s=o.play?Math.round(Math.sin(t*14)):0;
   R(c,x+1,y-15,2,1,'#1a1a1a');R(c,x+2,y-14,2,2,'#e3b341');R(c,x+3,y-12+s,2,7,'#e3b341');R(c,x+3,y-6+s,5,2,'#e3b341');R(c,x+6,y-10+s,2,5,'#e3b341');R(c,x+5,y-11+s,4,2,'#f2d060');R(c,x+3,y-10+s,1,1,'#8a6a10');R(c,x+3,y-8+s,1,1,'#8a6a10');
@@ -1365,7 +1366,7 @@ function* winGen(){
 function* blocoGen(){
   P.mode='cut';P.dir='down';
   yield* wait(.4);
-  yield* talk('Jamal','A regra é a regra... Tu puxou a próxima. A banda é tua, Markin.');
+  dlgRetrato=RETRATOS.jamal;yield* talk('Jamal','A regra é a regra... Tu puxou a próxima. A banda é tua, Markin.');dlgRetrato=null;
   yield* talk('Trompetista','Puxa a próxima, mestre! A gente vai contigo!');
   const names=buddies.filter(b=>!b.crowd).map(b=>b.nome);
   yield* talk('Markin',names.length?`${names.join(', ')}... cola comigo! Vamo fazer barulho!`:'Galera, cola comigo! Vamo fazer barulho!');
@@ -3905,7 +3906,7 @@ function gtSax(f,d){
   o1.connect(fl);o2.connect(fl);fl.connect(g);g.connect(MASTER);for(const o of [o1,o2,lfo]){o.start(t);o.stop(t+d+.08);}
 }
 // as falas aparecem na caixa de diálogo de sempre, digitando
-function gtFala(m){const [quem,txt]=m.falas[m.fi];showDialog(quem,txt);}
+function gtFala(m){const [quem,txt]=m.falas[m.fi];dlgRetrato=RETRATOS.jamal;showDialog(quem,txt);} // na Guerra dos Músicos o retrato do Jamal fica em cima da conversa
 function gtLaneX(i){return 160+(i-1.5)*30;}
 function wrapTxt(s,n){const out=[];let cur='';for(const w of s.split(' ')){if(cur&&(cur+' '+w).length>n){out.push(cur);cur=w;}else cur=cur?cur+' '+w:w;}if(cur)out.push(cur);return out;}
 function gtSong(L,t0){
@@ -3946,7 +3947,7 @@ function updGuitarra(dt){
   // conversa: só passa apertando espaço (ou tocando na tela)
   if(m.phase==='talk'){if(act&&m.t-m.falaT>.2){m.falaT=m.t;
       if(dlg.active&&dlg.shown<dlg.full.length){dlg.shown=dlg.full.length;$('dtext').textContent=dlg.full;return;} // 1º toque completa a frase, o 2º passa
-      m.fi++;if(m.fi<m.falas.length){gtFala(m);return;}hideDialog();
+      m.fi++;if(m.fi<m.falas.length){gtFala(m);return;}dlgRetrato=null;hideDialog();
       if(m.intro){m.intro=false;m.phase='titulo';m.phaseT=2.4;sfx.alert();beep(220,.5,'sawtooth',.05,440);}
       else{const L=GT_LESSONS[m.lesson];gtStartRound(m);m.phase='play';m.beatT0=m.t;m.beatN=-1;m.msg=L.nome;m.msgT=1.6;}}return;}
   if(m.phase==='titulo'){m.phaseT-=dt;if(m.phaseT<=0){m.phase='talk';m.falas=GT_LESSONS[0].fala;m.fi=0;m.falaT=m.t;gtFala(m);}return;}
@@ -4365,7 +4366,7 @@ let histP=[],histT=0,rebS=null,tempoCh=3,tempoPend=null; // tempoCh: chances que
 const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 // cena depois do Bloco Secreto: o mestre entrega o sax e conta a lenda
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
-const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
+const RETRATOS={jamal:SVPC_ASSETS.JAMAL_SRC,altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
 const PRE_FALAS={
   altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
     volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
