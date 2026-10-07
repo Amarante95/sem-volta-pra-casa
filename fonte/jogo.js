@@ -824,6 +824,7 @@ function musWant(){
   if(state==='mglost')return null; // perdeu o desafio: silêncio e o jingle de fim
   if(state==='paused')return mus.song;
   if(state==='cut'&&cutKind==='sax')return ['mg_bloco','blocoRec','bloco'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // cena do sax: a música do Bloco Secreto segue sem recomeçar (ainda não é a hora do Eva)
+  if(state==='cut'&&cutKind==='pre')return mus.song&&!['fuga','cogumelo','sono','final','axe'].includes(mus.song)?mus.song:nightA()>.4?'noite':'rua'; // conversa antes do desafio: trilha tranquila, nada de Eva
   if(state==='play'&&P.energy<=30)return null; // energia em 30 ou menos: a música para e fica só o coração
   if(finalStage>=2||state==='cut')return mus.finalBuf?'final':'axe'; // venceu o Jamal: Eva até o barco
   if(state==='play'&&nightA()>.15)return 'noite'; // escureceu: só a música da noite (sem fuga, cogumelo ou sono por cima)
@@ -4566,7 +4567,7 @@ function updLabirinto(dt){
     if(inp.act&&m.t-cv.t0>.3){cv.t0=m.t;
       if(cv.fase==='falas'){cv.fi++;if(cv.fi>=cv.g.falas.length)cv.fase='escolha';}
       else if(cv.fase==='escolha')labEscolhe(cv.sel);
-      else{m.phase='anda';m.cv=null;labEfeito(cv.ef);}}
+      else{m.phase='anda';m.cv=null;labEfeito(cv.ef);if(cv.ef==='expulsa')cv.p.falou=false;}} // errou: na volta a pessoa pergunta de novo
     return;}
   if(m.phase==='fala'){if(inp.act&&m.t-m.falaT>.3){m.falaT=m.t;if(dlg.shown<dlg.full.length){dlg.shown=dlg.full.length;$('dtext').textContent=dlg.full;return;}m.fi++;if(m.fi>=m.falas.length){dlgRetrato=null;hideDialog();m.phase='ensina';m.ens={i:-1,t:-.6};}else showDialog(...m.falas[m.fi]);}return;}
   if(m.phase==='ensina'){m.ens.t+=dt;const i=Math.floor(m.ens.t/.95); // o Cria toca devagar, uma nota de cada vez
