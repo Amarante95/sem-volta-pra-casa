@@ -2809,15 +2809,15 @@ function renderAltinha(){
 }
 
 /* ---------- FUTEVÔLEI (aula com o Professor Arthur): igual à altinha, mas com rede no meio. 5 pontos ganha ---------- */
-const FV={NET:160,NT:AG-38,PTS:5,ACERTO:.75}; // rede no meio (topo em NT); o professor rebate certo 75% das bolas
+const FV={NET:160,NT:AG-57,PTS:5,ACERTO:.75,CORTE:245,JANELA:.15}; // rede no meio (topo em NT); o professor rebate certo 75% das bolas; cortada 1,5x mais forte
 let futvDay=0;
 const ARTHUR_BOA=['Boa, aluno!','Essa eu deixei cair...','Tá aprendendo, hein!','Opa! Vacilei.'];
 const ARTHUR_ZOA=['Mexe esse pé, Markin!','Futevôlei é com a cabeça!','Aula 1: não deixa cair.','Tá dormindo em pé?'];
 function startFutevolei(){
   mgEnter('futevolei');
   mg={t:0,ptsMe:0,ptsPc:0,msg:'Quem fizer 5 pontos primeiro ganha!',msgT:2.6,done:0,result:null,saque:'pc',serveT:2,pauseT:0,pops:[],mood:null,moodT:0,
-    lado:'pc',last:null,meToques:0,pcToques:0,pcErro:null,
-    me:{x:80,y:AG,vy:0,face:1,kick:0,cd:0,ground:true},
+    lado:'pc',last:null,meToques:0,pcToques:0,pcErro:null,pcCorta:false,
+    me:{x:80,y:AG,vy:0,face:1,kick:0,cd:0,ground:true,cortT:0,cortCd:0},
     pc:{x:240,y:AG,vy:0,face:-1,kick:0,cd:0,ground:true,think:0,goal:240},
     ball:{x:232,y:AG-20,vx:0,vy:0,r:12,rot:0,live:false}};
 }
@@ -2834,36 +2834,50 @@ function fvPonto(quem,msg){
   if(m.ptsMe>=FV.PTS){m.result='win';m.done=2.4;m.msg=`GANHOU DO PROFESSOR! ${m.ptsMe} a ${m.ptsPc}!`;m.msgT=2.4;m.mood='hype';m.moodT=2.4;sfx.win();}
   else if(m.ptsPc>=FV.PTS){m.result='lose';m.done=2.4;m.msg=`O Professor Arthur fechou ${m.ptsPc} a ${m.ptsMe}.`;m.msgT=2.4;}
 }
-// toque do Markin: cabeça ou chute. Segurando ← levanta pra si mesmo; → corta (no pulo, perto da rede) ou dá uma curtinha; sem direção manda no fundo
-function fvHitMe(inp){
+// toque do Markin: a cabeçada é automática, com a mesma força da altinha. A CORTADA é no botão de chute:
+// só sai se a bola estiver no alcance no instante em que aperta (janela curta). A direção vem de onde ele pega na bola:
+// por cima da cabeça crava pra baixo, na altura da cabeça sai reta, embaixo/atrás (ou no pé) sobe
+function fvHitMe(){
   const m=mg,b=m.ball,p=m.me;if(!b.live||p.cd>0||b.x>FV.NET+4)return;
   const hx=p.x,hy=p.y-36,dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),RR=16+b.r;
-  const head=d<RR&&d>0&&dy<8;
-  const kx=p.x+p.face*12,ky=p.y-10,foot=p.kick>0&&Math.hypot(b.x-kx,b.y-ky)<28;
-  if(!head&&!foot)return;
-  if(head){const nx=dx/d,ny=dy/d;b.x=hx+nx*RR;b.y=hy+ny*RR;}else{b.y=Math.min(b.y,ky-4);p.kick=0;}
+  const kx=p.x+p.face*12,ky=p.y-10,fd=Math.hypot(b.x-kx,b.y-ky);
+  const corta=p.cortT>0&&(d<RR+4||fd<26),head=d<RR&&d>0&&dy<8;
+  if(!corta&&!head)return;
   m.meToques++;m.last=p;p.cd=.28;
   if(m.meToques>3){fvPonto('pc','Quatro toques!');return;}
-  const ix=inp.ix;let nome=String(m.meToques);
-  if(ix<-.3&&m.meToques<3)aimTo(b,clamp(p.x+18,30,FV.NET-34),rnd(250,280)); // levantada pra ele mesmo
-  else if(ix>.3&&head&&!p.ground&&p.x>FV.NET-75){fvAim(b,rnd(178,212),30);nome='CORTADA!';shake=.15;} // shark attack
-  else if(ix>.3)fvAim(b,rnd(176,200),220); // curtinha colada na rede
-  else fvAim(b,rnd(235,285),260); // no fundo
-  fvPop(b.x,b.y-10,nome,nome==='CORTADA!'?'#ff8a3d':'#ffe14f');
-  if(head)beep(520+m.meToques*60,.08,'square',.05);else beep(180,.08,'triangle',.08);
-  if(nome==='CORTADA!'){m.mood='hype';m.moodT=.6;}
+  if(corta){
+    const pe=d>=RR+4,cx=pe?(b.x-kx)/(fd||1):dx/(d||1),cy=pe?(b.y-ky)/(fd||1):dy/(d||1);
+    if(!pe&&d<RR){b.x=hx+cx*RR;b.y=hy+cy*RR;}
+    const ang=clamp(-cy*.75-Math.max(0,-cx)*.35-(pe?.45:0),-.6,.9); // radianos abaixo da horizontal
+    b.vx=FV.CORTE*Math.cos(ang);b.vy=FV.CORTE*Math.sin(ang);
+    p.cortT=0;p.kick=.25;shake=.18;m.mood='hype';m.moodT=.6;
+    fvPop(b.x,b.y-10,'CORTADA!','#ff8a3d');beep(150,.1,'square',.09);beep(90,.12,'sawtooth',.05);return;
+  }
+  const nx=dx/d,ny=dy/d;b.x=hx+nx*RR;b.y=hy+ny*RR;
+  const up=clamp(185+(p.vy<0?-p.vy*.55:0)+(-ny)*55+Math.abs(b.vy)*.1,160,350);
+  b.vy=-up;b.vx=clamp((nx*155+p.vx*.55)*.8+aimVx(b,m.pc.x,up)*.2,-180,180);
+  fvPop(b.x,b.y-10,String(m.meToques),'#ffe14f');beep(520+m.meToques*60,.08,'square',.05);
 }
-// toque do professor: o erro (25%) já vem sorteado quando a bola passa a rede
+// cortada do professor: do alto do pulo, procura o ângulo mais cravado que passa a rede e cai no campo do Markin
+function fvCortePc(b){
+  for(let a=.8;a>=-.3;a-=.05){let x=b.x,y=b.y,vx=-FV.CORTE*Math.cos(a),vy=FV.CORTE*Math.sin(a),ok=true;
+    for(let i=0;i<300;i++){const x0=x;vy+=ALT_G*.008;x+=vx*.008;y+=vy*.008;
+      if(x0>=FV.NET&&x<FV.NET&&y>FV.NT-b.r-2){ok=false;break;}
+      if(y+b.r>=AG+3)break;}
+    if(ok&&x<FV.NET-14&&x>b.r+2){b.vx=-FV.CORTE*Math.cos(a);b.vy=FV.CORTE*Math.sin(a);return true;}}
+  return false;
+}
+// toque do professor (mesma força da altinha): o erro (25%) já vem sorteado quando a bola passa a rede
 function fvHitPc(){
-  const m=mg,b=m.ball,pc=m.pc;m.pcToques++;m.last=pc;pc.cd=.3;if(b.y>pc.y-30)pc.kick=.22;
-  if(m.pcErro==='rede'){aimTo(b,FV.NET+6,rnd(80,120));m.pcErro=null;m.pcToques=3;}            // bate fraco e morre antes da rede
-  else if(m.pcErro==='fora'){b.vx=-rnd(195,220);b.vy=-rnd(270,300);m.pcErro=null;m.pcToques=3;} // isola pra fora
-  else if(m.pcToques===1&&b.vy>120&&Math.random()<.5)aimTo(b,clamp(pc.x-14,FV.NET+34,300),rnd(230,260)); // domina e levanta
-  else if(m.pcToques>=2)fvAim(b,rnd(40,135),rnd(150,190)); // depois de levantar, ataca mais rápido
-  else{const r=Math.random();
-    if(r<.2)fvAim(b,rnd(112,140),220);       // curtinha
-    else if(r<.4)fvAim(b,rnd(25,50),280);    // no fundo
-    else fvAim(b,rnd(50,125),rnd(220,290));}
+  const m=mg,b=m.ball,pc=m.pc,me=m.me;m.pcToques++;m.last=pc;pc.cd=.3;if(b.y>pc.y-30)pc.kick=.22;
+  if(m.pcErro==='rede'){aimTo(b,FV.NET+6,rnd(80,120));m.pcErro=null;m.pcToques=3;} // bate fraco e morre antes da rede
+  else if(m.pcCorta&&!pc.ground&&fvCortePc(b)){m.pcCorta=false;shake=.18;fvPop(b.x,b.y-12,'CORTADA!','#ff8a3d');beep(150,.1,'square',.09);beep(90,.12,'sawtooth',.05);return;}
+  else if(m.pcToques===1&&b.vy>120&&Math.random()<.5){aimTo(b,clamp(pc.x-14,FV.NET+34,300),rnd(230,260));m.pcCorta=Math.random()<.5;} // domina e levanta (às vezes pra cortar)
+  else{const r=Math.random(),t=x=>clamp(x,22,FV.NET-26); // devoluções da altinha, passando a rede
+    if(r<.12)fvAim(b,t(me.x+rnd(-20,20)),rnd(320,350));       // chapéu altão
+    else if(r<.24)fvAim(b,t(me.x+rnd(40,70)),rnd(170,200));   // curtinha, tem que correr
+    else if(r<.36)fvAim(b,t(me.x-rnd(40,70)),rnd(230,270));   // passou do ponto
+    else fvAim(b,t(me.x+rnd(-35,35)),rnd(200,300));}
   if(b.y<pc.y-30)beep(440,.08,'square',.04);else beep(170,.08,'triangle',.07);
 }
 function fvServe(){
@@ -2880,7 +2894,8 @@ function updFutevolei(dt){
     else mgLost(`O Professor Arthur ganhou de ${m.ptsPc} a ${m.ptsMe}. Aula é aula.`);}
     altMove(me,0,false,dt,120);altMove(pc,0,false,dt,110);me.x=Math.min(me.x,FV.NET-10);pc.x=Math.max(pc.x,FV.NET+10);return;}
   // Markin (não passa da rede)
-  if(inp.act&&me.kick<=0&&(b.live||m.pauseT>0||m.saque!=='me'))me.kick=.32;
+  me.cortT=Math.max(0,me.cortT-dt);me.cortCd=Math.max(0,me.cortCd-dt);
+  if(inp.act&&b.live&&me.cortCd<=0){me.cortT=FV.JANELA;me.cortCd=.45;me.kick=.2;beep(300,.05,'triangle',.03);} // arma a cortada: errou o tempo, espera um pouco
   altMove(me,inp.ix,inp.jump,dt,125);me.x=Math.min(me.x,FV.NET-10);
   // professor (CPU): vai pra onde a bola cai; se for errar deixando passar, chega atrasado
   let tx=240,sp=112;
@@ -2889,7 +2904,9 @@ function updFutevolei(dt){
   else if(m.saque==='pc')tx=232;
   pc.think-=dt;if(pc.think<=0){pc.think=.12;pc.goal=clamp(tx+rnd(-2,2),FV.NET+12,306);}
   const dg=pc.goal-pc.x,pix=Math.abs(dg)>3?Math.sign(dg)*Math.min(1,Math.abs(dg)/18):0;
-  altMove(pc,pix,false,dt,sp);pc.x=Math.max(pc.x,FV.NET+10);pc.face=-1;
+  // vai cortar: pula na hora que a bola chega no alto
+  let pj=false;if(b.live&&m.pcCorta&&pc.ground&&b.x>FV.NET&&Math.abs(b.x-(pc.x-4))<18){const yb=b.y+b.vy*.3+ALT_G*.045;if(Math.abs(yb-(pc.y-88))<16)pj=true;}
+  altMove(pc,pix,pj,dt,sp);pc.x=Math.max(pc.x,FV.NET+10);pc.face=-1;
   // bola
   if(!b.live){
     if(m.pauseT>0){m.pauseT-=dt;b.y=Math.min(b.y+120*dt,AG+3-b.r);return;}
@@ -2901,19 +2918,19 @@ function updFutevolei(dt){
   }
   const px0=b.x;
   b.vy+=ALT_G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vx*dt*.06;
+  if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.8;}if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx)*.8;} // parede de fora: volta pra quadra
   // rede: a bola bate e volta pro lado de onde veio
   if(Math.abs(b.x-FV.NET)<b.r*.5+1&&b.y>FV.NT-b.r*.4){const esq=px0<FV.NET;b.x=esq?FV.NET-b.r*.5-1:FV.NET+b.r*.5+1;b.vx=(esq?-1:1)*Math.abs(b.vx)*.3;if(!(m.redeT>0))beep(120,.1,'sawtooth',.05);m.redeT=.3;}
   m.redeT=(m.redeT||0)-dt;
   const lado=b.x<FV.NET?'me':'pc';
   if(lado!==m.lado){m.lado=lado;
-    if(lado==='pc'){m.pcToques=0;m.pcErro=Math.random()<FV.ACERTO?null:pick(['passa','passa','rede','fora']);}
+    if(lado==='pc'){m.pcToques=0;m.pcErro=Math.random()<FV.ACERTO?null:pick(['passa','passa','rede']);m.pcCorta=!m.pcErro&&Math.random()<.25;}
     else m.meToques=0;}
-  fvHitMe(inp);
+  fvHitMe();
   // o professor rebate quando a bola chega nele (de cabeça, peito ou peixinho rente à areia)
   if(b.live&&lado==='pc'&&pc.cd<=0&&m.pcErro!=='passa'&&(m.last!==pc||m.pcToques===1)&&b.vy>0){
     const near=Math.abs(b.x-(pc.x-4))<20&&b.y>pc.y-62,peixe=b.y+b.r>=AG-2&&Math.abs(b.x-pc.x)<52;
     if(near||peixe){if(peixe&&!near){pc.x=clamp(b.x+6,FV.NET+10,306);fvPop(pc.x,pc.y-60,'peixinho!','#fff1c2');}fvHitPc();}}
-  if(b.x<-b.r||b.x>W+b.r){fvPonto(m.last===me?'pc':'me',m.last===me?'Foi pra fora!':'O professor mandou pra fora!');return;}
   if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Arthur! PONTO!':'Caiu no teu campo.');}
 }
 function drawArthur(g,hx,hy,look){ // o Professor Arthur: viseira branca, cabelo curto espetado, cavanhaque e sorriso de professor
@@ -2962,7 +2979,7 @@ function renderFutevolei(){
   if(b.live&&m.lado==='me'&&m.meToques>0)outlineText(g,`toques ${m.meToques}/3`,W-8,15,8,m.meToques>=3?'#ff9a8a':'#f3ecd8','right');
   if(m.msgT>0)outlineText(g,m.msg,W/2,62,9,m.result==='lose'?'#ff6b5d':m.result==='win'?'#8be08b':'#ffffff');
   else if(!b.live&&m.saque==='me'&&!m.result&&m.pauseT<=0)outlineText(g,isTouch?'CHUTA pra sacar':'ESPAÇO pra sacar',W/2,62,9,'#ffe14f');
-  if(m.t<6&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA · ← levanta · → corta':'← → anda · ↑ pula · ESPAÇO chuta · segure → corta, ← levanta',W/2,174,7,'#fff1c2');
+  if(m.t<6&&!m.result)outlineText(g,isTouch?'analógico anda · PULA · CHUTA corta na hora certa':'← → anda · ↑ pula · ESPAÇO corta (na hora certa)',W/2,174,7,'#fff1c2');
 }
 
 /* ---------- BLOCO SECRETO (corrida estilo Subway Surfers) ---------- */
