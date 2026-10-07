@@ -793,7 +793,6 @@ function crowdInit(){
   const g=AC.createGain();g.gain.value=0;src.connect(bp);bp.connect(g);g.connect(MASTER);src.start();
   mus.crowd={g,bp,lvl:0,goal:false,rec:null};
   maracaAudioLoad();fetch('musicas/final.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.finalBuf=buf;}).catch(()=>recDecode(FINAL_AUDIO,b=>{mus.finalBuf=b;mus.finalCurta=true;})); // Eva inteira (o trecho do loop é escolhido na hora de tocar)recDecode(INICIO_AUDIO,b=>{mus.inicioBuf=b;});recDecode(FESTA_AUDIO,b=>{mus.festaBuf=b;});
-  fetch('musicas/galo.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.galoBuf=buf;}).catch(()=>{}); // galo da troca de dia
   // músicas dos desafios (mp3 na pasta musicas/, enviadas pelo João)
   mus.mg={};for(const [k,arq] of Object.entries(MG_MUSICAS))fetch('musicas/'+arq).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>AC.decodeAudioData(b)).then(buf=>{mus.mg[k]=buf;}).catch(()=>{});
 }
@@ -2145,22 +2144,19 @@ function somCapitulo(d){const n=2+Math.floor(d/3),gap=Math.max(.3,.62-d*.022),f0
   for(let i=0;i<n;i++){beep(f0,.18,'sine',.18,30,.35+i*gap);beep(f0-6,.14,'sine',.13,25,.35+i*gap+.15);}
   beep(70+d*4,2.4,'sawtooth',.018+d*.0018,62+d*4,.1);
   if(d>=6)beep(104+d*6,1.8,'square',.012,98+d*6,.6);if(d>=11)beep(147+d*8,1.4,'square',.012,0,1.1);}
-// galo cantando quando a tela clareia (mp3 enviado pelo João)
-function galo(){if(!AC||muted||!mus||!mus.galoBuf)return;const src=AC.createBufferSource(),g=AC.createGain();src.buffer=mus.galoBuf;g.gain.value=.8;src.connect(g);g.connect(MASTER);src.start();}
-const CAP={FECHA:.8,TEXTO:3.3,ABRE:4.6};
-function updCapitulo(dt){const antes=cap.t;cap.t+=dt;if(antes<CAP.TEXTO&&cap.t>=CAP.TEXTO)galo();if(cap.t>=CAP.ABRE){cap=null;state='play';P.mode='free';$('hud').hidden=false;}}
+const CAP={FECHA:.5,TEXTO:3,ABRE:4};
+function updCapitulo(dt){cap.t+=dt;if(cap.t>=CAP.ABRE){cap=null;state='play';P.mode='free';$('hud').hidden=false;}}
 // a "íris" que fecha em volta do Markin (r = raio do buraco em px da tela)
 function iris(r,px,py){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='#000';dc.fillRect(0,0,W,H);
   if(r>0){dc.globalCompositeOperation='destination-out';const gr=dc.createRadialGradient(px,py,Math.max(0,r*.75),px,py,r);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');
     dc.fillStyle=gr;dc.beginPath();dc.arc(px,py,r,0,Math.PI*2);dc.fill();dc.globalCompositeOperation='source-over';}
   ctx.drawImage(dk,0,0);}
-// a troca de dia: a tela inteira escurece, aparece o DIA X e depois clareia de novo com o galo
-function renderCapitulo(cx,cy){const t=cap.t;
-  if(t<CAP.FECHA){ctx.fillStyle='rgba(0,0,0,'+(t/CAP.FECHA).toFixed(3)+')';ctx.fillRect(0,0,W,H);}
+function renderCapitulo(cx,cy){const t=cap.t,px=P.x-cx,py=P.y-14-cy;
+  if(t<CAP.FECHA)iris(70*(1-t/CAP.FECHA),px,py);
   else if(t<CAP.TEXTO){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const a=Math.min(1,(t-CAP.FECHA)/.4,(CAP.TEXTO-t)/.3);ctx.globalAlpha=Math.max(0,a);
     outlineText(ctx,'DIA '+cap.dia,W/2,H/2-4,18,'#ffe14f');if(L.days[cap.dia])outlineText(ctx,L.days[cap.dia],W/2,H/2+16,8,'#f3ecd8');ctx.globalAlpha=1;$('hud').hidden=true;}
-  else{ctx.fillStyle='rgba(0,0,0,'+(1-(t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO)).toFixed(3)+')';ctx.fillRect(0,0,W,H);}
-  if(t>=CAP.FECHA*.5&&t<(CAP.TEXTO+CAP.ABRE)/2)headCv.hidden=true;} // a cabeça some quando a tela já tá mais escura que clara
+  else iris(400*Math.pow((t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO),1.6),px,py);
+  if(t>=CAP.FECHA&&t<CAP.TEXTO)headCv.hidden=true;} // a cabeça só some na tela preta
 function renderVirando(){const g=ctx,t=virar.t,cx=W/2,cy=H/2;headCv.hidden=true;
   g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/VR.ESC)})`;g.fillRect(0,0,W,H);
   const virou=t>=VR.VIRA,pw=Math.max(0,Math.min(1,(t-VR.ESC)/(VR.VIRA-VR.ESC)));
