@@ -2834,7 +2834,7 @@ function fvAim(b,tx,up){
 }
 function fvPop(x,y,txt,col){mg.pops.push({x,y,t:.9,txt,col});}
 function fvPonto(quem,msg){
-  const m=mg;m.ball.live=false;m.pauseT=1.1;m.saque=quem;m.serveT=quem==='me'?4:1.6;m.last=null;
+  const m=mg;m.ball.live=false;m.saqueVoo=false;m.pauseT=1.1;m.saque=quem;m.serveT=quem==='me'?4:1.6;m.last=null;
   if(quem==='me'){m.ptsMe++;m.mood='hype';m.moodT=1.4;beep(660,.1,'square',.06);beep(880,.12,'square',.06);}
   else{m.ptsPc++;m.mood='sad';m.moodT=1.4;sfx.hit();shake=.25;}
   m.msg=msg+' · '+(quem==='me'?pick(ARTHUR_BOA):pick(ARTHUR_ZOA));m.msgT=2;
@@ -2845,7 +2845,7 @@ function fvPonto(quem,msg){
 // só sai se a bola estiver no alcance no instante em que aperta (janela curta). A direção vem de onde ele pega na bola:
 // por cima da cabeça crava pra baixo, na altura da cabeça sai reta, embaixo/atrás (ou no pé) sobe
 function fvHitMe(){
-  const m=mg,b=m.ball,p=m.me;if(!b.live||p.cd>0||b.x>FV.NET+4)return;
+  const m=mg,b=m.ball,p=m.me;if(!b.live||m.saqueVoo||p.cd>0||b.x>FV.NET+4)return;
   const hx=p.x,hy=p.y-36,dx=b.x-hx,dy=b.y-hy,d=Math.hypot(dx,dy),RR=16+b.r;
   const kx=p.x+p.face*12,ky=p.y-10,fd=Math.hypot(b.x-kx,b.y-ky);
   const corta=p.cortT>0&&(d<RR+4||fd<26),head=d<RR&&d>0&&dy<8;
@@ -2888,7 +2888,7 @@ function fvHitPc(){
   if(b.y<pc.y-30)beep(440,.08,'square',.04);else beep(170,.08,'triangle',.07);
 }
 function fvServe(){
-  const m=mg,b=m.ball;b.live=true;b.vx=0;b.vy=0;
+  const m=mg,b=m.ball;b.live=true;b.vx=0;b.vy=0;m.saqueVoo=true; // o saque sempre passa pro outro lado: ninguém toca até ela cruzar a rede
   if(m.saque==='me'){m.me.kick=.25;m.last=m.me;m.lado='me';m.meToques=1;m.me.cd=.3;fvAim(b,rnd(225,280),250);beep(180,.08,'triangle',.08);}
   else{m.pc.kick=.25;m.last=m.pc;m.lado='pc';m.pcToques=1;m.pc.cd=.3;fvAim(b,rnd(40,130),rnd(230,280));sfx.pick();}
 }
@@ -2919,23 +2919,23 @@ function updFutevolei(dt){
     if(m.pauseT>0){m.pauseT-=dt;b.y=Math.min(b.y+120*dt,AG+3-b.r);return;}
     if(m.result)return;
     m.serveT-=dt;
-    if(m.saque==='me'){b.x=me.x+me.face*12;b.y=AG-46+Math.sin(m.t*5)*3;b.rot=0;if((inp.act&&me.cd<=0)||m.serveT<=0)fvServe();}
-    else{b.x=pc.x-8;b.y=AG-20;if(m.serveT<=0)fvServe();}
+    if(m.saque==='me'){b.x=clamp(me.x+me.face*12,14,FV.NET-30);b.y=AG-46+Math.sin(m.t*5)*3;b.rot=0;if((inp.act&&me.cd<=0)||m.serveT<=0)fvServe();}
+    else{b.x=Math.max(pc.x-8,FV.NET+22);b.y=AG-20;if(m.serveT<=0)fvServe();}
     return;
   }
   const px0=b.x;
   b.vy+=ALT_G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vx*dt*.06;
   if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.8;}if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx)*.8;} // parede de fora: volta pra quadra
   // rede: a bola bate e volta pro lado de onde veio
-  if(Math.abs(b.x-FV.NET)<b.r*.5+1&&b.y>FV.NT-b.r*.4){const esq=px0<FV.NET;b.x=esq?FV.NET-b.r*.5-1:FV.NET+b.r*.5+1;b.vx=(esq?-1:1)*Math.abs(b.vx)*.3;if(!(m.redeT>0))beep(120,.1,'sawtooth',.05);m.redeT=.3;}
+  if(!m.saqueVoo&&Math.abs(b.x-FV.NET)<b.r*.5+1&&b.y>FV.NT-b.r*.4){const esq=px0<FV.NET;b.x=esq?FV.NET-b.r*.5-1:FV.NET+b.r*.5+1;b.vx=(esq?-1:1)*Math.abs(b.vx)*.3;if(!(m.redeT>0))beep(120,.1,'sawtooth',.05);m.redeT=.3;}
   m.redeT=(m.redeT||0)-dt;
   const lado=b.x<FV.NET?'me':'pc';
-  if(lado!==m.lado){m.lado=lado;
+  if(lado!==m.lado){m.lado=lado;m.saqueVoo=false;
     if(lado==='pc'){m.pcToques=0;m.pcErro=Math.random()<FV.ACERTO?null:pick(['passa','passa','rede']);m.pcCorta=!m.pcErro&&Math.random()<.25;}
     else m.meToques=0;}
   fvHitMe();
   // o professor rebate quando a bola chega nele (de cabeça, peito ou peixinho rente à areia)
-  if(b.live&&lado==='pc'&&pc.cd<=0&&m.pcErro!=='passa'&&(m.last!==pc||m.pcToques===1)&&b.vy>0){
+  if(b.live&&!m.saqueVoo&&lado==='pc'&&pc.cd<=0&&m.pcErro!=='passa'&&(m.last!==pc||m.pcToques===1)&&b.vy>0){
     const near=Math.abs(b.x-(pc.x-4))<20&&b.y>pc.y-62,peixe=b.y+b.r>=AG-2&&Math.abs(b.x-pc.x)<52;
     if(near||peixe){if(peixe&&!near){pc.x=clamp(b.x+6,FV.NET+10,306);fvPop(pc.x,pc.y-60,'peixinho!','#fff1c2');}fvHitPc();}}
   if(b.y+b.r>=AG+3){b.y=AG+3-b.r;fvPonto(lado==='pc'?'me':'pc',lado==='pc'?'Caiu no campo do Arthur! PONTO!':'Caiu no teu campo.');}
