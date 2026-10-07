@@ -1845,7 +1845,7 @@ const TASKS=[
   {k:'sinuca',curto:'Bambina',nome:'Ganhar na bambina',onde:()=>barDoors.find(b=>b.kind==='sinuca'),lugar:'no bar de placa verde'},
   {k:'festa',curto:'Circo Voador',nome:'Conquistar a Rebecca',onde:()=>FESTA,lugar:'no Circo Voador, na Lapa'},
   {k:'maraca',curto:'Maracanã',nome:'Fazer gol no Maracanã',onde:()=>MARACA,lugar:'no estádio ao lado da favela'},
-  {k:'surf',curto:'Surf',nome:'Surfar 2500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'},
+  {k:'surf',curto:'Surf',nome:'Surfar 1500 pontos',onde:()=>SURF,lugar:'na areia, depois do navio'},
   {k:'futevolei',curto:'Futevôlei',nome:'Ganhar a aula de futevôlei',onde:()=>FUTV,lugar:'na areia do canto direito, perto do calçadão'}
 ];
 let tasksDone={},hintT=12;
@@ -2348,8 +2348,8 @@ const DUDU_POCKET=['Volta pro pocket!','Tá longe da onda, volta!','Cola na espu
    - TUBO: com a quebra logo atrás dele (o lábio passa por cima). Os pontos do tubo sobem com multiplicador (x1, x1.1, ... x5 em 10 s).
    - AÉREO: ESPAÇO só funciona lá em cima da onda. No ar, ← → (ou ↑ ↓) giram a prancha; dá pra fazer 360°,
      mas tem que cair com o bico da prancha apontando pra baixo, senão é vaca.
-   Soma 2500 pontos nas 3 ondas pra vencer. */
-const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:2500,VMAX:220,G:400,LEVANTA:.5,CURL:80,TUBO_PTS:1000/29.5,TUBO_PASSO:.25};
+   Soma 1500 pontos nas 3 ondas pra vencer. */
+const SF={TOPO:62,BASE:162,CREST:47,LABIO:49,FUNDO:168,VSAI:70,MX:196,META:1500,VMAX:220,G:400,LEVANTA:.5,CURL:80,TUBO_PTS:1000/29.5,TUBO_PASSO:.25};
 // tartarugas: aparecem depois de 5 s em pé, nadando na parede. Bater nelas = vaca (dá pra pular por cima no aéreo)
 const TARTA_FALAS=['Kd meu canudo?'];
 // frente da quebra na altura y: embaixo fica em cx, e o lábio lá em cima se inclina pra direita (como no jogo)
