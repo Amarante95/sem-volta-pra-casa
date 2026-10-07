@@ -1547,7 +1547,7 @@ function update(dt){
   particles=particles.filter(p=>p.life>0);
   if(state==='cut'){
     P.moving=false; // o walkTo da cena liga de novo enquanto ele anda, pra animar a passada (macacão na intro)
-    if(cutGen){const r=cutGen.next(dt);if(r.done){cutGen=null;if(cutKind==='intro')endIntro();else if(cutKind==='bloco')startMarch();else if(cutKind==='sax'){state='play';P.mode='free';}else if(cutKind==='pre'){const f=preFn;preFn=null;dlgRetrato=null;hideDialog();f();}else endWin();}}
+    if(cutGen){const r=cutGen.next(dt);if(r.done){cutGen=null;if(cutKind==='intro')endIntro();else if(cutKind==='bloco')startMarch();else if(cutKind==='sax'){state='play';P.mode='free';mgSaiuEm=performance.now();}else if(cutKind==='pre'){const f=preFn;preFn=null;dlgRetrato=null;hideDialog();f();}else endWin();}}
   }else if(state==='play')play(dt);
   else if(state==='guitarra')updGuitarra(dt);
   else if(state==='maraca')updMaraca(dt);
