@@ -3554,10 +3554,10 @@ function updSinuca(dt){
   else if(m.phase==='pick')snPick(m,inp);
   else if(m.phase==='pcPick')snPcPickTick(m,dt);
   else if(m.turn==='pc')snAiTick(m,dt,cue);
-  else if(m.phase==='aim'){m.ang+=inp.ix*1.5*dt;if(inp.act){m.phase='power';m.pw=0;m.pwDir=1;}}
+  else if(m.phase==='aim'){m.ang+=inp.ix*1.2*dt;if(inp.act){m.phase='power';m.pw=0;m.pwDir=1;}}
   else if(m.phase==='power'){
     const spd=(.75+m.beers*.15)*.5;m.pw+=m.pwDir*spd*dt;if(m.pw>1){m.pw=1;m.pwDir=-1;}if(m.pw<0){m.pw=0;m.pwDir=1;}
-    m.ang+=inp.ix*.8*dt;
+    m.ang+=inp.ix*.65*dt;
     if(inp.act)snShoot(m,cue,m.ang+snWob(m),m.pw);
   }
 }
