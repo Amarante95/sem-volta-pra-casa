@@ -1163,6 +1163,7 @@ function setupStatics(){
     const yard=x>=31&&x<=46&&y>=25&&y<=34; // quintal da casa
     if(!yard)walkTiles.push({x,y});else if(Math.hypot(x-DOORT.x,y-DOORT.y)<4)continue;
     if(noNavio(x*T+8,y*T+8))continue;
+    if(kiosks.some(k=>Math.abs(x*T+8-k.x)<=T&&y*T+10<=k.y&&y*T+10>k.y-2*T))continue; // atrás do quiosque o item some
     // zona de itens: cada região do mapa tem os seus
     const q={x,y},perto=(o,r)=>Math.hypot(x-(o.x-8)/T,y-(o.y-10)/T)<=r;
     if(perto(FESTA,8)||t===LAPA||(x>=50&&y<=8)){spawnSets.beer.push(q,q,q);spawnSets.zip.push(q);spawnSets.shades.push(q);if(t!==ROAD)spawnSets.shroom.push(q);} // festa e Lapa: de tudo um pouco
