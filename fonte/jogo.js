@@ -4373,7 +4373,7 @@ const RETRATOS={jamal:SVPC_ASSETS.JAMAL_SRC,altinha:SVPC_ASSETS.AMARANTE_SRC,sin
 const PRE_FALAS={
   altinha:{primeira:[['Amara','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, Jogo Prensado.'],['Amara','Então mostra que tu é cria do leme: oito toques sem deixar cair.'],['Amara','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
     volta:[['Amara','Voltou pra outro X1? Bora, oito toques!']]},
-  futevolei:{primeira:[['Tchuco','Coee perna de pau! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra mostrar minha peitada na lua...'],['Tchuco','Então bora, peito cachoeira.'],['Markin','E se eu ganhar do professor?'],['Tchuco','Aí eu vou contigo pro próximo rolé.']],
+  futevolei:{primeira:[['Tchuco','Coee perna de pau! Chega mais que a aula já vai começar.'],['Markin','Aula? Calma ai Jogo Prensado. Eu vim só pra mostrar minha peitada na lua...'],['Tchuco','Então bora, peito cachoeira.'],['Markin','E se eu ganhar do professor?'],['Tchuco','Aí eu vou contigo pro próximo rolé.']],
     volta:[['Tchuco','Voltou pra aula? Bora, até 5!']]},
   sinuca:{primeira:[['Liu','Visãaaao, cria!'],['Liu','Quero ver ganhar de mim: quatro vermelhas, quatro amarelas. E cada tacada tua é uma cerveja. Vai sair daqui trocando perna.'],['Markin','Doidão eu jogo melhor. Impossível perder pra tu.'],['Liu','Pega no taco meu rapa.']],
     volta:[['Liu','De novo? Pega no taco, Markin.']]},
