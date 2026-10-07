@@ -1228,7 +1228,7 @@ function resetGame(){bandeira=0;
   cv.style.filter='';cv.style.transform='';
   {const tg=targets();for(const k in tg)for(let i=0;i<tg[k];i++)spawnItem(k,true);} // já começa com as mesmas quantidades de sempre
   navioDX=0;boto=null;
-  mg=null;grab=null;spawnNpcs();lastSleep=-999;for(const o of [...busStops,...chairs])o.lastRest=-99999;altinhaDay=0;barDay=0;festaDay=0;tasksDone={};hintT=15;$('festa').hidden=true;taxis=[];taxiT=20;tregua=0;relocateBloco();
+  mg=null;grab=null;spawnNpcs();lastSleep=-999;for(const o of [...busStops,...chairs])o.lastRest=-99999;altinhaDay=0;barDay=0;festaDay=0;tasksDone={};hintT=15;$('festa').hidden=true;taxis=[];taxiT=20;tregua=0;maePegou=0;relocateBloco();
 }
 function targets(){return{beer:12,shroom:2,zip:3,shades:2,shroomGold:1,shroomRoxo:1};} // igual todos os dias
 function spawnItem(type,initial=false){
@@ -1804,15 +1804,17 @@ function updTias(dt){
   }
 }
 /* ---------- PRESO: a chave ou a mãe te arrastam pra casa; toque várias vezes pra se soltar ---------- */
-let grab=null,homeField=null,tregua=0,posGrab=0; // posGrab: segundos depois de se soltar (os avisos esperam zerar)
+let grab=null,homeField=null,tregua=0,posGrab=0,maePegou=0; // maePegou: quantas vezes a mãe já pegou o Markin na partida (cada vez puxa mais rápido); posGrab: segundos depois de se soltar (os avisos esperam zerar)
 // depois que alguém pega o Markin, os outros se afastam por um tempo
 function apanhou(){tregua=Math.max(tregua,8);}
 const afasta=(o,sp,dt)=>moveAxis(o,o.x-P.x,o.y-P.y,sp*dt,(x,y)=>!hitsWall(x,y));
 function startGrab(kind,ref){
   if(!homeField)homeField=bfs(DOORT.x,DOORT.y);
   const need=kind==='mae'?14:9;
-  closeBeg();grab={kind,ref,need,left:need,t:0};actionQ=false;apanhou();
-  toast(kind==='mae'?'A mãe te pegou pelo braço! Toque rápido pra se soltar!':'*plim plim* A chave te prendeu! Toque rápido pra se soltar!','bad',3);
+  if(kind==='mae')maePegou++;
+  const forca=kind==='mae'?Math.min(2.5,1+.25*(maePegou-1)):1; // 1ª vez normal, +25% a cada pegada, até 2,5x (7ª em diante)
+  closeBeg();grab={kind,ref,need,left:need,t:0,forca};actionQ=false;apanhou();
+  toast(kind==='mae'?(maePegou>1?`A mãe te pegou pela ${maePegou}ª vez e tá puxando mais forte! Toque rápido pra se soltar!`:'A mãe te pegou pelo braço! Toque rápido pra se soltar!'):'*plim plim* A chave te prendeu! Toque rápido pra se soltar!','bad',3);
   bubble(kind==='mae'?mom:P,kind==='mae'?pick(['Achei! Pra dentro, agora!','Chega de rua, Markin!','A lasanha tá esfriando!']):'ME SOLTA!',2.2,kind==='mae'?'mom':'',kind==='mae'?26:46);
 }
 function updGrab(dt,act){
@@ -1826,7 +1828,7 @@ function updGrab(dt,act){
   }
   // arrastado pro rumo da porta
   g.drainT=(g.drainT||0)+dt;if(g.drainT>=2){g.drainT-=2;lose(5);} // arrastado cansa: -5 a cada 2 s
-  const sp=g.kind==='mae'?8+80*(1-Math.exp(-dist(P,HOME)/250)):54; // a mãe puxa rápido longe de casa e bem devagar perto da porta
+  const sp=g.kind==='mae'?(8+80*(1-Math.exp(-dist(P,HOME)/250)))*g.forca:54; // a mãe puxa rápido longe de casa e bem devagar perto da porta
   followField(P,homeField,HOME,sp,dt);P.anim+=dt;
 }
 
