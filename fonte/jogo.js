@@ -1294,7 +1294,7 @@ function* introGen(){
   yield* wait(1.2);
   sfx.ring();bubble(P,'bizz bizz',1.6,'mom treme',46);
   yield* wait(.8);
-  yield* talk('Mãe (mensagem)','Filho, já desembarcou?? Recusou minha ligação?! Vem direto pra casa que eu fiz sopa de chuchu <3');
+  yield* talk('Mãe (mensagem)','Filho, já desembarcou?? Recusou minha ligação?! Vem direto pra casa que eu fiz lasanha <3');
   P.phoneOut=false;
   yield* talk('Markin','Casa? Casa é pra quem tem sono.');
   yield* talk('Markin','Me dá 15 dias. Ninguém me leva pra casa.');
@@ -1347,7 +1347,7 @@ function* winGen(){
   yield* wait(.8);
   yield* talk('Chefe (ligação)','Markin?! Que barulheira é essa no convés?',true);
   yield* talk('Markin','É o BLOCO DO MARKIN, chefe. Vai todo mundo pro mar.',true);
-  yield* talk('Mãe (mensagem)','MARKIN!!! A SOPA DE CHUCHU!!!',true);
+  yield* talk('Mãe (mensagem)','MARKIN!!! A LASANHA!!!',true);
   yield* talk('Markin','SEM VOLTA PRA CASA!! FODA-SE A CASA!!',true);
   yield* talk('Markin','Capitão, muda a rota! Tem bloco em PAQUETÁ!',true);
   // um boto cor de rosa aparece pulando no mar, vindo da esquerda pra direita
@@ -1475,13 +1475,13 @@ function resume(){hideScreen();state='play';}
 /* ================= GAMEPLAY ================= */
 const L={
   momSpot:['MARKIN!!!','Achei você!','Vem cá, menino!','Ô MARKIN!'],
-  decline:['Recusou. A mãe mandou 12 áudios de 4 minutos.','Recusou. "Visualizou e não respondeu, né?"','Recusou. O grupo da família já tá sabendo.','Recusou. Chegou foto da sopa de chuchu.','Recusou. "Tô rezando por você."'],
+  decline:['Recusou. A mãe mandou 12 áudios de 4 minutos.','Recusou. "Visualizou e não respondeu, né?"','Recusou. O grupo da família já tá sabendo.','Recusou. Chegou foto da lasanha.','Recusou. "Tô rezando por você."'],
   shroomTalk:['Psiu, Markin... sua mãe tá pro {d}.','Me come não... ou come. Sei lá.','Dormir é coisa de cogumelo velho.','{h} horas acordado. Respeito.','Aquela tia de bobe tá de olho.','Ouvi um tamborim... o Bloco Secreto tá pro {b}.','Tem altinha rolando na areia. Vai lá.'],
   shroomEat:['AAAH! Tudo bem... eu renasço.','Cuidado com as cores!','Bem-vindo ao outro lado.'],
   beer:['Gelada! Desceu redonda.','Só mais uma. Só mais uma.','Essa é pra lembrar do navio.'],
   zip:['SNIFF! Tô vendo sons.','Energia infinita (por enquanto).','Tô ligado no 220V.'],
   idle:['Eu durmo quando morrer.','Tô ótimo. Tô ÓTIMO.','Que dia é hoje? Não importa.','Pisquei ou dormi?','Meu olho tá tremendo sozinho.','Casa? Nunca ouvi falar.','15 dias no mar, 15 na terra.'],
-  low:['A cama tá me chamando...','Só um cochilinho em casa... NÃO!','Tô vendo a sopa de chuchu...','Minhas pernas tão indo sozinhas...'],
+  low:['A cama tá me chamando...','Só um cochilinho em casa... NÃO!','Tô vendo a lasanha...','Minhas pernas tão indo sozinhas...'],
   tia:['Ó o Markin ali!!','Vou contar pra sua mãe!','NEIDE! Liga pra mãe dele!','Tá magrinho, hein?'],
   days:{1:'TERRA FIRME',2:'CADÊ MEUS AMIGOS',3:'O OLHO TREMENDO',4:'O CAFÉ NÃO FAZ MAIS EFEITO',5:'AS TIAS FORAM AVISADAS',6:'NUNCA MAIS EU VOU DORMIR',7:'UMA SEMANA',8:'MICHAEL DOUGLAS',9:'O TÁXI DA MÃE',10:'NA ONDA DO COGU',11:'A ÚLTIMA GELADA',12:'DESERDADO',13:'CONTAGEM REGRESSIVA',14:'ÚLTIMAS 24H',15:'SEM VOLTA PRA CASA'}
 };
@@ -1516,9 +1516,9 @@ function gameOver(reason,semTempo){
   const podeSeguir=reason!=='tarefas'&&reason!=='navio'; // se os 15 dias acabaram, não tem de onde continuar
   salvo=podeSeguir?{tasks:{...tasksDone},finalStage,totalMin,gatHair,sabeMusica,criaLiberou,palhetas,usosTempo}:null;closeBeg();interruptRest();$('phone').hidden=true;call=null;sfx.lose();
   const hrs=Math.floor(totalMin/60);
-  const why=reason==='door'?['VOLTOU PRA CASA','Entrou pela porta da frente. A sopa de chuchu tava ótima. Você perdeu.']
+  const why=reason==='door'?['VOLTOU PRA CASA','Entrou pela porta da frente. A lasanha tava ótima. Você perdeu.']
     :reason==='tarefas'?['FALTOU TAREFA',`Os 15 dias acabaram, mas faltou: ${TASKS.filter(t=>!tasksDone[t.k]).map(t=>t.nome.toLowerCase()).join(', ')}. O Markin embarcou sem viver tudo. Você perdeu.`]
-    :reason==='navio'?['O NAVIO ZARPOU',finalStage<=1?'Os 15 dias acabaram e o Markin nunca encarou o Bloco do Jamal. O navio foi embora sem ele. Você perdeu.':'O Bloco do Markin não chegou no porto a tempo. O navio zarpou e a galera foi comer sopa de chuchu. Você perdeu.']
+    :reason==='navio'?['O NAVIO ZARPOU',finalStage<=1?'Os 15 dias acabaram e o Markin nunca encarou o Bloco do Jamal. O navio foi embora sem ele. Você perdeu.':'O Bloco do Markin não chegou no porto a tempo. O navio zarpou e a galera foi comer lasanha. Você perdeu.']
     :reason==='sono'?['APAGOU DE SONO','Não cochilou a tempo e apagou na calçada. Acordou na cama dele, com a mãe fazendo carinho. Você perdeu.']
     :reason==='bloco'?['DORMIU NO BLOCO','Apagou no meio da rua atrás do Bloco Secreto. Acordou em casa, com a mãe fazendo cafuné. Você perdeu.']
     :['APAGOU','A energia zerou. O Markin acordou na cama dele, coberto, com a mãe fazendo carinho. Você perdeu.'];
@@ -1811,7 +1811,7 @@ function startGrab(kind,ref){
   const need=kind==='mae'?14:9;
   closeBeg();grab={kind,ref,need,left:need,t:0};actionQ=false;apanhou();
   toast(kind==='mae'?'A mãe te pegou pelo braço! Toque rápido pra se soltar!':'*plim plim* A chave te prendeu! Toque rápido pra se soltar!','bad',3);
-  bubble(kind==='mae'?mom:P,kind==='mae'?pick(['Achei! Pra dentro, agora!','Chega de rua, Markin!','A sopa de chuchu tá esfriando!']):'ME SOLTA!',2.2,kind==='mae'?'mom':'',kind==='mae'?26:46);
+  bubble(kind==='mae'?mom:P,kind==='mae'?pick(['Achei! Pra dentro, agora!','Chega de rua, Markin!','A lasanha tá esfriando!']):'ME SOLTA!',2.2,kind==='mae'?'mom':'',kind==='mae'?26:46);
 }
 function updGrab(dt,act){
   const g=grab;g.t+=dt;
@@ -4346,7 +4346,7 @@ const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
 const RETRATOS={altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
 const PRE_FALAS={
-  altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa tomar sopa de chuchu.']],
+  altinha:{primeira:[['Amarante','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amarante','Então mostra. Altinha: oito toques sem deixar cair.'],['Amarante','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
     volta:[['Amarante','Voltou pra revanche? Bora, oito toques!']]},
   futevolei:{primeira:[['Professor Arthur','Ô, aluno novo! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra bater uma bolinha...'],['Professor Arthur','Aqui é futevôlei: pé, peito e cabeça. Mão, nunca. Até três toques do teu lado.'],['Professor Arthur','Derruba a bola no meu campo. Quem fizer 5 pontos primeiro ganha.'],['Markin','E se eu ganhar do professor?'],['Professor Arthur','Aí eu viro teu aluno. Mas eu acerto quase todas, hein.']],
     volta:[['Professor Arthur','Voltou pra aula? Bora, até 5!']]},
