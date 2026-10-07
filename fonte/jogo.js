@@ -1120,7 +1120,7 @@ screenEl.addEventListener('click',e=>{const b=e.target.closest('button[data-act]
   else if(a==='fase')playFase(b.dataset.f);
   else if(a==='menu')goTitle();
   else if(a==='mgRetry'){hideScreen();(MG_RETRY[mgKind]||(()=>{state='play';}))();}
-  else if(a==='mgSair'){hideScreen();state='play';$('hud').hidden=false;if(isTouch)$('touch').hidden=false;saidaSegura();toast('Saiu do desafio. Dá pra voltar quando quiser.','',2.6);}
+  else if(a==='mgSair'){hideScreen();state='play';$('hud').hidden=false;if(isTouch)$('touch').hidden=false;saidaSegura();mgSaiuEm=performance.now();toast('Saiu do desafio. Dá pra voltar quando quiser.','',2.6);}
   else if(a==='dif'){diff=b.dataset.d;try{localStorage.setItem('svpc-dificuldade',diff);}catch(e){}for(const x of screenEl.querySelectorAll('[data-act=dif]'))x.classList.toggle('ghost',x.dataset.d!==diff);}
   else if(a==='musica'){musicOn=!musicOn;pause();}
   else if(a==='controle')abreCtrlCfg(state==='paused'?'pause':'title');
@@ -1632,6 +1632,7 @@ function play(dt){
     if(!near)for(const b of barDoors)if(dist(b,P)<15){near={k:b.kind==='sinuca'?'sinuca':'bar',o:b};break;}
     if(!near){let v=null,vd=22;for(const n of npcs){const d=dist(n,P);if(!n.beggar&&n.stun<=0&&n.flee<=0&&totalMin-(n.falouEm??-1e9)>=CONV_GAP&&d<vd){v=n;vd=d;}}if(v)near={k:'npc',o:v};}
     if(!near)for(const s of busStops)if(dist(s,P)<16){near={k:'bus',o:s};break;}
+    if(near&&!['npc','bus','chair'].includes(near.k)&&performance.now()-mgSaiuEm<5000)near=null; // acabou de sair de um desafio: 5s sem entrar de novo (ESPAÇO pra pular fala não te joga de volta)
     if(!near)for(const c of chairs)if(dist(c,P)<14){near={k:'chair',o:c};break;}
     const sleepy=near&&(near.k==='bus'||near.k==='chair'),rest=sleepy&&!canRest(near.o);nearK=near?near.k:null;
     setPrompt(near&&near.k==='npc'?KL+': falar com '+near.o.quem:near?KL+': '+{alt:'jogar altinha',bloco:'buscar o Bloco Secreto',bar:'entrar no bar',sinuca:'jogar bambina no bar',festa:'entrar no Circo Voador',lab:'entrar nos becos do Santo Amaro',maraca:'invadir o Maracanã',surf:'pegar onda com o Lucas',futv:'aula de futevôlei com o Professor Arthur',bus:'cochilar',chair:'cochilar',boss:'encarar o BLOCO DO JAMAL'}[near.k]:null);
@@ -1953,7 +1954,7 @@ function taskHint(){const pend=TASKS.filter(t=>!tasksDone[t.k]);
   toast(`Dica: falta ${t.nome.toLowerCase()} ${t.lugar}. Fica ${dirHint(t.onde())}. (${pend.length} tarefa${pend.length>1?'s':''} faltando)`,'',4.5);}
 let bloco=null,mg=null,altinhaDay=0,jumpQ=false,laneQ=0,joyUp=false,joySide=0;
 function relocateBloco(){bloco={x:59*T+8,y:4*T+12,h:36,lineT:rnd(3,6)};} // ponto fixo na Lapa, embaixo dos Arcos
-let mgE=100,mgKind='';
+let mgE=100,mgKind='',mgSaiuEm=-1e9; // mgSaiuEm: quando saiu do último desafio (5s sem poder entrar de novo)
 function mgEnter(kind){
   if(!MG_STATES.includes(state)&&state!=='mglost')mgE=P.energy; // a energia fica guardada do jeito que ele entrou
   closeBeg();mgKind=kind;state=kind;hideScreen();interruptRest();setPrompt(null);call=null;$('phone').hidden=true;$('hud').hidden=true;clearBubbles();hideDialog();
@@ -1963,7 +1964,7 @@ function mgEnter(kind){
 function mgExit(msg,cls,dE,minutes){dlgRetrato=null;hideDialog();
   hideDialog();state='play';mg=null;$('hud').hidden=false;$('festa').hidden=true;if(isTouch)$('touch').hidden=false;cv.style.filter='';
   P.energy=Math.min(maxE(),mgE);if(dE>0)gain(dE); // volta com a energia de quando entrou (+ o prêmio, se ganhou)
-  saidaSegura();
+  saidaSegura();mgSaiuEm=performance.now();
   totalMin+=minutes;toast(msg,cls,3.4);actionQ=false;jumpQ=false;laneQ=0;
 }
 function mgQuit(){if(!mg)return;const k=state;
