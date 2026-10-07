@@ -1590,7 +1590,7 @@ function play(dt){
   if(!avisoEnergia&&P.energy<=60){avisoEnergia=true;abreAviso('energia');return;}
   if(!avisoCmd){cmdT+=dt;if(cmdT>=5){avisoCmd=true;abreAviso('comandos');return;}}
   if(ultDesafio==null)ultDesafio=totalMin;
-  if(finalStage===0&&!TASKS.every(t=>tasksDone[t.k])&&P.mode==='free'&&!grab&&!napS&&!chairS&&totalMin-ultDesafio>=3*1440){ultDesafio=totalMin;abreAviso('desafios');return;} // 3 dias sem vencer desafio: aviso apontando pro painel
+  if(finalStage===0&&!TASKS.every(t=>tasksDone[t.k])&&P.mode==='free'&&!grab&&!napS&&!chairS&&totalMin-ultDesafio>=2*1440){ultDesafio=totalMin;abreAviso('desafios');return;} // 2 dias sem vencer desafio: aviso apontando pro painel
   let ix=0,iy=0;
   if(keys.has('ArrowLeft')||keys.has('KeyA'))ix-=1;if(keys.has('ArrowRight')||keys.has('KeyD'))ix+=1;
   if(keys.has('ArrowUp')||keys.has('KeyW'))iy-=1;if(keys.has('ArrowDown')||keys.has('KeyS'))iy+=1;
@@ -4416,7 +4416,7 @@ function tempoPress(ln){const s=tempoS;if(state!=='tempo'||!s||s.phase!=='toca')
 function tempoDesiste(){if(state!=='tempo')return;const r=tempoS.reason;if(r==='fim'){tempoSegue('O Markin guardou o sax. Faltam 12 horas, bora até o fim!');return;}state='play';$('hud').hidden=false;gameOver(r,true);}
 // nas 12h finais, se não tocou (ou desafinou), o jogo só segue
 // aviso que para o jogo no meio da tela (energia em 60 pela 1ª vez e os comandos no começo): só passa com ESPAÇO
-let avisoEnergia=false,avisoCmd=false,cmdT=0,batidaT=0,ultDesafio=null,tarefasAbertas=false; // ultDesafio: minuto do último desafio vencido (3 dias sem nenhum, vem o aviso)
+let avisoEnergia=false,avisoCmd=false,cmdT=0,batidaT=0,ultDesafio=null,tarefasAbertas=false; // ultDesafio: minuto do último desafio vencido (2 dias sem nenhum, vem o aviso)
 const SETA_SVG='<svg viewBox="0 0 12 14" shape-rendering="crispEdges"><path d="M6 0L12 6H8V14H4V6H0Z" fill="#0a0612"/><path d="M6 1.5L10 5.5H7V13H5V5.5H2Z" fill="#ffe14f"/></svg>';
 function abreAviso(tipo){state='aviso';keys.clear();actionQ=false;P.moving=false;setPrompt(null);sfx.alert();
   const ok=`<div class="btns"><button data-act="avisoOk" type="button">${isTouch?'OK':'ESPAÇO'} ▸</button></div>`;
@@ -4425,7 +4425,7 @@ function abreAviso(tipo){state='aviso';keys.clear();actionQ=false;P.moving=false
     $('game').classList.add('avisoE');const g=$('game').getBoundingClientRect(),b=$('ebar').parentNode.getBoundingClientRect(),el=document.createElement('div');
     el.id='setaE';el.className='setaE';el.innerHTML=SETA_SVG;el.style.left=((b.left+b.width*.5-g.left)/g.width*100)+'%';el.style.top=((b.bottom-g.top)/g.height*100+1)+'%';$('game').appendChild(el);
   }else if(tipo==='desafios'){
-    showScreen(`<div class="card aviso"><div class="kicker">faz 3 dias sem desafio</div><h2>DESAFIOS</h2><p>Encontre os desafios para fazer mais um amigo! A lista tá no painel do canto direito${isTouch?' (toque nele pra abrir ou fechar)':''}.</p>${ok}</div>`);
+    showScreen(`<div class="card aviso"><div class="kicker">faz 2 dias sem desafio</div><h2>DESAFIOS</h2><p>Encontre os desafios para fazer mais um amigo! A lista tá no painel do canto direito${isTouch?' (toque nele pra abrir ou fechar)':''}.</p>${ok}</div>`);
     $('game').classList.add('avisoD');updHUD();const el=document.createElement('div');
     el.id='setaE';el.className='setaE setaD';el.innerHTML=SETA_SVG;document.querySelector('.hud-r').appendChild(el); // presa no painel: a seta fica sempre do lado esquerdo dele
   }else{
