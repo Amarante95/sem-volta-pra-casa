@@ -1474,7 +1474,6 @@ function resume(){hideScreen();state='play';}
 
 /* ================= GAMEPLAY ================= */
 const L={
-  momHit:['MARKIN! Olha essa cara!','Tá comendo direito, filho?','Seu quarto tá arrumadinho te esperando...','Fiz sopa de chuchu. SOPA DE CHUCHU, Markin.','Nem me deu um abraço!','Que olheira é essa?!','Vou contar pro seu pai!'],
   momSpot:['MARKIN!!!','Achei você!','Vem cá, menino!','Ô MARKIN!'],
   decline:['Recusou. A mãe mandou 12 áudios de 4 minutos.','Recusou. "Visualizou e não respondeu, né?"','Recusou. O grupo da família já tá sabendo.','Recusou. Chegou foto da sopa de chuchu.','Recusou. "Tô rezando por você."'],
   shroomTalk:['Psiu, Markin... sua mãe tá pro {d}.','Me come não... ou come. Sei lá.','Dormir é coisa de cogumelo velho.','{h} horas acordado. Respeito.','Aquela tia de bobe tá de olho.','Ouvi um tamborim... o Bloco Secreto tá pro {b}.','Tem altinha rolando na areia. Vai lá.'],
@@ -1778,11 +1777,7 @@ function updMom(dt){
     followField(m,m.field,m.target,30,dt);
   }
   if(m.moving)m.anim+=dt;
-  if(!disg&&!grab&&d<10&&P.mode!=='cut'&&Math.random()<.5){interruptRest();sfx.alert();bubble(m,pick(['Peguei! Bora pra casa!','Agora tu vem comigo!','Chega de rua, Markin!']),2.2,'mom');startGrab('mae',m);return;}
-  if(!disg&&!grab&&d<10&&P.mode!=='cut'){ // chinelada
-    apanhou();interruptRest();lose(22);sfx.hit();bubble(m,'CHINELADA! '+pick(L.momHit),2.4,'mom');particles.push({x:P.x,y:P.y-30,vx:0,vy:-20,g:0,life:1,text:'PÁ!',col:'#ffe14f'});m.stun=2.6;m.chasing=false;setTimeout(()=>{if(state==='play'&&!grab)saidaSegura();},900);
-    const dx=P.x-m.x,dy=P.y-m.y,dd=Math.hypot(dx,dy)||1;for(let i=0;i<10;i++)moveP(dx/dd*2.4,dy/dd*2.4);
-  }
+  if(!disg&&!grab&&d<10&&P.mode!=='cut'){interruptRest();sfx.alert();bubble(m,pick(['Peguei! Bora pra casa!','Agora tu vem comigo!','Chega de rua, Markin!']),2.2,'mom');startGrab('mae',m);} // encostou: pega pelo braço e arrasta pra casa
 }
 function updKeys(dt){
   for(const k of keysE)if(k.tonto>0)k.tonto-=dt;
