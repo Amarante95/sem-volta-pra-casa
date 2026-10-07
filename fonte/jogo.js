@@ -2139,24 +2139,45 @@ function updVirando(dt){const v=virar,t0=v.t;v.t+=dt;const act=takeAction();
     toast(`HOMEM-ARANHA! Escala prédios, bares e o Circo, ninguém te reconhece e ${KL} solta teia na mãe.`,'good',3.6);}}
 let cap=null;
 function abreCapitulo(d){cap={t:0,dia:d};state='capitulo';interruptRest();setPrompt(null);clearBubbles();P.moving=false;$('toast').hidden=true;$('banner').hidden=true;somCapitulo(d);}
-// som do capítulo: coração batendo e um zumbido grave; quanto mais dias, mais batidas, mais rápido e mais notas tensas
-function somCapitulo(d){const n=2+Math.floor(d/3),gap=Math.max(.3,.62-d*.022),f0=55+d*2;
-  for(let i=0;i<n;i++){beep(f0,.18,'sine',.18,30,.35+i*gap);beep(f0-6,.14,'sine',.13,25,.35+i*gap+.15);}
-  beep(70+d*4,2.4,'sawtooth',.018+d*.0018,62+d*4,.1);
-  if(d>=6)beep(104+d*6,1.8,'square',.012,98+d*6,.6);if(d>=11)beep(147+d*8,1.4,'square',.012,0,1.1);}
+// som do capítulo: o galo canta e entra uma batucada curta; quanto mais dias, mais rápida e mais cheia (contagem regressiva, mas de festa)
+function somCapitulo(d){if(!AC||muted)return;galo(.25);
+  const n=4+Math.floor(d/4),gap=Math.max(.11,.2-d*.006),t0=1.55;
+  for(let i=0;i<n;i++){const t=t0+i*gap;if(i%2===0)beep(110,.22,'sine',.16,50,t);beep(i%4===3?1180:1480,.05,'square',.035,0,t+(i%2?gap*.5:0));}
+  beep(i0Nota(d),.3,'square',.04,0,t0+n*gap);}
+const i0Nota=d=>d>=13?1046:d>=7?880:784; // nota final da batucada sobe nos últimos dias
+// cocoricó sintetizado: 4 sílabas com vibrato, passando por um filtro pra soar bico de galo
+function galo(delay){const t=AC.currentTime+delay,bp=AC.createBiquadFilter(),g=AC.createGain();bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=1.2;
+  g.gain.value=.12;bp.connect(g);g.connect(MASTER);
+  [[.0,.1,520,700],[.13,.1,700,820],[.26,.13,820,1050],[.43,.75,1050,640]].forEach(([dt,du,f1,f2])=>{
+    const o=AC.createOscillator(),v=AC.createGain(),lfo=AC.createOscillator(),lg=AC.createGain();o.type='sawtooth';
+    o.frequency.setValueAtTime(f1,t+dt);o.frequency.linearRampToValueAtTime(du>.5?f1*1.04:f2,t+dt+du*.35);o.frequency.exponentialRampToValueAtTime(f2,t+dt+du);
+    lfo.frequency.value=du>.5?14:22;lg.gain.value=du>.5?30:12;lfo.connect(lg);lg.connect(o.frequency);
+    v.gain.setValueAtTime(0,t+dt);v.gain.linearRampToValueAtTime(1,t+dt+.02);v.gain.setValueAtTime(1,t+dt+du*.7);v.gain.exponentialRampToValueAtTime(.0001,t+dt+du);
+    o.connect(v);v.connect(bp);o.start(t+dt);lfo.start(t+dt);o.stop(t+dt+du+.03);lfo.stop(t+dt+du+.03);});}
 const CAP={FECHA:.5,TEXTO:3,ABRE:4};
 function updCapitulo(dt){cap.t+=dt;if(cap.t>=CAP.ABRE){cap=null;state='play';P.mode='free';$('hud').hidden=false;}}
-// a "íris" que fecha em volta do Markin (r = raio do buraco em px da tela)
+// a "íris" que fecha em volta do Markin de madrugada (r = raio do buraco em px da tela)
 function iris(r,px,py){dc.globalCompositeOperation='source-over';dc.clearRect(0,0,W,H);dc.fillStyle='#000';dc.fillRect(0,0,W,H);
   if(r>0){dc.globalCompositeOperation='destination-out';const gr=dc.createRadialGradient(px,py,Math.max(0,r*.75),px,py,r);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');
     dc.fillStyle=gr;dc.beginPath();dc.arc(px,py,r,0,Math.PI*2);dc.fill();dc.globalCompositeOperation='source-over';}
   ctx.drawImage(dk,0,0);}
-function renderCapitulo(cx,cy){const t=cap.t,px=P.x-cx,py=P.y-14-cy;
-  if(t<CAP.FECHA)iris(70*(1-t/CAP.FECHA),px,py);
-  else if(t<CAP.TEXTO){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const a=Math.min(1,(t-CAP.FECHA)/.4,(CAP.TEXTO-t)/.3);ctx.globalAlpha=Math.max(0,a);
-    outlineText(ctx,'DIA '+cap.dia,W/2,H/2-4,18,'#ffe14f');if(L.days[cap.dia])outlineText(ctx,L.days[cap.dia],W/2,H/2+16,8,'#f3ecd8');ctx.globalAlpha=1;$('hud').hidden=true;}
-  else iris(400*Math.pow((t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO),1.6),px,py);
-  if(t>=CAP.FECHA&&t<CAP.TEXTO)headCv.hidden=true;} // a cabeça só some na tela preta
+// a troca de dia é um nascer do sol: o céu cobre a tela, o sol sobe do mar atrás do "DIA X" e o céu clareia de volta pro jogo
+function ceuAmanhecer(sobe){const g=ctx,hz=Math.round(H*.68);
+  const gr=g.createLinearGradient(0,0,0,hz);gr.addColorStop(0,'#3a2a6e');gr.addColorStop(.55,'#ff7a4a');gr.addColorStop(1,'#ffd27a');g.fillStyle=gr;g.fillRect(0,0,W,hz);
+  const sx=W/2,sy=Math.round(hz+22-58*sobe),r=26;
+  g.fillStyle='rgba(255,236,150,.25)';g.beginPath();g.arc(sx,sy,r+10,0,Math.PI*2);g.fill();
+  g.fillStyle='#ffe98a';g.beginPath();g.arc(sx,sy,r,0,Math.PI*2);g.fill();
+  g.fillStyle='#1d3a6e';g.fillRect(0,hz,W,H-hz); // mar
+  g.fillStyle='#ffd27a';for(let k=0;k<6;k++){const w=Math.round((44-k*6)*(.4+.6*sobe)),y=hz+4+k*7;g.fillRect(sx-w/2+((k%2)?3:-3),y,w,2);} // reflexo do sol na água
+  g.fillStyle='#ffb36b';for(let k=0;k<4;k++){const y=hz+8+k*12,x=(k*83+cap.t*14)%(W+40)-20;g.fillRect(x,y,16,1);}}
+function renderCapitulo(cx,cy){const t=cap.t;
+  if(t<CAP.FECHA){ctx.globalAlpha=t/CAP.FECHA;ceuAmanhecer(0);ctx.globalAlpha=1;}
+  else if(t<CAP.TEXTO){const k=(t-CAP.FECHA)/(CAP.TEXTO-CAP.FECHA);ceuAmanhecer(1-Math.pow(1-k,2));
+    const a=Math.min(1,(t-CAP.FECHA)/.4,(CAP.TEXTO-t)/.3);ctx.globalAlpha=Math.max(0,a);
+    outlineText(ctx,'DIA '+cap.dia,W/2,H*.3,18,'#fff4c8');if(L.days[cap.dia])outlineText(ctx,L.days[cap.dia],W/2,H*.3+20,8,'#fff4c8');ctx.globalAlpha=1;$('hud').hidden=true;}
+  else{const k=(t-CAP.TEXTO)/(CAP.ABRE-CAP.TEXTO);ctx.globalAlpha=1-k;ceuAmanhecer(1);ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(255,240,200,'+(.35*(1-k)).toFixed(3)+')';ctx.fillRect(0,0,W,H);} // clarão de manhã saindo
+  if(t>=CAP.FECHA&&t<CAP.TEXTO)headCv.hidden=true;} // a cabeça só some enquanto o céu cobre tudo
 function renderVirando(){const g=ctx,t=virar.t,cx=W/2,cy=H/2;headCv.hidden=true;
   g.fillStyle=`rgba(8,6,20,${.88*Math.min(1,t/VR.ESC)})`;g.fillRect(0,0,W,H);
   const virou=t>=VR.VIRA,pw=Math.max(0,Math.min(1,(t-VR.ESC)/(VR.VIRA-VR.ESC)));
