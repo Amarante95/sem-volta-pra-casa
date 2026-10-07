@@ -2497,12 +2497,13 @@ function drawDudu(g,x,y,t,nadando){ // o Lucas na água, sentado na prancha dele
   if(nadando){R(g,x-4,y-12,8,10,'#b8733f');R(g,x-6,y-11,2,7,'#b8733f');R(g,x+4,y-11+Math.round(Math.sin(t*6)*2),2,7,'#b8733f');R(g,x-4,y-4,8,4,'#2d8fe8');}
   drawCabeca(g,x,y+1,'down','lucas');
 }
-function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na areia e o Lucas do lado
+const SURFISTA={skin:'#c98a5a',hair:'#f2d27a',shirt:null,shorts:'#2d8fe8',cap:'#e84a4a'}; // surfista genérico da placa (o Lucas só aparece na água e depois seguindo o Markin)
+function drawSurfSpot(g,x,y,t){ // placa AULA DE SURF, a prancha fincada na areia e um surfista do lado
   x=Math.round(x);y=Math.round(y);
   R(g,x-19,y-1,2,4,'rgba(0,0,0,.25)');R(g,x-20,y-30,2,30,'#6d4322');R(g,x-34,y-40,34,12,'#f4f1e8');R(g,x-34,y-40,34,1,'#2d8fe8');R(g,x-34,y-29,34,1,'#c9c2b2');
   pxText(g,'AULA DE',x-31,y-38,'#1f6ab8');pxText(g,'SURF',x-25,y-33,'#e84a4a');
   R(g,x+10,y-2,8,3,'rgba(0,0,0,.25)');R(g,x+11,y-32,6,30,'#f4f1e8');R(g,x+12,y-34,4,2,'#f4f1e8');R(g,x+13,y-31,2,28,'#e84a4a');R(g,x+11,y-4,6,2,'#d9bf7c');
-  drawBuddy(g,x-2,y,DUDU,{dir:'down',frame:Math.sin(t*2)>.7?1:0,t});
+  drawBuddy(g,x-2,y,SURFISTA,{dir:'down',frame:Math.sin(t*2)>.7?1:0,t});
 }
 // Markin na prancha. pose: 'deitado' (remando), 'flexao' (empurrando a prancha), 'agacha' ou 'pe'.
 // Prancha grande, vista meio de cima (igual ao jogo); os dois pés ficam sempre em cima dela (inclusive no aéreo).
