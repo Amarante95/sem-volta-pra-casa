@@ -4383,7 +4383,7 @@ const PRE_FALAS={
     volta:[['Caslu','Mais uma série chegando! Bora, Markin!']]},
   bloco:{primeira:[['Gabriel','Markin! Tá sabendo do Bloco Secreto?'],['Giraldi','Porra, desisti de achar já. Cansadão, vou pra casa.'],['Markin','Mané casa, irmão! To com um MD do bom aqui pra nós. Vou achar esses caras.'],['Gabriel','Se tu achar, a gente cola contigo até o fim!']],
     volta:[['Giraldi','Me da mais um pouco desse MD e bora de novo! O bloco tá andando, Markin!']]},
-  bar:{primeira:[['Goiaba','Coeee Daucu.'],['Markin','Falaa Cheira Bife, qual ideia?'],['Sá','Regra da mesa: seis brejas e a cabeça tem que ficar em pé.'],['Markin','Seis? Fiquei quinze dias no mar, mermão. Manda vir.'],['Goiaba','Se tu aguentar, a gente vira teu bloco.']],
+  bar:{primeira:[['Goiaba','Coeee Daucu.'],['Markin','Falaa Cheira Bife, qual ideia?'],['Sá','Regra da mesa: seis brejas e a cabeça tem que ficar em pé.'],['Markin','Seis? Fiquei quinze dias no mar, mermão. Manda vir.'],['Goiaba','Se tu sustentar eu te conto da verificada que comi ontem e te apresento outra hoje.']],
     volta:[['Sá','Voltou pra mesa? Garçom, desce mais uma!']]},
   festa:{primeira:[['Rebecca','Ih, olha ele... o marinheiro sumido.'],['Markin','Sumido nada, cheguei agora. Bora dançar?'],['Rebecca','Calma. Primeiro me convence que tu vale o rolê.']],
     volta:[['Rebecca','Voltou, é? Vamos ver se agora tu acerta.']]}
