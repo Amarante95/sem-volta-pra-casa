@@ -4371,7 +4371,7 @@ const temSax=()=>!!(tasksDone&&tasksDone.bloco);
 /* conversa antes da altinha (Amarante) e da bambina (Liu), com o retrato de quem desafia */
 const RETRATOS={jamal:SVPC_ASSETS.JAMAL_SRC,altinha:SVPC_ASSETS.AMARANTE_SRC,sinuca:SVPC_ASSETS.LIU_SRC,maraca:SVPC_ASSETS.GUSTAVINHO_SRC,festa:SVPC_ASSETS.REBECCA_SRC,tavin:SVPC_ASSETS.TAVIN_SRC,futevolei:SVPC_ASSETS.ARTHUR_SRC,surf:SVPC_ASSETS.LUCAS_SRC,bloco:SVPC_ASSETS.BLOCO_SRC,bar:SVPC_ASSETS.BAR_SRC};
 const PRE_FALAS={
-  altinha:{primeira:[['Amara','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, parceiro.'],['Amara','Então mostra que tu é cria do leme: oito toques sem deixar cair.'],['Amara','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
+  altinha:{primeira:[['Amara','Coé, Markin! Quinze dias embarcado e ainda tá de pé?'],['Markin','De pé e sem volta pra casa, Jogo Prensado.'],['Amara','Então mostra que tu é cria do leme: oito toques sem deixar cair.'],['Amara','Se a bola beijar a areia, tu vai pra casa comer lasanha.']],
     volta:[['Amara','Voltou pra outro X1? Bora, oito toques!']]},
   futevolei:{primeira:[['Tchuco','Coee perna de pau! Chega mais que a aula já vai começar.'],['Markin','Aula? Eu vim só pra mostrar minha peitada na lua...'],['Tchuco','Então bora, peito cachoeira.'],['Markin','E se eu ganhar do professor?'],['Tchuco','Aí eu vou contigo pro próximo rolé.']],
     volta:[['Tchuco','Voltou pra aula? Bora, até 5!']]},
