@@ -3652,9 +3652,9 @@ function updTaxis(dt){
     if(c.x<8||c.x>MW*T-8||c.y<8||c.y>(ORLA_Y+1)*T+1){c.dir=[-c.dir[0],-c.dir[1]];c.x=clamp(c.x,8,MW*T-8);c.y=clamp(c.y,8,(ORLA_Y+1)*T);}
     if(d<16&&P.mode!=='cut'&&state==='play'&&tregua<=0&&!grab){
       interruptRest();lose(6);sfx.horn();c.dead=true;taxiT=25;
-      // o táxi larga ele na rua, bem em frente ao portão de casa, e a mãe já segura pelo braço
-      P.x=DOORT.x*T+8;P.y=36*T+12;P.dir='up';flash=.5;mom.stun=0;mom.x=P.x+9;mom.y=P.y;if(!grab)startGrab('mae',mom);
-      toast('O táxi te largou na porta de casa e a mãe te pegou pelo braço! Toque rápido pra se soltar!','bad',3.6);
+      // o táxi larga ele na calçada do outro lado da rua, de frente pro portão de casa, e a mãe já segura pelo braço (mais chão até a porta = mais tempo pra se soltar)
+      P.x=DOORT.x*T+8;P.y=38*T+12;P.dir='up';flash=.5;mom.stun=0;mom.x=P.x+9;mom.y=P.y;if(!grab)startGrab('mae',mom);
+      toast('O táxi te largou do outro lado da rua de casa e a mãe te pegou pelo braço! Toque rápido pra se soltar!','bad',3.6);
     }
   }
   taxis=taxis.filter(c=>!c.dead);
